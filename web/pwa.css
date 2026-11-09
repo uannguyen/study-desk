@@ -1,19 +1,68 @@
-#fc-fab { position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:50; border:0; border-radius:999px; padding:12px 18px; background:var(--accent,#a9583e); color:#fff; font:600 14px/1 "Segoe UI",sans-serif; box-shadow:0 4px 14px rgba(0,0,0,.2); cursor:pointer; }
-#fc-ov { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(37,37,35,.55); }
+/* Flashcard phong cách giấy vẽ tay, đồng bộ với vở Cornell (Patrick Hand, viền nét run, pastel theo chủ đề). */
+#fc-ov, #fc-fab { --ink:#2b2a27; --paper:#fffdf5; --desk:#f3eee2; --muted:#7a766c; --red:#c8553d; --green:#3f7d5a; --hand:"Patrick Hand","Segoe Print","Comic Sans MS",cursive; }
+html.fc-lock, html.fc-lock body { overflow:hidden; }
+
+#fc-fab { position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); z-index:50; display:flex; gap:6px; align-items:center;
+  padding:10px 18px; border:2px solid var(--ink); border-radius:255px 18px 225px 18px/18px 225px 18px 255px;
+  background:#f7da6a; color:var(--ink); font:22px/1 var(--hand); box-shadow:3px 3px 0 var(--ink); cursor:pointer; transform:rotate(-2deg); }
+#fc-fab:active { transform:rotate(-2deg) translate(2px,2px); box-shadow:1px 1px 0 var(--ink); }
+
+#fc-ov { position:fixed; inset:0; z-index:60; display:none; flex-direction:column; gap:10px;
+  padding:calc(12px + env(safe-area-inset-top)) 16px calc(14px + env(safe-area-inset-bottom));
+  background-color:var(--desk); background-image:radial-gradient(rgba(43,42,39,.13) 1px, transparent 1.2px); background-size:18px 18px;
+  color:var(--ink); font-family:var(--hand); }
 #fc-ov.open { display:flex; }
-.fc-box { width:min(560px,100%); max-height:100%; display:flex; flex-direction:column; gap:10px; }
-.fc-scene { perspective:1200px; min-height:0; display:flex; }
-.fc-card { position:relative; width:100%; height:min(60vh,420px); transform-style:preserve-3d; transition:transform .45s ease; cursor:pointer; }
+#fc-ov > * { width:100%; max-width:620px; margin:0 auto; }
+
+.fc-top { display:flex; gap:8px; align-items:center; }
+.fc-chips { flex:1; display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; padding:3px 2px 6px; }
+.fc-chips::-webkit-scrollbar { display:none; }
+.fc-chip { flex:none; padding:5px 12px; border:1.5px solid var(--ink); border-radius:14px 4px 14px 4px/4px 14px 4px 14px;
+  background:var(--paper); color:var(--ink); font:18px/1.1 var(--hand); cursor:pointer; }
+.fc-chip small { font-size:14px; color:var(--muted); }
+.fc-chip.on { background:var(--c,#f7da6a); box-shadow:2px 2px 0 var(--ink); }
+.fc-x { flex:none; width:40px; height:40px; border:0; background:none; color:var(--ink); font:34px/1 var(--hand); cursor:pointer; }
+
+.fc-stats { display:flex; gap:14px; font-size:16px; color:var(--muted); }
+.fc-stats span::before { content:""; display:inline-block; width:9px; height:9px; margin-right:5px; border-radius:50%; border:1.5px solid var(--ink); }
+.fc-stats .b1::before { background:var(--red); } .fc-stats .b2::before { background:#f7da6a; } .fc-stats .b3::before { background:var(--green); }
+
+.fc-scene { flex:1; min-height:0; perspective:1400px; }
+.fc-card { position:relative; height:100%; max-height:560px; transform-style:preserve-3d; transition:transform .5s cubic-bezier(.3,.7,.3,1); cursor:pointer; }
 .fc-card.flip { transform:rotateY(180deg); }
-.fc-face { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; display:flex; flex-direction:column; gap:10px; padding:20px; border-radius:14px; border:1px solid var(--line,#e6dfd8); background:var(--canvas,#faf9f5); color:var(--ink,#252523); font:16px/1.55 "Segoe UI",sans-serif; overflow:auto; }
-.fc-back { transform:rotateY(180deg); background:var(--teal-soft,#dcebe8); }
-.fc-tag { font-size:12px; color:var(--muted,#6c6a64); }
-.fc-q { font-size:20px; font-weight:600; margin:auto 0; }
-.fc-hint { font-size:12px; color:var(--muted,#6c6a64); }
-.fc-row b.l { display:block; font-size:12px; color:var(--teal,#2f6f6a); text-transform:uppercase; letter-spacing:.04em; }
-.fc-row { margin-bottom:10px; }
-.fc-row.red b.l { color:var(--accent,#a9583e); }
-.fc-bar { display:flex; gap:8px; }
-.fc-bar button { flex:1; border:0; border-radius:10px; padding:12px; font:600 14px/1 "Segoe UI",sans-serif; cursor:pointer; background:var(--card,#efe9de); color:var(--ink,#252523); }
-.fc-bar button.pri { background:var(--accent,#a9583e); color:#fff; }
-@media(prefers-reduced-motion:reduce) { .fc-card { transition:none; } }
+.fc-card.enter { animation:fc-in .35s ease-out; }
+@keyframes fc-in { from { opacity:0; translate:24px 0; rotate:1.5deg; } }
+
+.fc-face { position:absolute; inset:0; display:flex; flex-direction:column; gap:12px; padding:0 22px 20px; overflow:auto;
+  backface-visibility:hidden; -webkit-backface-visibility:hidden;
+  background:var(--paper) linear-gradient(transparent 31px, rgba(110,150,200,.22) 32px) 0 52px/100% 32px;
+  border:2px solid var(--ink); border-radius:255px 14px 225px 14px/14px 225px 14px 255px; box-shadow:5px 5px 0 var(--ink); }
+.fc-back { transform:rotateY(180deg); }
+.fc-tag { margin:0 -22px; padding:12px 22px 8px; background:var(--c,#c5def5); border-bottom:2px solid var(--ink);
+  font-size:15px; color:var(--ink); position:sticky; top:0; z-index:1; }
+.fc-q { margin:auto 0; font-size:clamp(26px,6.5vw,34px); line-height:1.25; text-align:center; }
+.fc-star { font-size:.7em; vertical-align:super; }
+.fc-hint { align-self:center; border:1.5px dashed var(--muted); border-radius:12px; background:none; padding:4px 12px; color:var(--muted); font:17px var(--hand); cursor:pointer; }
+.fc-kw { align-self:center; text-align:center; font-size:19px; color:#2f5d8a; }
+.fc-tip { text-align:center; font-size:15px; color:var(--muted); }
+
+.fc-q2 { font-size:19px; color:var(--muted); border-bottom:1.5px dashed rgba(43,42,39,.3); padding-bottom:8px; }
+.fc-row { font:20px/1.45 var(--hand); }
+.fc-row .lb { display:inline-block; margin-right:8px; padding:0 8px; border:1.5px solid var(--ink); border-radius:10px 3px 10px 3px; background:var(--c,#c5def5); font-size:15px; line-height:1.5; vertical-align:2px; }
+.fc-row.warn .lb { background:#f9c9bd; }
+.fc-row.warn .lb::before { content:"⚠ "; }
+.fc-row code { font:15px/1.4 ui-monospace,monospace; background:rgba(43,42,39,.07); padding:1px 5px; border-radius:4px; }
+.fc-row b { background:linear-gradient(transparent 55%, rgba(247,218,106,.75) 55%); font-weight:400; }
+.fc-src { margin-top:auto; align-self:flex-end; color:#2f5d8a; font-size:18px; }
+
+.fc-bar { display:flex; gap:10px; }
+.fc-bar button { flex:1; padding:12px; border:2px solid var(--ink); border-radius:255px 14px 225px 14px/14px 225px 14px 255px;
+  background:var(--paper); color:var(--ink); font:22px/1 var(--hand); box-shadow:3px 3px 0 var(--ink); cursor:pointer; }
+.fc-bar button:active { translate:2px 2px; box-shadow:1px 1px 0 var(--ink); }
+.fc-bar .skip { flex:.55; color:var(--muted); }
+.fc-bar .flip { background:#f7da6a; }
+.fc-bar .no { background:#f9c9bd; }
+.fc-bar .ok { background:#cfe8cf; }
+
+@media (min-width:700px) { .fc-face { padding:0 30px 24px; } .fc-tag { margin:0 -30px; padding:12px 30px 8px; } }
+@media (prefers-reduced-motion:reduce) { .fc-card { transition:none; } .fc-card.enter { animation:none; } }

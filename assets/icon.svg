@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Bàn Học: vở (học) + thẻ "?" (ôn) + giấy việc cần làm (làm), nét vẽ tay như các vở Cornell. -->
+  <rect width="512" height="512" fill="#f7da6a"/>
+  <g stroke="#2b2a27" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Vở -->
+    <g transform="rotate(-8 190 262)">
+      <path d="M92 124 Q190 116 290 126 L286 398 Q190 406 88 396 Z" fill="#2b2a27" transform="translate(12 12)"/>
+      <path d="M92 124 Q190 116 290 126 L286 398 Q190 406 88 396 Z" fill="#fffdf5"/>
+      <path d="M132 122 L128 400" stroke="#e07a5f" stroke-width="6"/>
+      <g stroke="#9cbfe3" stroke-width="6">
+        <path d="M150 190 Q205 186 262 190"/><path d="M150 236 Q200 232 250 236"/>
+        <path d="M150 282 Q208 278 264 282"/><path d="M150 328 Q195 325 238 328"/>
+      </g>
+    </g>
+    <!-- Thẻ ôn -->
+    <g transform="rotate(9 330 190)">
+      <path d="M248 118 Q332 112 414 120 L410 262 Q330 268 244 258 Z" fill="#2b2a27" transform="translate(11 11)"/>
+      <path d="M248 118 Q332 112 414 120 L410 262 Q330 268 244 258 Z" fill="#f5c6cf"/>
+      <path d="M302 164 Q304 138 330 138 Q358 140 356 164 Q354 182 334 190 Q326 196 327 214" fill="none" stroke-width="13"/>
+      <circle cx="327" cy="238" r="5" fill="#2b2a27" stroke-width="6"/>
+    </g>
+    <!-- Việc cần làm -->
+    <g transform="rotate(-4 340 350)">
+      <path d="M262 284 Q340 278 420 286 L416 418 Q340 424 258 414 Z" fill="#2b2a27" transform="translate(11 11)"/>
+      <path d="M262 284 Q340 278 420 286 L416 418 Q340 424 258 414 Z" fill="#cfe8cf"/>
+      <rect x="284" y="310" width="30" height="30" rx="5" fill="#fffdf5" stroke-width="7"/>
+      <path d="M288 322 L299 336 L322 302" fill="none" stroke="#3f7d5a" stroke-width="10"/>
+      <path d="M332 326 Q365 323 398 326" stroke-width="7"/>
+      <rect x="284" y="362" width="30" height="30" rx="5" fill="#fffdf5" stroke-width="7"/>
+      <path d="M332 378 Q360 375 388 378" stroke-width="7"/>
+    </g>
+  </g>
+</svg>
