@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cú pháp SQL: DDL và migration</title>
+<meta name="repos" content="" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  /* khổ rộng: thêm class wide vào thẻ main, cột Q giữ nguyên, cột nội dung tự giãn. render.sh nhận ra để chụp rộng 1440 */
+  .sheet.wide { max-width: 1440px; }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  pre.sql { clear: both; font: 19px/26px 'Patrick Hand', 'Comic Sans MS', cursive; background: #efe9de; border-radius: 8px; padding: 6px 14px; margin: 8px 0; white-space: pre-wrap; }
+  pre.sql i { font-style: normal; color: #7a6f5d; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">Cú pháp SQL ③ · Tạo, sửa bảng và migration</h1>
+  <p class="sub">DDL dựng khung bảng; sửa khung của bảng lớn phải tính tới lock</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>Dựng bảng, sửa bảng, index</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> Tạo bảng và chọn kiểu dữ liệu thế nào?
+        <small>từ khóa: CREATE TABLE · BIGSERIAL · NUMERIC · TIMESTAMPTZ · TEXT</small></div>
+      <div class="note hand">
+        <h3>① CREATE TABLE: dựng khung</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Kẻ bảng trên giấy trước khi điền: cột nào ghi số, cột nào ghi chữ, cột nào bắt buộc phải có.</p>
+<pre class="sql">CREATE TABLE users (
+  id         BIGSERIAL PRIMARY KEY,
+  email      TEXT NOT NULL UNIQUE,
+  name       TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS ...;  <i>-- không lỗi nếu đã có</i>
+DROP TABLE IF EXISTS users;      <i>-- xóa cả bảng</i></pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-30 -22 v44 a30 10 0 0 0 60 0 v-44" fill="#bfd9f2"/><path class="s2" d="M-30 -2 a30 10 0 0 0 60 0 M-30 14 a30 10 0 0 0 60 0"/><ellipse class="s" cx="0" cy="-22" rx="30" ry="10" fill="#fffdf5"/></svg>
+          <figcaption>kẻ khung trước khi điền</figcaption>
+        </figure>
+        <p><span class="lb">Kiểu nên dùng</span><code>BIGINT</code>/<code>BIGSERIAL</code> cho id · <code>NUMERIC(18,2)</code> cho tiền · <code>TEXT</code> (nhanh như VARCHAR) · <code>TIMESTAMPTZ</code> · <code>BOOLEAN</code> · <code>JSONB</code> · <code>UUID</code>.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Lưu tiền bằng <code>FLOAT</code>/<code>REAL</code>: 0.1 + 0.2 ≠ 0.3, số dư lệch dần. Dùng NUMERIC, hoặc BIGINT tính theo đồng.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Vì sao <code>TIMESTAMPTZ</code> an toàn hơn <code>TIMESTAMP</code> khi server và client khác múi giờ?</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> Ràng buộc dữ liệu ngay ở DB có những loại nào?
+        <small>từ khóa: PRIMARY KEY · FOREIGN KEY · UNIQUE · CHECK · ON DELETE</small></div>
+      <div class="note hand">
+        <h3>② Constraint: luật do DB tự giữ</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Thủ thư không cho mượn sách nếu thẻ thư viện không tồn tại. App quên kiểm tra thì thủ thư vẫn chặn.</p>
+<pre class="sql">CREATE TABLE wallets (
+  id      BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL
+          REFERENCES users(id) ON DELETE RESTRICT,
+  balance NUMERIC(18,2) NOT NULL DEFAULT 0
+          CHECK (balance &gt;= 0),
+  version INT NOT NULL DEFAULT 0
+);</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-44" y="-12" width="24" height="24" rx="3" fill="#bfd9f2"/><rect class="s" x="20" y="-12" width="24" height="24" rx="3" fill="#f9c0b4"/><path class="s" d="M-24 0 H-4" fill="none" style="stroke-width:7"/><path d="M-24 0 H-4" fill="none" stroke="#cbd3dc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><rect class="s" x="-14" y="-9" width="30" height="18" rx="9" fill="none" style="stroke-width:7"/><rect x="-14" y="-9" width="30" height="18" rx="9" fill="none" stroke="#f7da6a" stroke-width="3"/><path class="s" d="M12 0 H24" fill="none" style="stroke-width:7"/><path d="M12 0 H24" fill="none" stroke="#cbd3dc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <figcaption>FK nối ví về user</figcaption>
+        </figure>
+        <p><span class="lb">ON DELETE</span><code>RESTRICT</code> chặn xóa cha khi còn con · <code>CASCADE</code> xóa luôn con · <code>SET NULL</code> giữ con, FK thành NULL. Dữ liệu tiền chọn RESTRICT.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Postgres <b>không</b> tự tạo index cho cột FK (MySQL InnoDB thì có). Quên tạo thì JOIN hoặc xóa user sẽ quét cả bảng con.</p>
+        <p class="test"><span class="lb">Tự kiểm</span><code>CHECK (balance &gt;= 0)</code> chặn được loại bug nào mà code Node có thể bỏ sót?</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> Thêm, xóa, đổi tên, đổi kiểu một cột thế nào?
+        <small>từ khóa: ALTER TABLE · ADD / DROP COLUMN · RENAME · TYPE</small></div>
+      <div class="note hand">
+        <h3>③ ALTER TABLE: sửa khung</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Thêm cột "ghi chú" vào bảng điểm đã kẻ: kẻ thêm một đường, không cần chép lại cả bảng.</p>
+<pre class="sql"><i>-- cột</i>
+ALTER TABLE wallets
+  ADD COLUMN currency TEXT NOT NULL DEFAULT 'VND';
+ALTER TABLE wallets DROP COLUMN currency;
+ALTER TABLE wallets RENAME COLUMN balance TO amount;
+ALTER TABLE wallets
+  ALTER COLUMN balance TYPE NUMERIC(20,2);
+
+<i>-- ràng buộc trên cột</i>
+ALTER TABLE users ALTER COLUMN name SET NOT NULL;
+ALTER TABLE users ALTER COLUMN name DROP NOT NULL;
+ALTER TABLE users ALTER COLUMN name SET DEFAULT 'x';
+
+<i>-- constraint có tên</i>
+ALTER TABLE transactions
+  ADD CONSTRAINT chk_amount CHECK (amount &gt; 0);
+ALTER TABLE transactions DROP CONSTRAINT chk_amount;</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-14 22 L14 -36" fill="none" style="stroke-width:9"/><path d="M-14 22 L14 -36" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path class="s" d="M14 22 L-14 -36" fill="none" style="stroke-width:9"/><path d="M14 22 L-14 -36" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle class="s" cx="-17" cy="30" r="9" fill="#e87a6a"/><circle class="s" cx="17" cy="30" r="9" fill="#e87a6a"/><circle class="s3" cx="0" cy="-6" r="3" fill="#1d2433"/></svg>
+          <figcaption>cắt, thêm, đổi cột</figcaption>
+        </figure>
+        <p class="warn"><span class="lb">⚠ Bẫy</span><code>RENAME</code> và <code>DROP COLUMN</code> có hiệu lực ngay, nhưng code cũ đang chạy vẫn gọi tên cũ nên lỗi. Phải deploy code trước, hoặc chia thành nhiều bước.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Thêm cột <code>NOT NULL</code> không có DEFAULT vào bảng đã có dữ liệu thì chuyện gì xảy ra?</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> ⭐ Thêm cột vào bảng 50 triệu dòng có phải ghi lại mọi dòng không?
+        <small>từ khóa: table rewrite · ACCESS EXCLUSIVE · metadata-only · volatile default</small></div>
+      <div class="note hand">
+        <h3>④ Ba loại ALTER: tức thì, quét, ghi lại</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-20 -31 H20 C20 -10 4 -4 4 0 C4 4 20 10 20 31 H-20 C-20 10 -4 4 -4 0 C-4 -4 -20 -10 -20 -31 Z" fill="#bfd9f2"/><path class="s3" d="M-13 -26 H13 C11 -16 5 -9 0 -5 C-5 -9 -11 -16 -13 -26 Z" fill="#f2b84b"/><path class="s3" d="M-16 29 H16 C14 22 6 16 0 14 C-6 16 -14 22 -16 29 Z" fill="#f2b84b"/><path class="s2" d="M0 -3 V14"/><rect class="s" x="-27" y="-39" width="54" height="8" rx="3" fill="#f7da6a"/><rect class="s" x="-27" y="31" width="54" height="8" rx="3" fill="#f7da6a"/></svg>
+          <figcaption>khóa càng lâu, API càng đứng</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Thêm một trang vào cuối sách thì nhanh; đổi cỡ chữ cả cuốn thì phải in lại từng trang.</p>
+        <p><span class="lb">Tức thì</span><code>ADD COLUMN</code> không default hoặc default là hằng số (từ Postgres 11, default lưu vào catalog, dòng cũ "mượn" giá trị đó) · <code>DROP COLUMN</code> (chỉ đánh dấu đã xóa) · <code>RENAME</code>.</p>
+        <p><span class="lb">Quét, không ghi</span><code>SET NOT NULL</code> · <code>ADD CONSTRAINT CHECK / FOREIGN KEY</code>: phải đọc mọi dòng để kiểm tra.</p>
+        <p><span class="lb">Ghi lại cả bảng</span><code>ALTER COLUMN TYPE</code> phải đổi dữ liệu (vd. INT → TEXT) · <code>ADD COLUMN … DEFAULT gen_random_uuid()</code> (mỗi dòng một giá trị khác).</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Cái nguy hiểm là lock, không phải thời gian: phần lớn ALTER giữ <code>ACCESS EXCLUSIVE</code>, chặn cả đọc lẫn ghi suốt lúc chạy.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Xếp vào đúng loại: <code>ADD COLUMN note TEXT</code>, <code>ALTER COLUMN id TYPE TEXT</code>, <code>SET NOT NULL</code>.</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> ⭐ Thêm cột bắt buộc mà không downtime thì làm thế nào?
+        <small>từ khóa: expand / contract · backfill · batch</small></div>
+      <div class="note hand">
+        <h3>⑤ Thêm cột bắt buộc: chia 3 bước</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Sửa đường mà xe vẫn chạy: làm từng làn, xong làn này mới rào làn kia.</p>
+<pre class="sql"><i>-- 1. Thêm cột nullable → tức thì</i>
+ALTER TABLE transactions ADD COLUMN fee NUMERIC(18,2);
+
+<i>-- 2. Backfill theo lô, mỗi lô một transaction ngắn</i>
+UPDATE transactions SET fee = amount * 0.01
+WHERE id BETWEEN 1 AND 10000 AND fee IS NULL;
+<i>-- ...lặp tiếp các lô sau</i>
+
+<i>-- 3. Đủ dữ liệu rồi mới siết</i>
+ALTER TABLE transactions ALTER COLUMN fee SET NOT NULL;</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-12" y="-38" width="24" height="74" rx="4" fill="#cbd3dc"/><path class="s" d="M-6 36 C22 26 -22 14 4 2 S20 -22 -2 -34" fill="none" style="stroke-width:8"/><path d="M-6 36 C22 26 -22 14 4 2 S20 -22 -2 -34" fill="none" stroke="#4fa355" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><ellipse class="s3" cx="12" cy="24" rx="9" ry="5" fill="#cdebd0" transform="rotate(30 12 24)"/><ellipse class="s3" cx="-12" cy="10" rx="9" ry="5" fill="#cdebd0" transform="rotate(-40 -12 10)"/><ellipse class="s3" cx="14" cy="-6" rx="9" ry="5" fill="#cdebd0" transform="rotate(40 14 -6)"/><ellipse class="s3" cx="-10" cy="-20" rx="9" ry="5" fill="#cdebd0" transform="rotate(-35 -10 -20)"/><ellipse class="s3" cx="8" cy="-32" rx="9" ry="5" fill="#cdebd0" transform="rotate(30 8 -32)"/></svg>
+          <figcaption>mở rộng dần, siết sau cùng</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span>Bước 2 mới là chỗ "migrate từng record", nhưng chia nhỏ để không giữ khóa lâu. Trong lúc backfill, code phải chịu được cột còn NULL.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Một câu UPDATE cho cả 50 triệu dòng: transaction rất dài, khóa dòng lâu, sinh nhiều dead tuple.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Vì sao bước 3 vẫn chậm trên bảng lớn dù không ghi dòng nào?</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q6</b> Tạo index và kiểm tra query có dùng index không?
+        <small>từ khóa: CREATE INDEX · composite · CONCURRENTLY · EXPLAIN ANALYZE</small></div>
+      <div class="note hand">
+        <h3>⑥ Index và EXPLAIN ANALYZE</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Mục lục sách: muốn tìm chữ "JOIN" thì tra mục lục, khỏi lật từng trang.</p>
+<pre class="sql">EXPLAIN ANALYZE
+SELECT * FROM transactions WHERE wallet_id = 42;
+<i>-- Seq Scan = đọc cả bảng · Index Scan = tra mục lục</i>
+
+CREATE INDEX idx_tx_wallet ON transactions (wallet_id);
+CREATE INDEX idx_tx_wallet_time
+  ON transactions (wallet_id, created_at);
+CREATE UNIQUE INDEX uq_wallet_user ON wallets (user_id);
+CREATE INDEX CONCURRENTLY idx_tx_time
+  ON transactions (created_at);   <i>-- không khóa ghi</i>
+DROP INDEX idx_tx_wallet;</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><ellipse class="s2" cx="0" cy="38" rx="14" ry="4" fill="#cbd3dc"/><path class="s" d="M0 38 C-8 24 -28 8 -28 -10 A28 28 0 0 1 28 -10 C28 8 8 24 0 38 Z" fill="#e87a6a"/><circle class="s" cx="0" cy="-10" r="10" fill="#fffdf5"/></svg>
+          <figcaption>đi thẳng tới đúng chỗ</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span><code>EXPLAIN</code> chỉ in plan dự đoán; <code>EXPLAIN ANALYZE</code> chạy thật và in thời gian thật. Mỗi index làm INSERT/UPDATE chậm thêm vì phải cập nhật cả index.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span><code>CONCURRENTLY</code> không chạy được trong <code>BEGIN … COMMIT</code>. Lỗi giữa chừng để lại index INVALID, phải DROP rồi tạo lại.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Index <code>(wallet_id, created_at)</code> có giúp query chỉ lọc theo <code>created_at</code> không? Vì sao?</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>Mongo không có schema cố định nên ở FV bạn chưa phải lo ALTER khóa bảng: khối ④ ⑤ là phần mới thật sự. Index thì đã làm trên Mongo; compound index và leftmost prefix ở Mongo cùng ý tưởng với khối ⑥.</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Chọn kiểu đúng ngay từ đầu: NUMERIC cho tiền, TIMESTAMPTZ cho thời gian, constraint để DB tự chặn dữ liệu sai; FK không tự có index. ALTER chia ba loại: tức thì, quét cả bảng, ghi lại cả bảng; cái đáng sợ là lock ACCESS EXCLUSIVE. Bảng lớn thì thêm cột nullable → backfill theo lô → siết NOT NULL, còn index thì tạo bằng CONCURRENTLY.</p>
+    </div>
+  </section>
+
+  <p class="foot">ADD COLUMN default tức thì theo Postgres 11+; ví dụ dùng schema lab users · wallets · transactions.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

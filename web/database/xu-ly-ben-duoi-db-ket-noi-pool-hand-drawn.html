@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Process, thread và pool</title>
+    <meta name="repos" content="" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1600px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1600 2685"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Process và thread khác nhau thế nào, Postgres Mongo Redis chạy kiểu gì, cần bao nhiêu connection theo định luật Little, và vì sao báo lỗi hết pool"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <defs>
+        <g id="cook"><ellipse class="s3" cx="0" cy="-34" rx="9" ry="6" fill="#ffffff"/><circle class="s3" cx="0" cy="-22" r="8" fill="#fde2c8"/><path class="s2" d="M0 -14 V8 M-10 -6 L10 -6 M0 8 l-7 13 M0 8 l7 13"/></g>
+        <g id="kid"><circle class="s3" cx="0" cy="-16" r="7" fill="#fde2c8"/><path class="s2" d="M0 -9 V6 M-8 -3 L8 -3 M0 6 l-6 10 M0 6 l6 10"/></g>
+        <g id="car"><path class="s" d="M-26 0 v-12 l8 -10 h26 l8 10 h10 v12 z" fill="#f7da6a"/><circle class="s3" cx="-14" cy="2" r="5" fill="#1d2433"/><circle class="s3" cx="12" cy="2" r="5" fill="#1d2433"/></g>
+      </defs>
+
+      <g filter="url(#wobble)">
+        <!-- TIÊU ĐỀ -->
+        <rect class="s" x="40" y="30" width="1520" height="100" rx="16" fill="#bcd9f5"/>
+        <text class="t" x="800" y="95" font-size="44">Process, thread và connection pool</text>
+        <rect class="s" x="370" y="143" width="860" height="52" rx="26" fill="#f9c9b6"/>
+        <text class="t" x="800" y="179" font-size="28">Mỗi connection có 1 người làm, chạy lần lượt từng query một</text>
+
+        <!-- ① PROCESS VS THREAD -->
+        <g transform="translate(0 225)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#c5def5"/>
+          <text class="tl" x="55" y="45" font-size="34">① Process và thread khác nhau ở đâu?</text>
+
+          <!-- Process -->
+          <rect class="s" x="35" y="86" width="720" height="300" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="175" y="100" width="440" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="395" y="136" font-size="30">Process = mỗi người một căn bếp</text>
+          <g transform="translate(110 235)">
+            <rect class="s" x="-48" y="-25" width="96" height="75" fill="#fde0c8"/><polygon class="s" points="-58,-25 0,-68 58,-25" fill="#e9937a"/>
+            <use href="#cook" transform="translate(0 26)"/>
+          </g>
+          <g transform="translate(235 235)">
+            <rect class="s" x="-48" y="-25" width="96" height="75" fill="#fde0c8"/><polygon class="s" points="-58,-25 0,-68 58,-25" fill="#e9937a"/>
+            <use href="#cook" transform="translate(0 26)"/>
+          </g>
+          <text class="t" x="110" y="312" font-size="17">RAM riêng</text>
+          <text class="t" x="235" y="312" font-size="17">RAM riêng</text>
+          <text class="tl" x="315" y="200" font-size="24">vùng nhớ riêng, không ai đọc trộm</text>
+          <text class="tl" x="315" y="245" font-size="24">tạo đắt: fork(), tốn vài MB</text>
+          <text class="tl" x="315" y="290" font-size="24">1 process chết, process khác vẫn sống</text>
+          <rect x="60" y="330" width="670" height="40" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="395" y="358" font-size="24">Postgres: mỗi connection 1 process</text>
+
+          <text class="t" x="800" y="245" font-size="28">vs</text>
+
+          <!-- Thread -->
+          <rect class="s" x="845" y="86" width="720" height="300" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="970" y="100" width="470" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="1205" y="136" font-size="30">Thread = nhiều đầu bếp chung bếp</text>
+          <g transform="translate(985 235)">
+            <rect class="s" x="-95" y="-25" width="190" height="75" fill="#d6f0d9"/><polygon class="s" points="-108,-25 0,-72 108,-25" fill="#6fbf73"/>
+            <use href="#cook" transform="translate(-55 26)"/><use href="#cook" transform="translate(0 26)"/><use href="#cook" transform="translate(55 26)"/>
+          </g>
+          <text class="t" x="985" y="312" font-size="17">heap chung</text>
+          <text class="tl" x="1115" y="190" font-size="23">chung heap, mỗi thread riêng stack</text>
+          <text class="tl" x="1115" y="228" font-size="23">tạo rẻ: ~1MB stack</text>
+          <text class="tl" x="1115" y="266" font-size="23">dùng chung nên phải có lock</text>
+          <text class="tl" x="1115" y="304" font-size="23">1 thread hỏng bộ nhớ → cả process chết</text>
+          <rect x="870" y="330" width="670" height="40" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="1205" y="358" font-size="24">MongoDB: mỗi connection 1 thread</text>
+
+          <text class="t" x="800" y="428" font-size="22">Trên Linux cả hai đều là task tạo bằng clone(), cùng một scheduler chia CPU → lúc chạy query, process hay thread nhanh như nhau</text>
+        </g>
+
+        <!-- ② BA DB CHẠY KIỂU GÌ -->
+        <g transform="translate(0 695)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#cdebd0"/>
+          <text class="tl" x="55" y="45" font-size="34">② Ba DB chạy kiểu gì bên trong?</text>
+
+          <!-- Postgres -->
+          <rect class="s" x="35" y="86" width="480" height="380" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="55" y="100" width="440" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="275" y="135" font-size="28">Postgres: 1 khách = 1 process</text>
+          <g transform="translate(275 230)">
+            <rect class="s" x="-60" y="-62" width="120" height="32" rx="6" fill="#d9cdf2"/>
+            <text class="t" x="0" y="-40" font-size="17">postmaster</text>
+            <path class="ink" d="M-20 -30 L-90 6 M0 -30 L0 6 M20 -30 L90 6" marker-end="url(#ad)" style="stroke-width:2"/>
+            <text class="tl" x="60" y="-12" font-size="17" style="fill:#2f80d8;stroke:#2f80d8">fork()</text>
+            <rect class="s" x="-135" y="10" width="70" height="40" rx="6" fill="#e3d9f5"/><text class="t" x="-100" y="36" font-size="15">backend</text>
+            <rect class="s" x="-35" y="10" width="70" height="40" rx="6" fill="#e3d9f5"/><text class="t" x="0" y="36" font-size="15">backend</text>
+            <rect class="s" x="65" y="10" width="70" height="40" rx="6" fill="#e3d9f5"/><text class="t" x="100" y="36" font-size="15">backend</text>
+          </g>
+          <text class="t" x="275" y="322" font-size="23">mỗi connection: fork() 1 process</text>
+          <text class="t" x="275" y="358" font-size="23">vài MB đến 10MB+ RAM mỗi cái</text>
+          <text class="t" x="275" y="396" font-size="23" style="fill:#7a5cc0;stroke:#7a5cc0">max_connections mặc định 100</text>
+          <rect x="60" y="414" width="430" height="38" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="275" y="441" font-size="23">đụng trần sớm → cần PgBouncer</text>
+
+          <!-- Mongo -->
+          <rect class="s" x="560" y="86" width="480" height="380" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="580" y="100" width="440" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="800" y="135" font-size="28">MongoDB: 1 khách = 1 thread</text>
+          <g transform="translate(800 232)">
+            <rect class="s" x="-120" y="-64" width="240" height="116" rx="10" fill="#d6f0d9"/>
+            <text class="t" x="0" y="-44" font-size="16">mongod (1 process)</text>
+            <path d="M-75 -32 q8 8 0 16 q-8 8 0 16 q8 8 0 16 M-25 -32 q8 8 0 16 q-8 8 0 16 q8 8 0 16 M25 -32 q8 8 0 16 q-8 8 0 16 q8 8 0 16 M75 -32 q8 8 0 16 q-8 8 0 16 q8 8 0 16" fill="none" stroke="#2fa24a" stroke-width="3" stroke-linecap="round"/>
+            <rect class="s3" x="-105" y="22" width="210" height="22" rx="4" fill="#fbe98a"/>
+            <text class="t" x="0" y="39" font-size="15" stroke-width="0.3">cache WiredTiger dùng chung</text>
+          </g>
+          <text class="t" x="800" y="322" font-size="23">1 process, mỗi connection 1 thread</text>
+          <text class="t" x="800" y="358" font-size="23">~1MB stack mỗi connection</text>
+          <text class="t" x="800" y="396" font-size="23" style="fill:#2fa24a;stroke:#2fa24a">vài nghìn connection vẫn ổn</text>
+          <rect x="585" y="414" width="430" height="38" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="800" y="441" font-size="23">ít khi cần proxy gom connection</text>
+
+          <!-- Redis -->
+          <rect class="s" x="1085" y="86" width="480" height="380" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="1105" y="100" width="440" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="1325" y="135" font-size="28">Redis: 1 thread cho tất cả</text>
+          <g transform="translate(1310 228)">
+            <rect class="s3" x="-140" y="-13" width="38" height="26" rx="4" fill="#f6a3c4"/><text class="t" x="-121" y="5" font-size="13" stroke-width="0.3">GET</text>
+            <rect class="s3" x="-98" y="-13" width="38" height="26" rx="4" fill="#f6a3c4"/><text class="t" x="-79" y="5" font-size="13" stroke-width="0.3">SET</text>
+            <rect class="s3" x="-56" y="-13" width="38" height="26" rx="4" fill="#f6a3c4"/><text class="t" x="-37" y="5" font-size="13" stroke-width="0.3">INCR</text>
+            <path class="ink" d="M-14 0 h10" marker-end="url(#ad)" style="stroke-width:2"/>
+            <circle class="s3" cx="48" cy="0" r="46" fill="#eaf4fd"/>
+            <path class="blue" d="M96 6 A50 50 0 1 1 70 -42" marker-end="url(#ah)"/>
+            <text class="t" x="48" y="-4" font-size="18">1 thread</text>
+            <text class="t" x="48" y="18" font-size="15">event loop</text>
+          </g>
+          <text class="t" x="1325" y="322" font-size="23">chạy lệnh tuần tự, giống hệt Node</text>
+          <text class="t" x="1325" y="358" font-size="23">không lock, mỗi lệnh tự atomic</text>
+          <text class="t" x="1325" y="396" font-size="23" style="fill:#d0522d;stroke:#d0522d">1 lệnh chậm (KEYS *) chặn cả server</text>
+          <rect x="1110" y="414" width="430" height="38" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="1325" y="441" font-size="23">ioredis: 1 connection, không cần pool</text>
+        </g>
+
+        <!-- ③ BAO NHIÊU CONNECTION -->
+        <g transform="translate(0 1195)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#fde0c8"/>
+          <text class="tl" x="55" y="45" font-size="34">③ 100.000 user thì cần bao nhiêu connection?</text>
+
+          <!-- 1 user -->
+          <rect class="s" x="35" y="86" width="350" height="230" rx="16" fill="#fffdf5"/>
+          <rect class="s" x="60" y="100" width="300" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="210" y="133" font-size="26">100.000 user online</text>
+          <g transform="translate(210 0) scale(1.1)">
+            <use href="#kid" transform="translate(-60 168)"/><use href="#kid" transform="translate(-20 168)"/><use href="#kid" transform="translate(20 168)"/><use href="#kid" transform="translate(60 168)"/>
+            <use href="#kid" transform="translate(-40 202)"/><use href="#kid" transform="translate(0 202)"/><use href="#kid" transform="translate(40 202)"/>
+          </g>
+          <text class="t" x="210" y="270" font-size="20">phần lớn đang đọc, chưa bấm</text>
+          <rect x="60" y="278" width="300" height="32" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="210" y="301" font-size="21">~20.000 query/giây</text>
+
+          <path class="blue" d="M392 200 L421 200" marker-end="url(#ah)"/>
+
+          <!-- 2 app -->
+          <rect class="s" x="428" y="86" width="350" height="230" rx="16" fill="#fffdf5"/>
+          <rect class="s" x="453" y="100" width="300" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="603" y="133" font-size="26">App Node</text>
+          <path class="s2" d="M490 165 L585 205 M490 185 L585 205 M490 205 L585 205 M490 225 L585 205 M490 245 L585 205" stroke="#9aa3b2"/>
+          <use href="#cook" transform="translate(625 215) scale(1.4)"/>
+          <text class="t" x="603" y="270" font-size="20">1 thread + epoll giữ 100k socket</text>
+          <rect x="453" y="278" width="300" height="32" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="603" y="301" font-size="21">không cần 100k thread</text>
+
+          <path class="blue" d="M785 200 L814 200" marker-end="url(#ah)"/>
+
+          <!-- 3 pool -->
+          <rect class="s" x="821" y="86" width="350" height="230" rx="16" fill="#fffdf5"/>
+          <rect class="s" x="846" y="100" width="300" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="996" y="133" font-size="26">Pool ~20 connection</text>
+          <g transform="translate(996 0) scale(1.25)">
+            <use href="#car" transform="translate(-66 182)"/><use href="#car" transform="translate(-6 182)"/><use href="#car" transform="translate(54 182)"/>
+          </g>
+          <text class="t" x="996" y="270" font-size="20">hết xe thì xếp hàng vài ms</text>
+          <rect x="846" y="278" width="300" height="32" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="996" y="301" font-size="21">mượn ~1 ms rồi trả lại</text>
+
+          <path class="blue" d="M1178 200 L1207 200" marker-end="url(#ah)"/>
+
+          <!-- 4 db -->
+          <rect class="s" x="1214" y="86" width="350" height="230" rx="16" fill="#fffdf5"/>
+          <rect class="s" x="1239" y="100" width="300" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="1389" y="133" font-size="26">Database</text>
+          <g transform="translate(1389 205) scale(1.3)">
+            <path class="s" d="M-30 -22 v44 a30 10 0 0 0 60 0 v-44" fill="#bfd9f2"/><path class="s2" d="M-30 -2 a30 10 0 0 0 60 0 M-30 14 a30 10 0 0 0 60 0"/><ellipse class="s" cx="0" cy="-22" rx="30" ry="10" fill="#fffdf5"/>
+          </g>
+          <text class="t" x="1389" y="270" font-size="20">chỉ thấy ~20 connection</text>
+          <rect x="1229" y="278" width="320" height="32" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="1389" y="301" font-size="21">~1000 query/giây mỗi connection</text>
+
+          <!-- Little -->
+          <rect class="s" x="35" y="340" width="1530" height="186" rx="16" fill="#fffdf5"/>
+          <text class="tl" x="60" y="386" font-size="30">Định luật Little:  số connection cần  =  số query mỗi giây  ×  thời gian 1 query</text>
+          <rect class="s3" x="60" y="405" width="1480" height="46" rx="8" fill="#d6f0d9"/>
+          <text class="tl" x="80" y="437" font-size="25">✓  20.000 query/s × 1 ms = 20 connection → pool 20–50 là đủ</text>
+          <rect class="s3" x="60" y="461" width="1480" height="46" rx="8" fill="#fde3dc"/>
+          <text class="tl" x="80" y="493" font-size="25">✗  20.000 query/s × 100 ms (thiếu index) = 2.000 connection → pool cạn, DB sập</text>
+          <rect x="35" y="542" width="1530" height="42" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="800" y="571" font-size="26">Hệ thống chết vì query chậm, không phải vì nhiều user</text>
+        </g>
+
+        <!-- ④ LỖI HẾT POOL -->
+        <g transform="translate(0 1815)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#e3d9f5"/>
+          <text class="tl" x="55" y="45" font-size="34">④ Báo “hết pool”: lỗi nào, do đâu?</text>
+
+          <!-- app pool cạn -->
+          <rect class="s" x="35" y="86" width="720" height="230" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="175" y="100" width="440" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="395" y="136" font-size="30">Pool phía app cạn</text>
+          <g transform="translate(110 222) scale(1.3)">
+            <path class="s" d="M-20 -32 L20 -32 L2 0 L20 32 L-20 32 L-2 0 Z" fill="#fffdf5"/>
+            <path class="s3" d="M-10 -20 L10 -20 L2 -6 L-2 -6 Z" fill="#f2b84b"/><path class="s3" d="M-14 26 L0 14 L14 26 L14 32 L-14 32 Z" fill="#f2b84b"/>
+            <path class="s" d="M-26 -34 h52 M-26 34 h52"/>
+          </g>
+          <text class="tl" x="190" y="190" font-size="22">pg: timeout exceeded when trying to connect</text>
+          <text class="tl" x="190" y="224" font-size="22">knex: Timeout acquiring a connection</text>
+          <text class="tl" x="190" y="258" font-size="22">Mongo: Timed out while checking out a connection</text>
+          <rect x="60" y="272" width="670" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="395" y="296" font-size="22">mọi connection đang bị mượn, request đợi quá hạn</text>
+
+          <!-- DB từ chối -->
+          <rect class="s" x="845" y="86" width="720" height="230" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="985" y="100" width="440" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="1205" y="136" font-size="30">DB từ chối kết nối</text>
+          <g transform="translate(925 222)">
+            <circle class="s" cx="0" cy="0" r="38" fill="#f28b82"/><rect class="s3" x="-24" y="-7" width="48" height="14" rx="3" fill="#ffffff"/>
+          </g>
+          <text class="tl" x="990" y="190" font-size="22">Postgres: FATAL: sorry, too many clients already</text>
+          <text class="tl" x="990" y="224" font-size="22">tổng connection mọi pod > max_connections</text>
+          <text class="tl" x="990" y="258" font-size="22">vd. 20 pod × pool 10 = 200 > 100</text>
+          <rect x="870" y="272" width="670" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="1205" y="296" font-size="22">thêm pod để scale lại làm DB từ chối</text>
+
+          <!-- nguyên nhân -->
+          <rect class="s" x="35" y="336" width="1530" height="210" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="595" y="350" width="410" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="800" y="383" font-size="28">5 nguyên nhân hay gặp</text>
+          <g font-size="23">
+            <text class="tl" x="70" y="430">1. quên release() ở nhánh lỗi → release trong finally</text>
+            <text class="tl" x="70" y="470">2. giữ connection trong lúc gọi HTTP sang dịch vụ khác</text>
+            <text class="tl" x="70" y="510">3. query chậm, thiếu index → đặt statement_timeout</text>
+            <text class="tl" x="830" y="430">4. pod × pool > max_connections → thêm PgBouncer</text>
+            <text class="tl" x="830" y="470">5. tạo MongoClient mới mỗi request → dùng chung 1 client</text>
+          </g>
+
+          <rect class="s" x="35" y="566" width="1530" height="84" rx="14" fill="#fde3dc"/>
+          <g transform="translate(92 610) scale(0.8)">
+            <polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/>
+          </g>
+          <text class="tl" x="150" y="602" font-size="25">Bẫy: “hết pool thì tăng pool size” → thường chỉ dời lỗi sang DB</text>
+          <text class="tl" x="150" y="634" font-size="21">pool to hơn không nhanh hơn vì DB chỉ có ngần ấy core: bắt đầu nhỏ (~số core × 2) rồi đo</text>
+        </g>
+
+        <!-- CÂU CHỐT -->
+        <g transform="translate(0 2505)">
+          <path class="s2" d="M30 30 l14 8 M28 56 l16 -4 M1570 30 l-14 8 M1572 56 l-16 -4" stroke="#e0a800"/>
+          <rect class="s" x="60" y="0" width="1480" height="112" rx="16" fill="#fbe98a"/>
+          <text class="t" x="800" y="48" font-size="36">Số connection cần = throughput × latency, không phải số user.</text>
+          <text class="t" x="800" y="94" font-size="36">Query nhanh + nhớ release: vài chục connection phục vụ cả trăm nghìn người.</text>
+          <text class="t" x="800" y="155" font-size="20">Số liệu là bậc độ lớn để hình dung. RAM mỗi connection tuỳ cấu hình (work_mem, số thread) và phiên bản.</text>
+        </g>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

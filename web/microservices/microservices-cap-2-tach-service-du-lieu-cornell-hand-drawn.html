@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tách service và dữ liệu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">Tách service &amp; dữ liệu</h1>
+  <p class="sub">cắt theo nghiệp vụ, mỗi service giữ dữ liệu của mình</p>
+  <section class="page">
+    <h2 class="page-no"><b>2</b>Tách service &amp; dữ liệu</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> Tách service theo tiêu chí gì?
+        <small>từ khóa: bounded context · DDD · business capability · high cohesion / low coupling</small></div>
+      <div class="note hand">
+        <h3>① Cắt theo nghiệp vụ</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-14 22 L14 -36" fill="none" style="stroke-width:9"/><path d="M-14 22 L14 -36" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path class="s" d="M14 22 L-14 -36" fill="none" style="stroke-width:9"/><path d="M14 22 L-14 -36" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle class="s" cx="-17" cy="30" r="9" fill="#e87a6a"/><circle class="s" cx="17" cy="30" r="9" fill="#e87a6a"/><circle class="s3" cx="0" cy="-6" r="3" fill="#1d2433"/></svg>
+          <figcaption>cắt chỗ nghĩa đổi</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Siêu thị chia gian rau củ, gian thịt, gian sữa; không chia “gian cân hàng” vì món nào cũng phải qua đó.</p>
+        <p><span class="lb">Bên dưới</span>Tách theo <b>business capability</b>, không theo tầng kỹ thuật. <b>Bounded context</b>: cùng một từ nhưng nghĩa đổi theo ngữ cảnh, chỗ đổi nghĩa là chỗ cắt. <b>Cohesion</b> cao trong service, <b>coupling</b> thấp giữa các service. <b>Conway’s Law</b>: service phản chiếu cấu trúc team, một team sở hữu một hoặc vài service.</p>
+        <p><span class="lb">Ví dụ</span>“Product”: Catalog = giá, mô tả · Kho = số lượng · Giao hàng = cân nặng → ba context, ba service.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Cắt theo Controller/Service/Repository là cắt theo tầng, không phải theo nghiệp vụ.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Sửa một feature mà đụng 3–4 service → cắt sai. Service hỏng phải hỏi 3 team → sở hữu sai.</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> Dấu hiệu tách sai là gì?
+        <small>từ khóa: entity service · chatty · change amplification</small></div>
+      <div class="note hand">
+        <h3>② Bốn mùi của cắt sai</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/></svg>
+          <figcaption>thấy mùi là gộp lại</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Hai bạn chia nhau một bài toán nhưng bạn nào cũng phải hỏi bạn kia từng dòng một.</p>
+        <p><span class="lb">Bên dưới</span>(1) Một feature sửa 3–4 service. (2) A gọi B liên tục cho mọi việc (<b>chatty</b>), một khối nghiệp vụ bị cắt đôi. (3) Phải deploy cùng nhau (<b>lockstep</b>). (4) Tách theo tầng kỹ thuật (<code>db-service</code>, <code>validation-service</code>) hoặc <b>entity service</b>: chỉ bọc CRUD một bảng, logic nghiệp vụ rơi ra ngoài.</p>
+        <p><span class="lb">Ví dụ</span>Tạo order phải gọi customer 3 lần + pricing 5 lần. B chết thì A không chạy được → gộp lại.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Tên service là danh từ kỹ thuật (db, validation) là dấu hiệu xấu; phải là danh từ nghiệp vụ (Order, Payment).</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Deploy riêng một service được không? Service có quy tắc nghiệp vụ riêng, hay chỉ là REST bọc một bảng?</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> Vì sao mỗi service phải có DB riêng? Dùng chung DB thì hậu quả gì?
+        <small>từ khóa: database-per-service · shared database anti-pattern · encapsulation</small></div>
+      <div class="note hand">
+        <h3>③ Dữ liệu là của riêng nhà</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-30 -22 v44 a30 10 0 0 0 60 0 v-44" fill="#bfd9f2"/><path class="s2" d="M-30 -2 a30 10 0 0 0 60 0 M-30 14 a30 10 0 0 0 60 0"/><ellipse class="s" cx="0" cy="-22" rx="30" ry="10" fill="#fffdf5"/></svg>
+          <figcaption>ai có kho nấy</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Nhà nào cũng có ngăn tủ riêng. Hàng xóm muốn lấy đồ thì gõ cửa hỏi, không tự mở tủ nhà người ta.</p>
+        <p><span class="lb">Bên dưới</span>Schema là chi tiết nội bộ: service tự đổi schema mà không làm vỡ ai, tự chọn loại DB (Mongo, Postgres, Redis) và tự scale. Service khác <b>chỉ đọc qua API hoặc event</b>, không đọc thẳng DB.</p>
+        <p><span class="lb">Ví dụ</span>Hai service cùng đọc bảng <code>orders</code>. Đổi một cột là cả hai vỡ, và không ai dám đổi.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Dùng chung DB: đổi một cột lan ra nhiều service, không ai thật sự sở hữu dữ liệu, tranh chấp lock. Red flag: “cho service này đọc thẳng DB service kia”.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Service B đọc thẳng DB của A thì A còn đổi schema tự do được không?</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> ⭐ Một màn hình cần dữ liệu từ 3 service, JOIN thế nào?
+        <small>từ khóa: API composition · CQRS · read model · data replication</small></div>
+      <div class="note hand">
+        <h3>④ Ghép ở tầng trên, hoặc chuẩn bị sẵn</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M0 0 L0.0 -30.0"/><path class="s" d="M0 0 L30.4 -9.3"/><path class="s" d="M0 0 L18.8 24.3"/><path class="s" d="M0 0 L-18.8 24.3"/><path class="s" d="M0 0 L-30.4 -9.3"/><circle class="s" cx="0.0" cy="-30.0" r="8" fill="#bfd9f2"/><circle class="s" cx="30.4" cy="-9.3" r="8" fill="#bfd9f2"/><circle class="s" cx="18.8" cy="24.3" r="8" fill="#bfd9f2"/><circle class="s" cx="-18.8" cy="24.3" r="8" fill="#bfd9f2"/><circle class="s" cx="-30.4" cy="-9.3" r="8" fill="#bfd9f2"/><circle class="s" cx="0" cy="0" r="12" fill="#f7da6a"/></svg>
+          <figcaption>một điểm gọi ba nơi</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Muốn biết lớp có bao nhiêu bạn, điểm bao nhiêu, đóng quỹ chưa: hoặc hỏi ba cô rồi tự tính, hoặc có cô thư ký ghi sẵn một bảng tổng.</p>
+        <p><span class="lb">Bên dưới</span><b>a. API composition</b>: gateway/composer gọi A + B + C rồi ghép. Đơn giản nhưng chậm, dễ N+1, một service chết là màn hình lỗi, khó filter/sort trên tập ghép lớn. <b>b. CQRS/read model</b>: một service nghe event của A, B, C, tự dựng bảng đã JOIN; đọc nhanh nhưng dữ liệu trễ vài giây và thêm hạ tầng. <b>c. Data replication</b>: lưu sẵn bản copy tối thiểu.</p>
+        <p><span class="lb">Ví dụ</span>Màn hình đơn hàng: composition gọi Order + Customer + Payment; hoặc View service giữ sẵn bảng order_view đã có tên khách và trạng thái trả tiền.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Red flag: JOIN thẳng giữa DB của các service. Nói được cả hai cách và đánh đổi của từng cách mới đạt.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Màn hình cần lọc và sắp xếp trên hàng chục nghìn đơn thì chọn composition hay read model? (Read model.)</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> CQRS là gì? Phải trả giá gì?
+        <small>từ khóa: command / query separation · projection · eventual consistency</small></div>
+      <div class="note hand">
+        <h3>⑤ Tách đường ghi và đường đọc</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s2" d="M0 -36 V36" style="stroke-dasharray:5 5"/><g transform="translate(-21 5) rotate(-40)"><rect class="s" x="-17" y="-5" width="26" height="10" fill="#f7da6a"/><polygon class="s3" points="9,-5 22,0 9,5" fill="#fbe3a8"/><rect class="s" x="-23" y="-5" width="6" height="10" fill="#f9c0b4"/></g><path class="s" d="M5 0 Q22 -18 39 0 Q22 18 5 0 Z" fill="#fffdf5"/><circle class="s3" cx="22" cy="0" r="6.5" fill="#bfd9f2"/><circle cx="22" cy="0" r="2.5" fill="#1d2433"/></svg>
+          <figcaption>ghi một nơi, xem một nơi</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Cô thủ quỹ ghi sổ gốc; bảng tin ở cửa lớp là bản tóm tắt cô chép lại cho mọi người xem nhanh.</p>
+        <p><span class="lb">Bên dưới</span>Tách phía ghi (<b>command</b>, model chuẩn hóa) và phía đọc (<b>query</b>, model tối ưu cho màn hình). Order svc phát <code>OrderCreated</code> qua queue, View svc dựng bảng JOIN sẵn, client query bảng đó. Giá: eventual consistency, phải xử lý event trùng/sai thứ tự (cặp 6), debug khó hơn.</p>
+        <p><span class="lb">Ví dụ</span>Ghi: INSERT vào <code>orders</code>. Đọc: SELECT từ <code>order_view</code> đã có tên khách, tổng tiền, trạng thái.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>CQRS không bắt buộc đi kèm event sourcing; hai thứ này hay bị nhầm.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Vừa tạo đơn xong mà read model chưa thấy đơn thì đó là lỗi hay là hành vi bình thường? (Bình thường, đang trễ.)</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q6</b> Migrate monolith sang microservices thế nào? Vì sao không viết lại từ đầu?
+        <small>từ khóa: strangler fig · anti-corruption layer · big-bang rewrite</small></div>
+      <div class="note hand">
+        <h3>⑥ Bóp dần, đừng đập đi xây lại</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-12" y="-38" width="24" height="74" rx="4" fill="#cbd3dc"/><path class="s" d="M-6 36 C22 26 -22 14 4 2 S20 -22 -2 -34" fill="none" style="stroke-width:8"/><path d="M-6 36 C22 26 -22 14 4 2 S20 -22 -2 -34" fill="none" stroke="#4fa355" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><ellipse class="s3" cx="12" cy="24" rx="9" ry="5" fill="#cdebd0" transform="rotate(30 12 24)"/><ellipse class="s3" cx="-12" cy="10" rx="9" ry="5" fill="#cdebd0" transform="rotate(-40 -12 10)"/><ellipse class="s3" cx="14" cy="-6" rx="9" ry="5" fill="#cdebd0" transform="rotate(40 14 -6)"/><ellipse class="s3" cx="-10" cy="-20" rx="9" ry="5" fill="#cdebd0" transform="rotate(-35 -10 -20)"/><ellipse class="s3" cx="8" cy="-32" rx="9" ry="5" fill="#cdebd0" transform="rotate(30 8 -32)"/></svg>
+          <figcaption>dây leo thay dần cây cũ</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Cây dây leo bám vào cột cũ, lớn dần rồi thay luôn cột. Không ai phải phá nhà để xây lại.</p>
+        <p><span class="lb">Bên dưới</span>Viết lại từ đầu (<b>big-bang</b>): rủi ro cao, hai hệ chạy song song rất lâu, không có đường lùi. <b>Strangler fig</b>: đặt lớp định tuyến phía trước, tách dần từng chức năng ra service mới, phần còn lại vẫn vào monolith → monolith “teo” dần. <b>Anti-corruption layer</b> dịch giữa model cũ và mới để model cũ không lây sang.</p>
+        <p><span class="lb">Ví dụ</span>Tuần này route <code>/invoices</code> sang service mới, còn <code>/orders</code> vẫn vào monolith. Lỗi thì đổi route về lại.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Tách <b>dữ liệu</b> là bước khó nhất nên làm sau cùng; tách code trước mà dùng chung DB là bước đệm, không phải đích.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Vì sao có đường lùi là lợi thế lớn nhất của strangler fig?</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span><code>eco-card</code> vs <code>eco-card-payment</code> tách theo <b>ranh giới tin cậy</b> + Mongo riêng · Mongo <code>finviet</code> dùng chung giữa <code>backend</code>, <code>backend-npp</code>, <code>eco-consumer</code> = shared database anti-pattern · thế hệ 2 đẩy nghiệp vụ đụng tiền qua <code>BACKEND_REQ</code> cho monolith cũ = strangler fig.</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Tách theo <b>nghiệp vụ</b> (bounded context), không theo tầng. Mỗi service <b>DB riêng</b> vì schema là chi tiết nội bộ; dữ liệu xuyên service lấy qua API hoặc event. Hai cách “JOIN”: <b>API composition</b> (đơn giản, chậm, phụ thuộc nhiều service) và <b>CQRS/read model</b> (đọc nhanh, dữ liệu trễ). Migrate bằng strangler fig, không big-bang.</p>
+    </div>
+  </section>
+
+  <p class="foot">Nguồn: On-tap/01c cặp 2 (dòng FV chép từ file đó). Ví dụ đời thường để hiểu, không chép vào vở.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

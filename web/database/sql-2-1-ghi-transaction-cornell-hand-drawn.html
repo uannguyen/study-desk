@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cú pháp SQL: ghi và transaction</title>
+<meta name="repos" content="" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  /* khổ rộng: thêm class wide vào thẻ main, cột Q giữ nguyên, cột nội dung tự giãn. render.sh nhận ra để chụp rộng 1440 */
+  .sheet.wide { max-width: 1440px; }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  pre.sql { clear: both; font: 19px/26px 'Patrick Hand', 'Comic Sans MS', cursive; background: #efe9de; border-radius: 8px; padding: 6px 14px; margin: 8px 0; white-space: pre-wrap; }
+  pre.sql i { font-style: normal; color: #7a6f5d; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">Cú pháp SQL ② · Ghi dữ liệu và transaction</h1>
+  <p class="sub">Ghi dữ liệu thì phải tính chuyện ghi nhầm và hai người ghi cùng lúc</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>Ghi, transaction và lock</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> Thêm dữ liệu và lấy lại id vừa tạo thế nào?
+        <small>từ khóa: INSERT · RETURNING · INSERT…SELECT · ON CONFLICT</small></div>
+      <div class="note hand">
+        <h3>① INSERT: thêm dòng mới</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Gửi thư ở bưu điện, nhân viên trả lại số biên nhận để sau này tra.</p>
+<pre class="sql">INSERT INTO users (name, email)
+VALUES ('an', 'an@x.vn'), ('binh', 'binh@x.vn')
+RETURNING id;
+
+<i>-- chép từ bảng khác</i>
+INSERT INTO wallets (user_id, balance)
+SELECT id, 0 FROM users;
+
+<i>-- upsert: trùng khóa thì cập nhật</i>
+INSERT INTO wallets (user_id, balance) VALUES (1, 0)
+ON CONFLICT (user_id)
+DO UPDATE SET balance = EXCLUDED.balance;</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-6" y="8" width="9" height="30" fill="#cbd3dc"/><path class="s" d="M-32 10 V-8 Q-32 -28 -8 -28 Q18 -28 18 -8 V10 Z" fill="#bfd9f2"/><path class="s2" d="M-32 10 H18 M18 -6 H12"/><path class="s" d="M24 -34 V-2" fill="none"/><polygon class="s3" points="24,-34 40,-27 24,-20" fill="#e87a6a"/><path class="ink" d="M-22 -2 l8 9 l16 -18" stroke="#4fa355" style="stroke-width:4"/></svg>
+          <figcaption>gửi xong nhận biên nhận</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span><code>RETURNING</code> trả về dòng vừa ghi ngay trong câu đó, khỏi SELECT lại. <code>EXCLUDED</code> là dòng bạn định chèn. <code>ON CONFLICT</code> cần UNIQUE index trên cột đó.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Không ghi tên cột (<code>INSERT INTO users VALUES (...)</code>) thì sau này thêm cột vào bảng là câu INSERT hỏng.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Upsert ở trên báo lỗi khi <code>wallets.user_id</code> chưa có UNIQUE. Vì sao?</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> Sửa hoặc xóa dữ liệu sao cho không lỡ tay cả bảng?
+        <small>từ khóa: UPDATE · DELETE · WHERE · TRUNCATE</small></div>
+      <div class="note hand">
+        <h3>② UPDATE và DELETE: luôn có WHERE</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Trước khi xóa ảnh, nhìn lại đã chọn đúng ảnh chưa. Lỡ bấm "chọn tất cả" là mất hết.</p>
+<pre class="sql"><i>-- 1. Xem trước sẽ chạm vào dòng nào</i>
+SELECT * FROM wallets WHERE id = 1;
+
+<i>-- 2. Rồi mới sửa / xóa với đúng điều kiện đó</i>
+UPDATE wallets SET balance = balance + 1000
+WHERE id = 1;
+DELETE FROM transactions
+WHERE created_at &lt; now() - interval '2 years';
+
+<i>-- xóa sạch bảng, reset id (dùng khi seed lại lab)</i>
+TRUNCATE transactions RESTART IDENTITY;</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/></svg>
+          <figcaption>thiếu WHERE = cả bảng</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span>psql in ra <code>UPDATE 1</code>, <code>DELETE 340</code>: số dòng bị chạm. Số khác với dự kiến là dấu hiệu viết sai điều kiện.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span><code>UPDATE wallets SET balance = 0;</code> không có WHERE vẫn chạy và áp lên mọi dòng. Không có nút undo, trừ khi đang ở trong transaction.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Chạy một UPDATE sau <code>BEGIN</code>, xem kết quả, rồi <code>ROLLBACK</code>. Dữ liệu có quay về không?</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> ⭐ Transaction là gì, viết thế nào?
+        <small>từ khóa: BEGIN · COMMIT · ROLLBACK · atomicity · autocommit</small></div>
+      <div class="note hand">
+        <h3>③ Transaction: tất cả hoặc không gì cả</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Chuyển 500k từ ví An sang ví Bình: trừ An và cộng Bình phải cùng xảy ra. Mất điện giữa chừng thì coi như chưa chuyển.</p>
+<pre class="sql">BEGIN;
+UPDATE wallets SET balance = balance - 500 WHERE id = 1;
+UPDATE wallets SET balance = balance + 500 WHERE id = 2;
+COMMIT;   <i>-- hoặc ROLLBACK; để hủy cả hai</i></pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s" cx="0" cy="0" r="17" fill="#f7da6a"/><text class="t" x="0" y="8" font-size="24">$</text><path class="ink" d="M19.9 -23.7 A31 31 0 0 0 -26.8 15.5" stroke="#e0652d"/><polygon class="s3" points="-22.3,23.3 -33.3,16.9 -22.4,10.6" fill="#e0652d"/></svg>
+          <figcaption>lỗi giữa chừng thì hoàn lại</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span>Trước COMMIT, phiên khác vẫn thấy dữ liệu cũ. Một câu lỗi làm hỏng cả transaction: mọi câu sau báo "current transaction is aborted" cho tới khi ROLLBACK.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Không có BEGIN thì mỗi câu tự commit riêng (autocommit). Hai UPDATE tách rời, câu thứ hai lỗi là tiền mất.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Mở hai psql. Phiên 1: BEGIN + UPDATE, chưa COMMIT. Phiên 2 SELECT thấy số dư cũ hay mới?</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> ⭐ Hai request cùng trừ tiền một ví: chặn thế nào?
+        <small>từ khóa: SELECT FOR UPDATE · row lock · lost update · deadlock</small></div>
+      <div class="note hand">
+        <h3>④ FOR UPDATE: khóa dòng trước khi sửa</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Hai người cùng rút tiền một sổ tiết kiệm: người đến sau phải đợi người trước rút xong mới được xem số dư.</p>
+<pre class="sql">BEGIN;
+SELECT id, balance FROM wallets
+WHERE id IN (1, 2)
+ORDER BY id      <i>-- khóa theo thứ tự id cố định</i>
+FOR UPDATE;
+<i>-- Node kiểm tra đủ tiền, rồi:</i>
+UPDATE wallets SET balance = balance - 500 WHERE id = 1;
+UPDATE wallets SET balance = balance + 500 WHERE id = 2;
+COMMIT;</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-15 -6 V-20 A15 15 0 0 1 15 -20 V-6" fill="none" style="stroke-width:9"/><path d="M-15 -6 V-20 A15 15 0 0 1 15 -20 V-6" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><rect class="s" x="-26" y="-8" width="52" height="42" rx="6" fill="#f7da6a"/><circle class="s3" cx="0" cy="12" r="5.5" fill="#1d2433"/><path class="ink" d="M0 14 V24"/></svg>
+          <figcaption>người sau phải chờ</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span>Khóa giữ tới hết transaction. Ai muốn sửa hoặc FOR UPDATE cùng dòng phải chờ; SELECT thường vẫn đọc được nhờ MVCC.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Hai transaction khóa 2 ví theo thứ tự ngược nhau thì chờ nhau mãi: deadlock. Postgres phát hiện và hủy một bên. Khóa theo thứ tự id cố định thì hết.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Giải thích vì sao khóa theo thứ tự id cố định thì không thể xảy ra deadlock.</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> Xem và đổi isolation level của một transaction?
+        <small>từ khóa: READ COMMITTED · REPEATABLE READ · SERIALIZABLE · snapshot</small></div>
+      <div class="note hand">
+        <h3>⑤ Isolation level: được nhìn thấy gì</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Đang làm bài kiểm tra: bạn có được thấy bạn bên cạnh vừa sửa đáp án không? Mức cách ly quyết định chuyện đó.</p>
+<pre class="sql">SHOW transaction_isolation;   <i>-- mặc định: read committed</i>
+
+BEGIN ISOLATION LEVEL REPEATABLE READ;
+SELECT balance FROM wallets WHERE id = 1;
+<i>-- phiên khác UPDATE + COMMIT ở đây</i>
+SELECT balance FROM wallets WHERE id = 1;  <i>-- vẫn số cũ</i>
+COMMIT;</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M0 -38 L32 -26 V0 C32 20 14 32 0 40 C-14 32 -32 20 -32 0 V-26 Z" fill="#bfd9f2"/><path class="s3" d="M0 -38 L-32 -26 V0 C-32 20 -14 32 0 40 Z" fill="#a8c8ea"/><circle class="s3" cx="0" cy="-6" r="7" fill="#1d2433"/><polygon class="s3" points="-3,0 3,0 6,17 -6,17" fill="#1d2433"/></svg>
+          <figcaption>tách mình khỏi người khác</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span>Read Committed: mỗi câu lấy snapshot mới, hai lần đọc có thể khác nhau. Repeatable Read: cả transaction dùng một snapshot. Serializable: như chạy lần lượt, xung đột thì báo lỗi để bạn retry.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Postgres không có dirty read ở mức nào: Read Uncommitted chạy như Read Committed.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Chạy lại đoạn trên với READ COMMITTED. Lần SELECT thứ hai ra số nào?</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q6</b> Không muốn khóa thì viết optimistic lock thế nào?
+        <small>từ khóa: optimistic lock · version · rowCount · retry</small></div>
+      <div class="note hand">
+        <h3>⑥ Optimistic lock: ghi kèm số phiên bản</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Sửa chung một tài liệu: lúc lưu, nếu ai đó đã lưu bản mới hơn thì bạn bị báo "bản của bạn đã cũ, tải lại rồi sửa".</p>
+<pre class="sql"><i>-- đọc kèm version, giả sử nhận về version = 7</i>
+SELECT balance, version FROM wallets WHERE id = 1;
+
+UPDATE wallets
+SET balance = 500, version = version + 1
+WHERE id = 1 AND version = 7;
+<i>-- UPDATE 0 → có người sửa trước → đọc lại, retry</i></pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-9" y="-42" width="18" height="16" rx="8" fill="#e87a6a"/><rect class="s" x="-5" y="-28" width="10" height="16" fill="#f7da6a"/><rect class="s" x="-24" y="-14" width="48" height="10" rx="3" fill="#e87a6a"/><rect x="-26" y="6" width="52" height="26" rx="5" fill="none" stroke="#e0652d" stroke-width="2.5" style="stroke-dasharray:6 4"/><text class="t" x="0" y="26" font-size="17" style="fill:#e0652d;stroke:#e0652d">v8</text></svg>
+          <figcaption>mỗi lần ghi đóng số mới</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span>Không ai phải chờ ai. Chỉ lúc ghi mới kiểm tra version; ở Node đọc <code>rowCount</code> (pg) hoặc <code>affected</code> (TypeORM) để biết có cần retry.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Tranh chấp cao (nhiều request vào cùng một ví) thì retry liên tục, chậm hơn FOR UPDATE. Optimistic hợp khi xung đột hiếm.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Khi nào chọn FOR UPDATE, khi nào chọn version? Nói trong 30 giây.</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span><code>wallet-management</code> PoC: TypeORM <code>pessimistic_write</code> chính là <code>SELECT … FOR UPDATE</code>, sort id trước khi lock là khối ④. Optimistic (khối ⑥) là phần chưa làm, nằm trong lab phiên 3.</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Trước UPDATE/DELETE, chạy SELECT với cùng WHERE; thiếu WHERE là áp lên cả bảng. Nhiều câu phải cùng thành công thì bọc trong BEGIN … COMMIT. Hai request sửa cùng dòng: FOR UPDATE (chờ nhau, khóa theo thứ tự id để tránh deadlock) hoặc cột version (không chờ, xung đột thì retry). Postgres mặc định Read Committed và không bao giờ có dirty read.</p>
+    </div>
+  </section>
+
+  <p class="foot">Hành vi isolation theo tài liệu Postgres mục Transaction Isolation; ví dụ dùng schema lab.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

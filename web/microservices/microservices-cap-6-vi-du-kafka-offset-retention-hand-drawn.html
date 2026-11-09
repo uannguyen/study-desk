@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kafka: offset và retention</title>
+    <meta name="repos" content="" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1024px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1024 2176"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Kafka consumer pull, offset như dấu bút chì, message chỉ xoá khi hết retention, bẫy auto.offset.reset"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <!-- TIÊU ĐỀ -->
+        <rect class="s" x="40" y="30" width="944" height="100" rx="16" fill="#bcd9f5"/>
+        <text class="t" x="512" y="95" font-size="42">Kafka: đọc xong, message đi đâu?</text>
+        <rect class="s" x="202" y="143" width="620" height="52" rx="26" fill="#f9c9b6"/>
+        <text class="t" x="512" y="179" font-size="30">Kafka là cuốn sổ, không phải hộp thư</text>
+
+        <!-- ① PULL -->
+        <g transform="translate(0 220)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#c5def5"/>
+          <text class="tl" x="55" y="45" font-size="32">① Consumer tự đến lấy (pull), broker không đẩy</text>
+          <rect class="s" x="35" y="86" width="955" height="330" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="322" y="100" width="380" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="512" y="132" font-size="28">consumer gọi poll()</text>
+          <rect class="s" x="90" y="170" width="330" height="170" rx="14" fill="#bcd9f5"/>
+          <text class="t" x="255" y="204" font-size="24">Broker (giữ sổ)</text>
+          <g font-size="20">
+            <rect class="s3" x="122" y="226" width="50" height="44" fill="#fffdf5"/><text class="t" x="147" y="255" font-size="20">3</text>
+            <rect class="s3" x="180" y="226" width="50" height="44" fill="#fffdf5"/><text class="t" x="205" y="255" font-size="20">4</text>
+            <rect class="s3" x="238" y="226" width="50" height="44" fill="#f7da6a"/><text class="t" x="263" y="255" font-size="20">5</text>
+            <rect class="s3" x="296" y="226" width="50" height="44" fill="#f7da6a"/><text class="t" x="321" y="255" font-size="20">6</text>
+            <rect class="s3" x="354" y="226" width="50" height="44" fill="#f7da6a"/><text class="t" x="379" y="255" font-size="20">7</text>
+          </g>
+          <text class="t" x="255" y="310" font-size="20">message nằm chờ, không tự đi</text>
+          <path class="blue" d="M790 205 L432 205" marker-end="url(#ah)"/>
+          <text class="t" x="612" y="192" font-size="22">poll(): cho tôi từ offset 5</text>
+          <path class="ink" d="M432 275 L790 275" stroke-dasharray="8 8" marker-end="url(#ad)"/>
+          <text class="t" x="612" y="262" font-size="22">trả về 1 batch (5, 6, 7)</text>
+          <g transform="translate(860 318)">
+            <circle class="s" cx="0" cy="-78" r="14" fill="#ffe3c2"/>
+            <path class="s" d="M0 -64 V-26 M0 -52 L-20 -34 M0 -52 L20 -34 M0 -26 L-16 0 M0 -26 L16 0" fill="none"/>
+            <path class="s2" d="M-5 -80 q5 5 10 0"/>
+          </g>
+          <text class="t" x="860" y="346" font-size="22">Consumer</text>
+          <rect x="162" y="366" width="700" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="512" y="392" font-size="24">consumer chậm thì poll chậm → tự có backpressure</text>
+        </g>
+
+        <!-- ② OFFSET -->
+        <g transform="translate(0 680)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#cdebd0"/>
+          <text class="tl" x="55" y="45" font-size="32">② Đọc xong, message vẫn nằm nguyên trên sổ</text>
+          <rect class="s" x="35" y="86" width="955" height="380" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="322" y="100" width="380" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="512" y="132" font-size="28">offset = dấu bút chì</text>
+          <text class="t" x="512" y="190" font-size="24">partition = cuốn sổ chỉ ghi thêm (append-only)</text>
+          <g>
+            <rect class="s3" x="132" y="205" width="76" height="60" fill="#d6f0d8"/><text class="t" x="170" y="243" font-size="22">0</text>
+            <rect class="s3" x="208" y="205" width="76" height="60" fill="#d6f0d8"/><text class="t" x="246" y="243" font-size="22">1</text>
+            <rect class="s3" x="284" y="205" width="76" height="60" fill="#d6f0d8"/><text class="t" x="322" y="243" font-size="22">2</text>
+            <rect class="s3" x="360" y="205" width="76" height="60" fill="#d6f0d8"/><text class="t" x="398" y="243" font-size="22">3</text>
+            <rect class="s3" x="436" y="205" width="76" height="60" fill="#d6f0d8"/><text class="t" x="474" y="243" font-size="22">4</text>
+            <rect class="s3" x="512" y="205" width="76" height="60" fill="#d6f0d8"/><text class="t" x="550" y="243" font-size="22">5</text>
+            <rect class="s3" x="588" y="205" width="76" height="60" fill="#d6f0d8"/><text class="t" x="626" y="243" font-size="22">6</text>
+            <rect class="s3" x="664" y="205" width="76" height="60" fill="#d6f0d8"/><text class="t" x="702" y="243" font-size="22">7</text>
+            <rect class="s3" x="740" y="205" width="76" height="60" fill="#d6f0d8"/><text class="t" x="778" y="243" font-size="22">8</text>
+            <rect class="s3" x="816" y="205" width="76" height="60" fill="#fffdf5"/><text class="t" x="854" y="243" font-size="22">9</text>
+          </g>
+          <path class="ink" d="M972 235 L902 235" marker-end="url(#ad)"/>
+          <text class="t" x="940" y="290" font-size="18">ghi thêm</text>
+          <path class="blue" d="M398 330 L398 274" marker-end="url(#ah)"/>
+          <rect class="s" x="288" y="330" width="220" height="44" rx="12" fill="#e3dbf5"/>
+          <text class="t" x="398" y="360" font-size="22">nhóm B: đọc tới 3</text>
+          <path class="blue" d="M778 330 L778 274" marker-end="url(#ah)"/>
+          <rect class="s" x="668" y="330" width="220" height="44" rx="12" fill="#f9c9b6"/>
+          <text class="t" x="778" y="360" font-size="22">nhóm A: đọc tới 8</text>
+          <rect x="92" y="416" width="840" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="512" y="441" font-size="22">offset lưu ở topic __consumer_offsets · reset offset = đọc lại (replay)</text>
+        </g>
+
+        <!-- ③ RETENTION -->
+        <g transform="translate(0 1185)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#fde0c8"/>
+          <text class="tl" x="55" y="45" font-size="30">③ Khi nào xoá? Hết hạn retention, không phải khi đọc xong</text>
+          <rect class="s" x="35" y="86" width="955" height="350" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="362" y="100" width="300" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="512" y="132" font-size="28">retention</text>
+          <rect class="s" x="80" y="165" width="170" height="90" rx="10" fill="#fde0c8"/>
+          <text class="t" x="165" y="202" font-size="22">segment 1</text><text class="t" x="165" y="232" font-size="18">cũ nhất</text>
+          <path d="M88 172 L242 248 M242 172 L88 248" stroke="#d9453a" stroke-width="4" opacity="0.55" fill="none" stroke-linecap="round"/>
+          <rect class="s" x="280" y="165" width="170" height="90" rx="10" fill="#fde0c8"/>
+          <text class="t" x="365" y="202" font-size="22">segment 2</text>
+          <rect class="s" x="480" y="165" width="170" height="90" rx="10" fill="#fde0c8"/>
+          <text class="t" x="565" y="202" font-size="22">segment 3</text>
+          <rect class="s" x="680" y="165" width="170" height="90" rx="10" fill="#fffdf5"/>
+          <text class="t" x="765" y="202" font-size="22">segment 4</text><text class="t" x="765" y="232" font-size="18">đang ghi</text>
+          <g transform="translate(925 210)"><path class="s" d="M-20 -31 H20 C20 -10 4 -4 4 0 C4 4 20 10 20 31 H-20 C-20 10 -4 4 -4 0 C-4 -4 -20 -10 -20 -31 Z" fill="#bfd9f2"/><path class="s3" d="M-13 -26 H13 C11 -16 5 -9 0 -5 C-5 -9 -11 -16 -13 -26 Z" fill="#f2b84b"/><path class="s3" d="M-16 29 H16 C14 22 6 16 0 14 C-6 16 -14 22 -16 29 Z" fill="#f2b84b"/><path class="s2" d="M0 -3 V14"/><rect class="s" x="-27" y="-39" width="54" height="8" rx="3" fill="#f7da6a"/><rect class="s" x="-27" y="31" width="54" height="8" rx="3" fill="#f7da6a"/></g>
+          <path class="ink" d="M165 262 L165 300" stroke-dasharray="6 6" marker-end="url(#ad)"/>
+          <g transform="translate(165 345) scale(0.9)"><rect class="s" x="-14" y="-38" width="28" height="22" rx="2" fill="#fffdf5"/><path class="s2" d="M-14 -38 L0 -26 L14 -38"/><path class="s" d="M-24 -10 L-20 34 H20 L24 -10 Z" fill="#cbd3dc"/><rect class="s" x="-30" y="-20" width="60" height="10" rx="3" fill="#cbd3dc"/><path class="ink" d="M-8 6 l16 16 M8 6 l-16 16" stroke="#e0652d" style="stroke-width:4"/></g>
+          <text class="tl" x="285" y="300" font-size="22">• retention.ms mặc định 7 ngày (hoặc giới hạn dung lượng)</text>
+          <text class="tl" x="285" y="334" font-size="22">• xoá nguyên segment, không xoá lẻ từng message</text>
+          <text class="tl" x="285" y="368" font-size="22">• compact: mỗi key chỉ giữ bản mới nhất</text>
+          <rect x="132" y="388" width="760" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="512" y="414" font-size="24">hết hạn là xoá, kể cả khi chưa consumer nào đọc!</text>
+        </g>
+
+        <!-- ④ BẪY GROUP MỚI -->
+        <g transform="translate(0 1660)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#e3dbf5"/>
+          <text class="tl" x="55" y="45" font-size="32">④ Bẫy: consumer group mới tinh đọc từ đâu?</text>
+          <rect class="s" x="35" y="86" width="955" height="270" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="342" y="100" width="340" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="512" y="132" font-size="28">auto.offset.reset</text>
+          <g transform="translate(100 222)"><polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/></g>
+          <rect class="s" x="170" y="160" width="390" height="115" rx="14" fill="#e3dbf5"/>
+          <text class="t" x="365" y="198" font-size="26">latest (mặc định)</text>
+          <text class="t" x="365" y="232" font-size="22">chỉ thấy message đến sau</text>
+          <text class="t" x="365" y="260" font-size="22">lúc group join</text>
+          <rect class="s" x="590" y="160" width="380" height="115" rx="14" fill="#cdebd0"/>
+          <text class="t" x="780" y="198" font-size="26">earliest</text>
+          <text class="t" x="780" y="232" font-size="22">đọc từ message cũ nhất</text>
+          <text class="t" x="780" y="260" font-size="22">còn giữ trên sổ</text>
+          <rect x="162" y="302" width="700" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="512" y="328" font-size="24">group đã có offset → đọc tiếp từ chỗ cũ</text>
+        </g>
+
+        <!-- CÂU CHỐT -->
+        <g transform="translate(0 2050)">
+          <rect class="s" x="60" y="0" width="904" height="76" rx="16" fill="#fbe98a"/>
+          <text class="t" x="512" y="52" font-size="40">Đọc xong vẫn còn, hết retention mới xoá.</text>
+        </g>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

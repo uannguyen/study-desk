@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cú pháp SQL: đọc dữ liệu</title>
+<meta name="repos" content="" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  /* khổ rộng: thêm class wide vào thẻ main, cột Q giữ nguyên, cột nội dung tự giãn. render.sh nhận ra để chụp rộng 1440 */
+  .sheet.wide { max-width: 1440px; }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  pre.sql { clear: both; font: 19px/26px 'Patrick Hand', 'Comic Sans MS', cursive; background: #efe9de; border-radius: 8px; padding: 6px 14px; margin: 8px 0; white-space: pre-wrap; }
+  pre.sql i { font-style: normal; color: #7a6f5d; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">Cú pháp SQL ① · Đọc dữ liệu</h1>
+  <p class="sub">SELECT là câu hỏi gửi cho bảng: lấy gì, từ đâu, giữ dòng nào</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>Từ SELECT tới JOIN</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> ⭐ Postgres chạy các mệnh đề của SELECT theo thứ tự nào?
+        <small>từ khóa: logical query order · alias · WHERE vs HAVING</small></div>
+      <div class="note hand">
+        <h3>① Viết một đằng, chạy một nẻo</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Công thức ghi tên món ở dòng đầu, nhưng bếp phải lấy nguyên liệu, nhặt rau, nấu xong mới bày ra được món.</p>
+        <p><span class="lb">Bên dưới</span>Bạn viết <code>SELECT</code> đầu tiên, nhưng Postgres chạy nó gần cuối:</p>
+<pre class="sql">FROM / JOIN → WHERE → GROUP BY → HAVING
+            → SELECT → ORDER BY → LIMIT</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-40" y="-12" width="24" height="30" rx="4" fill="#cdebd0"/><text class="t" x="-28" y="10" font-size="22">1</text><rect class="s" x="-12" y="-12" width="24" height="30" rx="4" fill="#f9c0b4"/><text class="t" x="0" y="10" font-size="22">3</text><rect class="s" x="16" y="-12" width="24" height="30" rx="4" fill="#f9c0b4"/><text class="t" x="28" y="10" font-size="22">2</text><path class="ink" d="M0 -16 Q16 -48 28 -28" stroke="#e0652d" style="stroke-width:2.5"/><polygon class="s3" points="32.3,-20.1 21.5,-26.7 32.6,-32.8" fill="#e0652d"/><path class="s2" d="M-36 28 H36"/></svg>
+          <figcaption>thứ tự viết ≠ thứ tự chạy</figcaption>
+        </figure>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Dùng alias đặt ở SELECT trong <code>WHERE</code> sẽ lỗi "column does not exist": lúc WHERE chạy, alias chưa tồn tại. <code>ORDER BY</code> thì dùng được.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Vì sao <code>WHERE so_gd &gt; 5</code> lỗi, còn <code>HAVING COUNT(*) &gt; 5</code> chạy được?</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> Mở psql rồi, xem có bảng gì, cột gì bằng cách nào?
+        <small>từ khóa: psql · meta-command · \d · \timing</small></div>
+      <div class="note hand">
+        <h3>② Lệnh soi bảng trong psql</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Trước khi tìm đồ trong kho, nhìn bảng danh mục xem kho có những kệ nào, mỗi kệ để gì.</p>
+        <p><span class="lb">Bên dưới</span>Lệnh bắt đầu bằng <code>\</code> là của psql, không phải SQL: không cần <code>;</code>, không chạy được trong TypeORM hay DBeaver.</p>
+<pre class="sql">\dt               <i>-- liệt kê bảng</i>
+\d transactions   <i>-- cột, kiểu, index, FK của bảng</i>
+\x                <i>-- bật/tắt hiển thị dọc</i>
+\timing           <i>-- in thời gian chạy mỗi query</i>
+\q                <i>-- thoát</i></pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-28" y="-34" width="56" height="70" rx="5" fill="#fffdf5"/><rect class="s" x="-10" y="-41" width="20" height="10" rx="3" fill="#cbd3dc"/><rect class="s3" x="-20" y="-20" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 -14 H18"/><path class="ink" d="M-18 -14 l4 5 l8 -11" stroke="#4fa355" style="stroke-width:3"/><rect class="s3" x="-20" y="-2" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 4 H18"/><path class="ink" d="M-18 4 l4 5 l8 -11" stroke="#4fa355" style="stroke-width:3"/><rect class="s3" x="-20" y="16" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 22 H18"/></svg>
+          <figcaption>xem danh mục trước</figcaption>
+        </figure>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Quên <code>;</code> cuối câu SQL thì psql không chạy mà chờ dòng tiếp: dấu nhắc đổi từ <code>=#</code> sang <code>-#</code>.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Dùng một lệnh cho biết bảng <code>transactions</code> đang có những index nào.</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> Lọc dòng bằng WHERE: các toán tử hay dùng là gì?
+        <small>từ khóa: WHERE · IN · BETWEEN · LIKE · IS NULL</small></div>
+      <div class="note hand">
+        <h3>③ SELECT + WHERE: lấy cột nào, giữ dòng nào</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Lọc ảnh trong điện thoại: chỉ hiện ảnh tháng này, có mặt bạn, ảnh mới nhất lên đầu, lấy 10 tấm.</p>
+<pre class="sql">SELECT id, amount, created_at
+FROM transactions
+WHERE type = 'debit'
+  AND amount BETWEEN 100 AND 1000
+  AND wallet_id IN (1, 2, 3)
+  AND created_at &gt;= date_trunc('month', now())
+ORDER BY amount DESC
+LIMIT 10;</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M10 12 L34 36" fill="none" style="stroke-width:11"/><path d="M10 12 L34 36" fill="none" stroke="#f2b84b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle class="s" cx="-8" cy="-8" r="26" fill="#eaf4fd"/><path class="s2" d="M-24 4 l9 -11 l9 7 l12 -18" stroke="#e0652d"/><circle class="s3" cx="9" cy="-18" r="3" fill="#e0652d"/></svg>
+          <figcaption>soi từng dòng, giữ dòng khớp</figcaption>
+        </figure>
+        <p><span class="lb">Thêm</span><code>name LIKE 'user_1%'</code> (% là chuỗi bất kỳ) · <code>deleted_at IS NULL</code> · <code>NOT</code> · <code>OR</code> (nhớ bọc ngoặc).</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span><code>WHERE col = NULL</code> luôn ra rỗng vì NULL không bằng gì, kể cả NULL. Phải viết <code>IS NULL</code>.</p>
+        <p class="test"><span class="lb">Tự kiểm</span><code>a OR b AND c</code> được Postgres hiểu là gì? Khi nào phải thêm ngoặc?</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> ⭐ WHERE và HAVING khác nhau thế nào?
+        <small>từ khóa: GROUP BY · HAVING · COUNT · SUM · aggregate</small></div>
+      <div class="note hand">
+        <h3>④ GROUP BY: gom nhóm rồi mới tính</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Đổ kẹo ra bàn, chia vào từng hộp theo màu rồi đếm. Bỏ những hộp có ít hơn 5 viên.</p>
+<pre class="sql">SELECT wallet_id,
+       COUNT(*)        AS so_gd,
+       SUM(amount)     AS tong,
+       MAX(created_at) AS gd_cuoi
+FROM transactions
+WHERE type = 'debit'   <i>-- lọc DÒNG trước khi gom</i>
+GROUP BY wallet_id
+HAVING COUNT(*) &gt; 50   <i>-- lọc NHÓM sau khi gom</i>
+ORDER BY so_gd DESC;</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><polygon class="s3" points="-44,8 -36.3,0.3 -14.3,0.3 -22,8" fill="#fffdf5"/><polygon class="s3" points="-22,8 -14.3,0.3 -14.3,22.3 -22,30" fill="#cbd3dc"/><rect class="s" x="-44" y="8" width="22" height="22" fill="#bfd9f2"/><polygon class="s3" points="-11,-26 -3.3,-33.7 18.7,-33.7 11,-26" fill="#fffdf5"/><polygon class="s3" points="11,-26 18.7,-33.7 18.7,-11.7 11,-4" fill="#cbd3dc"/><rect class="s" x="-11" y="-26" width="22" height="22" fill="#f7da6a"/><polygon class="s3" points="18,6 25.7,-1.7 47.7,-1.7 40,6" fill="#fffdf5"/><polygon class="s3" points="40,6 47.7,-1.7 47.7,20.3 40,28" fill="#cbd3dc"/><rect class="s" x="18" y="6" width="22" height="22" fill="#f9c0b4"/></svg>
+          <figcaption>dồn vào từng hộp rồi đếm</figcaption>
+        </figure>
+        <p><span class="lb">Hàm gom</span><code>COUNT(*)</code> · <code>SUM</code> · <code>AVG</code> · <code>MIN</code> · <code>MAX</code> · <code>COUNT(DISTINCT col)</code>.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Cột nào trong SELECT không bọc trong hàm gom thì phải có trong <code>GROUP BY</code>, nếu không Postgres báo lỗi.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Chuyển <code>type = 'debit'</code> từ WHERE xuống HAVING thì chuyện gì xảy ra? Vì sao?</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> INNER JOIN và LEFT JOIN khác nhau thế nào?
+        <small>từ khóa: INNER · LEFT · ON · NULL · anti-join</small></div>
+      <div class="note hand">
+        <h3>⑤ JOIN: ghép hai bảng theo khóa</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Danh sách lớp ghép với danh sách nộp bài. INNER: chỉ bạn đã nộp. LEFT: cả lớp, bạn chưa nộp thì ô bài để trống.</p>
+<pre class="sql"><i>-- INNER: chỉ giữ dòng khớp cả hai bên</i>
+SELECT u.name, w.balance
+FROM users u
+JOIN wallets w ON w.user_id = u.id;
+
+<i>-- LEFT: giữ hết bảng trái, không khớp thì NULL</i>
+SELECT u.name, t.id AS tx_id
+FROM users u
+LEFT JOIN wallets w      ON w.user_id = u.id
+LEFT JOIN transactions t ON t.wallet_id = w.id;</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s" cx="-14" cy="0" r="24" fill="#bfd9f2"/><circle class="s" cx="14" cy="0" r="24" fill="#f9c0b4" fill-opacity="0.85"/><path class="s3" d="M0 -19.5 A24 24 0 0 1 0 19.5 A24 24 0 0 1 0 -19.5 Z" fill="#f7da6a"/></svg>
+          <figcaption>INNER = phần giữa · LEFT = cả vòng trái</figcaption>
+        </figure>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Sau LEFT JOIN, đặt điều kiện của bảng bên phải ở <code>WHERE</code> sẽ loại mất các dòng NULL, kết quả thành INNER JOIN. Điều kiện đó phải để ở <code>ON</code>.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Thêm <code>WHERE t.id IS NULL</code> vào query LEFT ở trên thì nó trả về những ai?</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q6</b> Subquery và CTE dùng khi nào?
+        <small>từ khóa: subquery · IN · WITH · CTE</small></div>
+      <div class="note hand">
+        <h3>⑥ Subquery và CTE: query lồng query</h3>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Bài toán dài thì giải nháp từng bước, đặt tên "kết quả bước 1" rồi dùng tiếp ở bước 2.</p>
+<pre class="sql"><i>-- Subquery</i>
+SELECT * FROM wallets
+WHERE id IN (SELECT wallet_id FROM transactions
+             WHERE amount &gt; 900000);
+
+<i>-- CTE: đặt tên cho kết quả trung gian</i>
+WITH tong_vi AS (
+  SELECT wallet_id, SUM(amount) AS tong
+  FROM transactions GROUP BY wallet_id
+)
+SELECT w.user_id, t.tong
+FROM tong_vi t JOIN wallets w ON w.id = t.wallet_id
+WHERE t.tong &gt; 10000000;</pre>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s" cx="-36" cy="-16" r="10" fill="#cdebd0"/><circle class="s" cx="0" cy="-16" r="10" fill="#cdebd0"/><circle class="s" cx="36" cy="-16" r="10" fill="#e87a6a"/><text class="t" x="-36" y="-11" font-size="15">1</text><text class="t" x="0" y="-11" font-size="15">2</text><text class="t" x="36" y="-11" font-size="15">3</text><path class="s2" d="M-25 -16 H-14 M11 -16 H22"/><polygon class="s3" points="-11.0,-16.0 -19.0,-11.8 -19.0,-20.2" fill="#1d2433"/><polygon class="s3" points="25.0,-16.0 17.0,-11.8 17.0,-20.2" fill="#1d2433"/><path class="ink" d="M36 -4 C36 36 -36 36 -36 14" stroke="#4fa355"/><polygon class="s3" points="-36.0,5.0 -29.7,16.0 -42.3,16.0" fill="#4fa355"/></svg>
+          <figcaption>giải nháp từng bước, có tên</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span>Từ Postgres 12, CTE chỉ dùng một lần được planner gộp vào query chính như subquery, nên không chậm hơn. Chọn CTE vì dễ đọc.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Viết lại query CTE ở trên thành subquery đặt trong <code>FROM</code>.</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>Liên hệ Mongo: <code>$match</code> ≈ WHERE, <code>$group</code> ≈ GROUP BY, <code>$lookup</code> ≈ LEFT JOIN. Aggregation báo cáo NHNN bạn đã viết là cùng tư duy, chỉ khác cú pháp.</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Postgres chạy FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT, nên alias chỉ dùng được từ ORDER BY. WHERE lọc dòng trước khi gom, HAVING lọc nhóm sau khi gom. INNER JOIN giữ dòng khớp cả hai bên; LEFT JOIN giữ hết bảng trái, điều kiện của bảng phải để ở ON. So sánh NULL bằng <code>IS NULL</code>, không dùng <code>=</code>.</p>
+    </div>
+  </section>
+
+  <p class="foot">Ví dụ chạy trên schema lab users · wallets · transactions; cú pháp theo Postgres 12+.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

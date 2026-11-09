@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Transport: chở byte</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1024px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1024 2181"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Transport: TCP, UDP, QUIC chở byte tới đúng process, không hiểu byte"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <!-- TIÊU ĐỀ -->
+        <rect class="s" x="40" y="30" width="944" height="100" rx="16" fill="#bcd9f5"/>
+        <text class="t" x="512" y="95" font-size="42">Transport: chở byte tới đúng nơi</text>
+        <rect class="s" x="232" y="143" width="560" height="52" rx="26" fill="#f9c9b6"/>
+        <text class="t" x="512" y="179" font-size="30">không cần biết trong byte có gì</text>
+
+        <!-- ① VẤN ĐỀ GỐC -->
+        <g transform="translate(0 225)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#c5def5"/>
+          <circle class="s" cx="75" cy="33" r="22" fill="#f9c9b6"/><text class="t" x="75" y="43" font-size="28">1</text>
+          <text class="tl" x="112" y="46" font-size="34">Vấn đề gốc: IP chỉ ném từng gói lẻ</text>
+          <rect class="s" x="35" y="90" width="955" height="280" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="272" y="104" width="480" height="48" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="512" y="138" font-size="28">IP: “cố gắng gửi”, không hứa gì</text>
+          <!-- máy gửi -->
+          <g transform="translate(105 235) scale(1.5)">
+            <rect class="s" x="-22" y="-22" width="44" height="18" rx="4" fill="#cfd8e3"/>
+            <rect class="s" x="-22" y="0" width="44" height="18" rx="4" fill="#cfd8e3"/>
+            <circle cx="-13" cy="-13" r="3" fill="#2fa24a"/><circle cx="-13" cy="9" r="3" fill="#2fa24a"/>
+            <line class="s2" x1="0" y1="-13" x2="14" y2="-13"/><line class="s2" x1="0" y1="9" x2="14" y2="9"/>
+          </g>
+          <path class="ink" d="M160 243 H640" stroke-dasharray="6 8" marker-end="url(#ad)"/>
+          <g font-size="22">
+            <rect class="s" x="190" y="225" width="44" height="36" rx="5" fill="#9bd9a0"/><text class="t" x="212" y="251">1</text>
+            <rect class="s" x="270" y="225" width="44" height="36" rx="5" fill="#f9c0b4"/><text class="t" x="292" y="251">3</text>
+            <rect x="350" y="225" width="44" height="36" rx="5" fill="#fffdf5" stroke="#d9453a" stroke-width="2.5" stroke-dasharray="5 4"/>
+            <path d="M360 233 l24 20 M384 233 l-24 20" stroke="#d9453a" stroke-width="4" stroke-linecap="round"/>
+            <rect class="s" x="430" y="225" width="44" height="36" rx="5" fill="#9bd9a0"/><text class="t" x="452" y="251">2</text>
+            <rect class="s" x="510" y="225" width="44" height="36" rx="5" fill="#f9c0b4"/><text class="t" x="532" y="251">2</text>
+          </g>
+          <g font-size="20" style="fill:#d9453a;stroke:#d9453a">
+            <text class="t" x="292" y="292" style="fill:#d9453a;stroke:#d9453a">sai thứ tự</text>
+            <text class="t" x="372" y="215" style="fill:#d9453a;stroke:#d9453a">mất</text>
+            <text class="t" x="532" y="292" style="fill:#d9453a;stroke:#d9453a">trùng</text>
+          </g>
+          <!-- nhà nhiều cửa = nhiều process -->
+          <polygon class="s" points="665,205 810,160 955,205" fill="#f9c0b4"/>
+          <rect class="s" x="680" y="205" width="260" height="105" rx="4" fill="#fde3cc"/>
+          <text class="t" x="810" y="198" font-size="18">1 máy, nhiều process</text>
+          <g font-size="18">
+            <text class="t" x="725" y="230">:443</text><rect class="s3" x="700" y="238" width="50" height="62" rx="4" fill="#fffdf5"/><text class="t" x="725" y="285" font-size="16">web</text>
+            <text class="t" x="810" y="230">:5432</text><rect class="s3" x="785" y="238" width="50" height="62" rx="4" fill="#fffdf5"/><text class="t" x="810" y="285" font-size="16">DB</text>
+            <text class="t" x="895" y="230">:6379</text><rect class="s3" x="870" y="238" width="50" height="62" rx="4" fill="#fffdf5"/><text class="t" x="895" y="285" font-size="16">cache</text>
+          </g>
+          <rect x="55" y="320" width="915" height="38" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="512" y="346" font-size="23">Transport vá 3 lỗi đó (hoặc chấp nhận chúng) + dùng port chỉ đúng process nhận</text>
+        </g>
+
+        <!-- ② TCP vs UDP -->
+        <g transform="translate(0 625)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#c5def5"/>
+          <circle class="s" cx="75" cy="33" r="22" fill="#f9c9b6"/><text class="t" x="75" y="43" font-size="28">2</text>
+          <text class="tl" x="112" y="46" font-size="34">TCP hay UDP: chắc chắn hay nhanh</text>
+
+          <!-- TCP -->
+          <rect class="s" x="35" y="90" width="450" height="400" rx="18" fill="#e3f2e3"/>
+          <rect class="s" x="75" y="104" width="370" height="50" rx="12" fill="#ffffff"/>
+          <text class="t" x="260" y="140" font-size="30">TCP = gửi bảo đảm, có ký nhận</text>
+          <rect class="s" x="60" y="175" width="80" height="90" rx="8" fill="#cfe0f5"/><text class="t" x="100" y="226" font-size="19">client</text>
+          <rect class="s" x="380" y="175" width="80" height="90" rx="8" fill="#9bd9a0"/><text class="t" x="420" y="226" font-size="19">server</text>
+          <path class="ink" d="M146 195 H372" marker-end="url(#ad)"/><text class="t" x="260" y="189" font-size="17">① SYN</text>
+          <path class="ink" d="M374 225 H148" marker-end="url(#ad)"/><text class="t" x="260" y="219" font-size="17">② SYN-ACK</text>
+          <path class="ink" d="M146 255 H372" marker-end="url(#ad)"/><text class="t" x="260" y="249" font-size="17">③ ACK → bắt đầu gửi</text>
+          <g font-size="22">
+            <text class="tl" x="58" y="305">✓ bắt tay 3 bước trước khi gửi data</text>
+            <text class="tl" x="58" y="340">✓ đánh số + ACK, mất thì gửi lại</text>
+            <text class="tl" x="58" y="375">✓ đúng thứ tự, tự giảm tốc khi nghẽn</text>
+            <text class="tl" x="58" y="410">✗ tốn thêm 1 vòng đi-về mới gửi được</text>
+          </g>
+          <rect x="55" y="436" width="410" height="38" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="260" y="462" font-size="22">HTTP/1.1, HTTP/2, DB, broker</text>
+
+          <text class="t" x="533" y="290" font-size="30">hoặc</text>
+          <path class="blue" d="M508 306 L558 306" marker-start="url(#ah)" marker-end="url(#ah)"/>
+
+          <!-- UDP -->
+          <rect class="s" x="580" y="90" width="410" height="400" rx="18" fill="#fdeedd"/>
+          <rect class="s" x="600" y="104" width="370" height="50" rx="12" fill="#ffffff"/>
+          <text class="t" x="785" y="140" font-size="30">UDP = thả tờ rơi</text>
+          <g transform="translate(660 222) scale(1.1)">
+            <rect class="s" x="-24" y="6" width="12" height="20" rx="3" fill="#f2b84b"/><path class="s" d="M-32 -8 H-12 L22 -28 V28 L-12 8 H-32 Z" fill="#f7da6a"/><path class="ink" d="M30 -12 q9 12 0 24 M36 -22 q16 22 0 44" style="stroke-width:2.5" stroke="#e0652d"/>
+          </g>
+          <g fill="#fffdf5">
+            <rect class="s3" x="745" y="180" width="34" height="26" rx="3" transform="rotate(-12 762 193)"/>
+            <rect class="s3" x="805" y="215" width="34" height="26" rx="3" transform="rotate(10 822 228)"/>
+            <rect class="s3" x="865" y="182" width="34" height="26" rx="3" transform="rotate(-6 882 195)"/>
+          </g>
+          <rect x="910" y="235" width="34" height="26" rx="3" fill="#fffdf5" stroke="#d9453a" stroke-width="2" stroke-dasharray="4 3"/>
+          <path d="M916 240 l22 16 M938 240 l-22 16" stroke="#d9453a" stroke-width="3" stroke-linecap="round"/>
+          <g font-size="22">
+            <text class="tl" x="600" y="305">✓ không bắt tay, gửi là đi</text>
+            <text class="tl" x="600" y="340">✓ header nhỏ, độ trễ thấp</text>
+            <text class="tl" x="600" y="375">✗ mất thì thôi, không giữ thứ tự</text>
+            <text class="tl" x="600" y="410">→ app tự lo phần cần chắc</text>
+          </g>
+          <rect x="600" y="436" width="370" height="38" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="785" y="462" font-size="22">DNS, video call, game, QUIC</text>
+        </g>
+
+        <!-- ③ QUIC -->
+        <g transform="translate(0 1145)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#c5def5"/>
+          <circle class="s" cx="75" cy="33" r="22" fill="#f9c9b6"/><text class="t" x="75" y="43" font-size="28">3</text>
+          <text class="tl" x="112" y="46" font-size="34">QUIC: UDP + tự làm phần chắc chắn</text>
+          <rect class="s" x="35" y="90" width="955" height="380" rx="18" fill="#f1ecfa"/>
+          <rect class="s" x="182" y="104" width="660" height="48" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="512" y="138" font-size="28">mỗi stream một làn riêng, thay vì chung một làn</text>
+
+          <!-- TCP một làn -->
+          <text class="tl" x="60" y="190" font-size="22">TCP: 3 stream chung một làn</text>
+          <rect class="s3" x="60" y="202" width="400" height="56" rx="8" fill="#efe9de"/>
+          <rect class="s3" x="80" y="213" width="44" height="34" rx="5" fill="#bfd9f2"/>
+          <rect class="s3" x="134" y="213" width="44" height="34" rx="5" fill="#f6a3c4"/>
+          <rect class="s3" x="188" y="213" width="44" height="34" rx="5" fill="#f7da6a"/>
+          <rect x="242" y="213" width="44" height="34" rx="5" fill="#fffdf5" stroke="#d9453a" stroke-width="2.5" stroke-dasharray="5 4"/>
+          <path d="M252 220 l24 20 M276 220 l-24 20" stroke="#d9453a" stroke-width="3.5" stroke-linecap="round"/>
+          <rect class="s3" x="296" y="213" width="44" height="34" rx="5" fill="#bfd9f2"/>
+          <rect class="s3" x="350" y="213" width="44" height="34" rx="5" fill="#f7da6a"/>
+          <path class="ink" d="M405 230 H448" marker-end="url(#ad)"/>
+          <text class="tl" x="60" y="290" font-size="20" style="fill:#d9453a;stroke:#d9453a">1 gói mất → cả 3 stream đứng chờ (HOL blocking)</text>
+
+          <!-- QUIC ba làn -->
+          <text class="tl" x="555" y="190" font-size="22">QUIC: mỗi stream một làn</text>
+          <g>
+            <rect class="s3" x="555" y="200" width="400" height="22" rx="6" fill="#efe9de"/>
+            <rect class="s3" x="575" y="203" width="36" height="16" rx="3" fill="#bfd9f2"/><rect class="s3" x="621" y="203" width="36" height="16" rx="3" fill="#bfd9f2"/><rect class="s3" x="667" y="203" width="36" height="16" rx="3" fill="#bfd9f2"/>
+            <path class="ink" d="M900 211 H943" marker-end="url(#ad)" style="stroke-width:2.5"/>
+            <rect class="s3" x="555" y="228" width="400" height="22" rx="6" fill="#efe9de"/>
+            <rect class="s3" x="575" y="231" width="36" height="16" rx="3" fill="#f6a3c4"/>
+            <rect x="621" y="231" width="36" height="16" rx="3" fill="#fffdf5" stroke="#d9453a" stroke-width="2" stroke-dasharray="4 3"/>
+            <path d="M630 233 l18 12 M648 233 l-18 12" stroke="#d9453a" stroke-width="3" stroke-linecap="round"/>
+            <text class="tl" x="672" y="245" font-size="17" style="fill:#d9453a;stroke:none">chờ gửi lại</text>
+            <rect class="s3" x="555" y="256" width="400" height="22" rx="6" fill="#efe9de"/>
+            <rect class="s3" x="575" y="259" width="36" height="16" rx="3" fill="#f7da6a"/><rect class="s3" x="621" y="259" width="36" height="16" rx="3" fill="#f7da6a"/><rect class="s3" x="667" y="259" width="36" height="16" rx="3" fill="#f7da6a"/>
+            <path class="ink" d="M900 267 H943" marker-end="url(#ad)" style="stroke-width:2.5"/>
+          </g>
+          <text class="tl" x="555" y="300" font-size="20" style="fill:#2fa24a;stroke:#2fa24a">chỉ làn hồng chờ, xanh và vàng chạy tiếp</text>
+
+          <g font-size="23">
+            <text class="tl" x="60" y="345">✓ mất gói chỉ chặn đúng stream của nó → hết HOL ở tầng TCP</text>
+            <text class="tl" x="60" y="380">✓ gắn sẵn TLS 1.3: kết nối + mã hoá xong trong 1 vòng đi-về</text>
+            <text class="tl" x="60" y="415">✓ đổi Wi-Fi sang 4G không rớt kết nối (nhận nhau qua connection ID)</text>
+          </g>
+          <rect x="55" y="428" width="915" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="512" y="452" font-size="22">HTTP/3 = HTTP chạy trên QUIC · đổi lại: chạy trong user space, tốn CPU hơn TCP</text>
+        </g>
+
+        <!-- ④ BYTE STREAM -->
+        <g transform="translate(0 1645)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#c5def5"/>
+          <circle class="s" cx="75" cy="33" r="22" fill="#f9c9b6"/><text class="t" x="75" y="43" font-size="28">4</text>
+          <text class="tl" x="112" y="46" font-size="32">TCP chỉ đưa dòng byte, không biết message là gì</text>
+          <rect class="s" x="35" y="90" width="955" height="290" rx="18" fill="#fffbe6"/>
+          <rect class="s" x="232" y="104" width="560" height="48" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="512" y="138" font-size="28">socket.on('data') không trả về message</text>
+          <g font-size="21">
+            <text class="tl" x="60" y="185" font-size="17" style="fill:#5a6475;stroke:none">gửi 2 message</text>
+            <rect class="s" x="60" y="195" width="120" height="40" rx="6" fill="#bfd9f2"/><text class="t" x="120" y="222">{"a":1}</text>
+            <rect class="s" x="60" y="245" width="120" height="40" rx="6" fill="#f6a3c4"/><text class="t" x="120" y="272">{"b":2}</text>
+          </g>
+          <path class="ink" d="M188 240 H226" marker-end="url(#ad)"/>
+          <rect class="s" x="234" y="207" width="370" height="66" rx="33" fill="#d6ecd6"/>
+          <text class="t" x="419" y="248" font-size="24">…{"a":1}{"b":2}…</text>
+          <text class="t" x="419" y="196" font-size="17" style="fill:#5a6475;stroke:none">TCP: một dòng liền, không ranh giới</text>
+          <path class="ink" d="M612 240 H650" marker-end="url(#ad)"/>
+          <g font-size="21">
+            <text class="tl" x="660" y="185" font-size="17" style="fill:#5a6475;stroke:none">nhận 2 lần 'data'</text>
+            <rect class="s" x="660" y="195" width="150" height="40" rx="6" fill="#fffdf5"/><text class="t" x="735" y="222">{"a":1}{"b</text>
+            <rect class="s" x="660" y="245" width="80" height="40" rx="6" fill="#fffdf5"/><text class="t" x="700" y="272">":2}</text>
+          </g>
+          <g transform="translate(905 240) scale(0.85)">
+            <path class="s" d="M-14 22 L14 -36" fill="none" style="stroke-width:9"/><path d="M-14 22 L14 -36" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round"/><path class="s" d="M14 22 L-14 -36" fill="none" style="stroke-width:9"/><path d="M14 22 L-14 -36" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round"/><circle class="s" cx="-17" cy="30" r="9" fill="#e87a6a"/><circle class="s" cx="17" cy="30" r="9" fill="#e87a6a"/><circle class="s3" cx="0" cy="-6" r="3" fill="#1d2433"/>
+          </g>
+          <text class="tl" x="60" y="322" font-size="22">Một lần 'data' có thể là nửa message, hoặc hai message dính nhau</text>
+          <rect x="55" y="336" width="915" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="512" y="360" font-size="22">→ cắt message đúng chỗ là việc của tầng trên: Protocol</text>
+        </g>
+
+        <!-- CÂU CHỐT -->
+        <g transform="translate(0 2055)">
+          <rect class="s" x="60" y="0" width="904" height="76" rx="16" fill="#fbe98a"/>
+          <text class="t" x="512" y="52" font-size="42">Transport chở byte, không hiểu byte</text>
+          <text class="t" x="512" y="108" font-size="17" style="fill:#5a6475;stroke:none">TLS không phải transport: nó chạy trên TCP (QUIC gắn sẵn TLS 1.3). Unix socket: chở byte giữa 2 process cùng máy.</text>
+        </g>
+
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

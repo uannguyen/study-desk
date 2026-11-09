@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Queue, topic và consumer group</title>
+    <meta name="repos" content="" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1600px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1600 1790"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Nhiều consumer cùng nghe: queue chia việc, topic phát cho tất cả, RabbitMQ exchange, Kafka consumer group"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M1 1 L9 5 L1 9" fill="none" stroke="#2fa24a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+        <g id="man"><circle class="s" cx="0" cy="-59" r="11" fill="#ffe3c2"/><path class="s" d="M0 -48 V-22 M0 -40 L-14 -28 M0 -40 L14 -28 M0 -22 L-12 0 M0 -22 L12 0" fill="none"/></g>
+        <g id="env"><rect class="s3" x="-18" y="-12" width="36" height="24" rx="3" fill="#fffdf5"/><path class="s2" d="M-18 -12 L0 2 L18 -12"/></g>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <!-- TIÊU ĐỀ -->
+        <rect class="s" x="40" y="30" width="1520" height="100" rx="16" fill="#bcd9f5"/>
+        <text class="t" x="800" y="95" font-size="44">Nhiều consumer cùng nghe: ai nhận message?</text>
+        <rect class="s" x="470" y="143" width="660" height="52" rx="26" fill="#f9c9b6"/>
+        <text class="t" x="800" y="179" font-size="30">Queue = chia việc · Topic = phát loa cho tất cả</text>
+
+        <!-- ① QUEUE -->
+        <g transform="translate(0 220)">
+          <rect class="s" x="35" y="0" width="720" height="66" rx="12" fill="#c5def5"/>
+          <text class="tl" x="55" y="45" font-size="32">① Queue: mỗi message chỉ 1 người nhận</text>
+          <rect class="s" x="35" y="86" width="720" height="380" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="235" y="100" width="320" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="395" y="132" font-size="26">competing consumers</text>
+          <rect class="s" x="70" y="175" width="275" height="150" rx="14" fill="#bcd9f5"/>
+          <text class="t" x="207" y="210" font-size="24">queue (quầy thuốc)</text>
+          <rect class="s3" x="85" y="230" width="36" height="40" fill="#fffdf5"/><text class="t" x="103" y="257" font-size="20">6</text>
+          <rect class="s3" x="127" y="230" width="36" height="40" fill="#fffdf5"/><text class="t" x="145" y="257" font-size="20">5</text>
+          <rect class="s3" x="169" y="230" width="36" height="40" fill="#fffdf5"/><text class="t" x="187" y="257" font-size="20">4</text>
+          <rect class="s3" x="211" y="230" width="36" height="40" fill="#f7da6a"/><text class="t" x="229" y="257" font-size="20">3</text>
+          <rect class="s3" x="253" y="230" width="36" height="40" fill="#f7da6a"/><text class="t" x="271" y="257" font-size="20">2</text>
+          <rect class="s3" x="295" y="230" width="36" height="40" fill="#f7da6a"/><text class="t" x="313" y="257" font-size="20">1</text>
+          <text class="t" x="207" y="305" font-size="18">thêm consumer = chạy nhanh hơn</text>
+          <path class="blue" d="M350 250 L612 195" marker-end="url(#ah)"/>
+          <path class="blue" d="M350 250 L612 270" marker-end="url(#ah)"/>
+          <path class="blue" d="M350 250 L612 345" marker-end="url(#ah)"/>
+          <use href="#man" x="640" y="230"/>
+          <use href="#man" x="640" y="305"/>
+          <use href="#man" x="640" y="380"/>
+          <text class="tl" x="668" y="205" font-size="22">1 · 4</text>
+          <text class="tl" x="668" y="280" font-size="22">2 · 5</text>
+          <text class="tl" x="668" y="355" font-size="22">3 · 6</text>
+          <rect x="115" y="412" width="560" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="395" y="438" font-size="22">không ai nhận trùng · scale bằng cách thêm pod</text>
+        </g>
+
+        <!-- ② TOPIC -->
+        <g transform="translate(0 220)">
+          <rect class="s" x="845" y="0" width="720" height="66" rx="12" fill="#cdebd0"/>
+          <text class="tl" x="865" y="45" font-size="32">② Topic: ai subscribe cũng nhận 1 bản</text>
+          <rect class="s" x="845" y="86" width="720" height="380" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="1045" y="100" width="320" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="1205" y="132" font-size="26">publish / subscribe</text>
+          <rect class="s" x="880" y="175" width="255" height="150" rx="14" fill="#cdebd0"/>
+          <text class="t" x="1007" y="210" font-size="24">topic (loa trường)</text>
+          <g transform="translate(965 262)">
+            <path class="s" d="M-35 -12 H-12 L22 -32 V32 L-12 12 H-35 Z" fill="#f2b84b"/>
+            <path class="s2" d="M32 -12 q9 12 0 24 M42 -22 q16 22 0 44"/>
+          </g>
+          <rect class="s3" x="1070" y="242" width="40" height="40" fill="#fbe98a"/><text class="t" x="1090" y="270" font-size="22">A</text>
+          <text class="t" x="1007" y="310" font-size="18">phát 1 lần, copy cho mỗi người</text>
+          <path d="M1140 250 L1392 195" stroke="#2fa24a" stroke-width="3" fill="none" stroke-linecap="round" marker-end="url(#ag)"/>
+          <path d="M1140 250 L1392 270" stroke="#2fa24a" stroke-width="3" fill="none" stroke-linecap="round" marker-end="url(#ag)"/>
+          <path d="M1140 250 L1392 345" stroke="#2fa24a" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="8 8" marker-end="url(#ag)"/>
+          <use href="#man" x="1420" y="230"/>
+          <use href="#man" x="1420" y="305"/>
+          <use href="#man" x="1420" y="380" opacity="0.35"/>
+          <path d="M1405 300 L1435 330 M1435 300 L1405 330" stroke="#d9453a" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <text class="tl" x="1448" y="205" font-size="22">nhận A</text>
+          <text class="tl" x="1448" y="280" font-size="22">nhận A</text>
+          <text class="tl" x="1448" y="355" font-size="20">offline → mất</text>
+          <rect x="935" y="412" width="540" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="1205" y="438" font-size="22">muốn không mất khi offline → durable subscription</text>
+        </g>
+
+        <!-- ③ HAI BẪY ACTIVEMQ -->
+        <g transform="translate(0 726)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#fde0c8"/>
+          <text class="tl" x="55" y="45" font-size="32">③ Hai bẫy khi dùng ActiveMQ</text>
+          <g transform="translate(1515 40) scale(0.7)"><polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/></g>
+          <rect class="s" x="35" y="86" width="1530" height="270" rx="18" fill="#fffdf5"/>
+          <!-- bẫy STOMP -->
+          <rect class="s3" x="80" y="110" width="700" height="225" rx="14" fill="#fff6ec"/>
+          <text class="t" x="430" y="148" font-size="26">STOMP: lệnh nào cũng là SUBSCRIBE</text>
+          <rect class="s3" x="120" y="168" width="620" height="44" rx="10" fill="#c5def5"/>
+          <text class="tl" x="140" y="198" font-size="22">SUBSCRIBE /queue/x  →  tranh nhau, 1 người nhận</text>
+          <rect class="s3" x="120" y="222" width="620" height="44" rx="10" fill="#cdebd0"/>
+          <text class="tl" x="140" y="252" font-size="22">SUBSCRIBE /topic/x  →  ai cũng nhận 1 bản</text>
+          <text class="t" x="430" y="304" font-size="20">tiền tố destination quyết định, không phải chữ SUBSCRIBE</text>
+          <!-- bẫy prefetch -->
+          <rect class="s3" x="820" y="110" width="700" height="225" rx="14" fill="#fff6ec"/>
+          <text class="t" x="1170" y="148" font-size="26">prefetch: queue mặc định 1000</text>
+          <use href="#man" x="880" y="285"/>
+          <use href="#env" x="925" y="275"/>
+          <use href="#env" x="925" y="263"/>
+          <use href="#env" x="925" y="251"/>
+          <use href="#env" x="925" y="239"/>
+          <use href="#env" x="925" y="227"/>
+          <use href="#env" x="925" y="215"/>
+          <text class="t" x="905" y="315" font-size="18">đến trước: ôm 1000</text>
+          <use href="#man" x="1085" y="285"/>
+          <text class="t" x="1085" y="315" font-size="18">đến sau: ngồi không</text>
+          <text class="tl" x="1205" y="205" font-size="20">• prefetch thấp → chia đều hơn</text>
+          <text class="tl" x="1205" y="245" font-size="20">• nhiều consumer → mất thứ tự</text>
+          <text class="tl" x="1205" y="285" font-size="20">• cần thứ tự → message groups</text>
+        </g>
+
+        <!-- ④ RABBITMQ -->
+        <g transform="translate(0 1122)">
+          <rect class="s" x="35" y="0" width="720" height="66" rx="12" fill="#fadbe6"/>
+          <text class="tl" x="55" y="45" font-size="30">④ RabbitMQ: gửi vào exchange, không vào queue</text>
+          <rect class="s" x="35" y="86" width="720" height="430" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="215" y="100" width="360" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="395" y="132" font-size="24">exchange = bàn phân loại thư</text>
+          <use href="#man" x="75" y="320"/>
+          <text class="t" x="75" y="345" font-size="18">Producer</text>
+          <path class="ink" d="M98 285 L140 285" marker-end="url(#ad)"/>
+          <rect class="s" x="145" y="230" width="150" height="110" rx="12" fill="#f6a3c4"/>
+          <text class="t" x="220" y="277" font-size="22">exchange</text>
+          <text class="t" x="220" y="307" font-size="18">(fanout)</text>
+          <path class="ink" d="M295 260 L355 210" marker-end="url(#ad)"/>
+          <path class="ink" d="M295 310 L355 360" marker-end="url(#ad)"/>
+          <text class="tl" x="300" y="290" font-size="16">bind</text>
+          <rect class="s" x="360" y="175" width="190" height="60" rx="10" fill="#bcd9f5"/>
+          <text class="t" x="455" y="213" font-size="22">queue A</text>
+          <rect class="s" x="360" y="335" width="190" height="60" rx="10" fill="#bcd9f5"/>
+          <text class="t" x="455" y="373" font-size="22">queue B</text>
+          <path class="blue" d="M552 200 L612 205" marker-end="url(#ah)"/>
+          <path class="blue" d="M552 215 L612 285" marker-end="url(#ah)"/>
+          <path class="blue" d="M552 365 L612 395" marker-end="url(#ah)"/>
+          <use href="#man" x="635" y="240"/>
+          <use href="#man" x="635" y="320"/>
+          <use href="#man" x="635" y="430"/>
+          <text class="tl" x="662" y="250" font-size="18">tranh nhau</text>
+          <text class="tl" x="662" y="405" font-size="18">nhận đủ</text>
+          <rect x="145" y="455" width="500" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="395" y="481" font-size="22">pub/sub = mỗi subscriber một queue riêng</text>
+        </g>
+
+        <!-- ⑤ KAFKA -->
+        <g transform="translate(0 1122)">
+          <rect class="s" x="845" y="0" width="720" height="66" rx="12" fill="#e3dbf5"/>
+          <text class="tl" x="865" y="45" font-size="30">⑤ Kafka: consumer group làm được cả hai</text>
+          <rect class="s" x="845" y="86" width="720" height="430" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="1005" y="100" width="400" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="1205" y="132" font-size="24">1 partition → 1 consumer / group</text>
+          <path d="M962 195 C962 150 1452 150 1452 176" stroke="#2fa24a" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="8 8" marker-end="url(#ag)"/>
+          <rect class="s" x="880" y="195" width="165" height="210" rx="12" fill="#e3dbf5"/>
+          <rect class="s3" x="895" y="205" width="135" height="50" rx="6" fill="#fffdf5"/><text class="t" x="962" y="237" font-size="20">partition 0</text>
+          <rect class="s3" x="895" y="275" width="135" height="50" rx="6" fill="#fffdf5"/><text class="t" x="962" y="307" font-size="20">partition 1</text>
+          <rect class="s3" x="895" y="345" width="135" height="50" rx="6" fill="#fffdf5"/><text class="t" x="962" y="377" font-size="20">partition 2</text>
+          <text class="t" x="962" y="432" font-size="22">topic</text>
+          <rect class="s" x="1120" y="180" width="220" height="245" rx="14" fill="#c5def5"/>
+          <text class="t" x="1270" y="212" font-size="22">group A</text>
+          <text class="t" x="1270" y="236" font-size="18">chia nhau</text>
+          <path class="blue" d="M1035 230 L1142 228" marker-end="url(#ah)"/>
+          <path class="blue" d="M1035 300 L1142 298" marker-end="url(#ah)"/>
+          <path class="blue" d="M1035 370 L1142 368" marker-end="url(#ah)"/>
+          <use href="#man" x="1165" y="262"/>
+          <use href="#man" x="1165" y="332"/>
+          <use href="#man" x="1165" y="402"/>
+          <use href="#man" x="1270" y="330" opacity="0.35"/>
+          <text class="t" x="1270" y="356" font-size="18">dư → ngồi không</text>
+          <rect class="s" x="1360" y="180" width="185" height="245" rx="14" fill="#cdebd0"/>
+          <text class="t" x="1452" y="212" font-size="22">group B</text>
+          <text class="t" x="1452" y="236" font-size="18">đọc đủ cả 3</text>
+          <use href="#man" x="1452" y="360"/>
+          <rect x="870" y="455" width="670" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="1205" y="481" font-size="22">consumer &gt; partition → dư người · thứ tự chỉ giữ trong 1 partition</text>
+        </g>
+
+        <!-- CÂU CHỐT -->
+        <g transform="translate(0 1678)">
+          <rect class="s" x="60" y="0" width="1480" height="80" rx="16" fill="#fbe98a"/>
+          <text class="t" x="800" y="54" font-size="40">Queue chia việc · Topic phát loa · Kafka group làm cả hai.</text>
+        </g>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Client side vs Server side</title>
+    <meta name="repos" content="" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1600px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1600 1966"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Client side và server side: ranh giới tin cậy, vì sao F12 không thấy request khi SSR, ba cách render"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M1 1 L9 5 L1 9" fill="none" stroke="#2fa24a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <!-- TIÊU ĐỀ -->
+        <rect class="s" x="40" y="30" width="1520" height="100" rx="16" fill="#bcd9f5" />
+        <text class="t" x="800" y="97" font-size="48">Client side vs Server side</text>
+        <rect class="s" x="470" y="143" width="660" height="52" rx="26" fill="#f9c9b6" />
+        <text class="t" x="800" y="179" font-size="30">Bàn ăn chỉ được xin món · Nhà bếp mới quyết định</text>
+
+        <!-- ① RANH GIỚI -->
+        <g transform="translate(0 230)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#c5def5" />
+          <text class="tl" x="55" y="46" font-size="36">① Ranh giới: ai giữ quyền quyết định?</text>
+
+          <!-- card client -->
+          <rect class="s" x="35" y="90" width="620" height="350" rx="18" fill="#fffdf5" />
+          <rect class="s" x="75" y="104" width="540" height="50" rx="12" fill="#fbd3b4" />
+          <text class="t" x="345" y="140" font-size="30">Client = bàn ăn của bạn</text>
+          <g transform="translate(210 380)">
+            <circle class="s" cx="0" cy="-78" r="14" fill="#ffe3c2" />
+            <path class="s" d="M0 -64 V-26 M0 -52 L-20 -34 M0 -52 L20 -34 M0 -26 L-16 0 M0 -26 L16 0" fill="none" />
+            <path class="s2" d="M-5 -80 q5 5 10 0" />
+          </g>
+          <g transform="translate(232 180)">
+            <path class="s" d="M0 12 a12 12 0 0 1 12 -12 H218 a12 12 0 0 1 12 12 V58 a12 12 0 0 1 -12 12 H48 L28 90 L30 70 H12 a12 12 0 0 1 -12 -12 z" fill="#ffffff" />
+            <text class="t" x="115" y="44" font-size="24">"giảm giá 90% nhé!"</text>
+          </g>
+          <g transform="translate(530 290) scale(1.5)">
+            <rect class="s" x="-22" y="-38" width="44" height="76" rx="9" fill="#fffdf5"/><rect class="s3" x="-15" y="-27" width="30" height="46" rx="3" fill="#bfd9f2"/><path class="s2" d="M-7 -32 h14"/><circle class="s3" cx="0" cy="28" r="4" fill="#1d2433"/><path class="s2" d="M-8 -14 h16 M-8 -4 h10 M-8 6 h13"/>
+          </g>
+          <rect x="55" y="396" width="580" height="34" rx="10" fill="#cfe0f5" />
+          <text class="t" x="345" y="422" font-size="23">browser, mobile app: người dùng sửa được mọi thứ</text>
+
+          <!-- mạng ở giữa -->
+          <text class="t" x="800" y="190" font-size="22">request</text>
+          <path class="blue" d="M675 205 H925" marker-end="url(#ah)" />
+          <text class="t" x="800" y="262" font-size="22">response</text>
+          <path class="ink" d="M925 277 H675" stroke-dasharray="8 8" marker-end="url(#ad)" />
+          <g transform="translate(730 310)">
+            <polygon class="s" points="0,0 140,0 140,96 110,96 100,108 100,96 0,96" fill="#fbe98a" />
+            <text class="t" x="70" y="40" font-size="22">qua mạng =</text>
+            <text class="t" x="70" y="70" font-size="22">không đáng tin</text>
+          </g>
+
+          <!-- card server -->
+          <rect class="s" x="945" y="90" width="620" height="350" rx="18" fill="#fffdf5" />
+          <rect class="s" x="985" y="104" width="540" height="50" rx="12" fill="#fbd3b4" />
+          <text class="t" x="1255" y="140" font-size="30">Server = nhà bếp của bạn</text>
+          <g transform="translate(1060 380)">
+            <ellipse class="s" cx="0" cy="-104" rx="22" ry="8" fill="#ffffff"/>
+            <path class="s" d="M-16 -106 a14 14 0 0 1 8 -20 a14 14 0 0 1 16 0 a14 14 0 0 1 8 20 z" fill="#ffffff"/>
+            <circle class="s" cx="0" cy="-82" r="14" fill="#ffe3c2"/>
+            <path class="s" d="M0 -68 V-26 M0 -56 L-20 -38 M0 -56 L20 -38 M0 -26 L-16 0 M0 -26 L16 0" fill="none"/>
+          </g>
+          <g transform="translate(1120 290)">
+            <rect class="s" x="0" y="0" width="150" height="90" rx="10" fill="#e9937a"/>
+            <rect class="s" x="14" y="14" width="122" height="62" rx="8" fill="#fffdf5"/>
+            <text class="t" x="75" y="44" font-size="20">giá thật, số dư,</text>
+            <text class="t" x="75" y="66" font-size="20">quyền (role)</text>
+          </g>
+          <g transform="translate(1430 300) scale(1.4)">
+            <path class="s" d="M0 -38 L32 -26 V0 C32 20 14 32 0 40 C-14 32 -32 20 -32 0 V-26 Z" fill="#bfd9f2"/><path class="s3" d="M0 -38 L-32 -26 V0 C-32 20 -14 32 0 40 Z" fill="#a8c8ea"/><circle class="s3" cx="0" cy="-6" r="7" fill="#1d2433"/><polygon class="s3" points="-3,0 3,0 6,17 -6,17" fill="#1d2433"/>
+          </g>
+          <text class="t" x="1255" y="215" font-size="22">bếp tính lại, không làm theo giấy order</text>
+          <rect x="965" y="396" width="580" height="34" rx="10" fill="#cfe0f5" />
+          <text class="t" x="1255" y="422" font-size="23">Node.js, DB, secret: nơi duy nhất đáng tin</text>
+
+          <!-- luật rút ra -->
+          <rect class="s" x="35" y="470" width="1530" height="66" rx="14" fill="#e3f1e0" />
+          <text class="t" x="800" y="513" font-size="27">Validate ở client chỉ cho UX · Validate ở server mới là bảo mật · Secret không bao giờ nằm trong bundle JS</text>
+        </g>
+
+        <!-- ② VÌ SAO F12 KHÔNG THẤY REQUEST -->
+        <g transform="translate(0 810)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#cdebd0" />
+          <text class="tl" x="55" y="46" font-size="36">② F12 không thấy request API? Vì server đã tự gọi thay bạn (SSR)</text>
+          <rect class="s" x="35" y="90" width="1530" height="380" rx="18" fill="#fffdf5" />
+
+          <!-- vùng DevTools -->
+          <rect x="60" y="110" width="620" height="300" rx="14" fill="none" stroke="#e07a3f" stroke-width="2.5" stroke-dasharray="10 8" />
+          <text class="tl" x="80" y="142" font-size="22" style="fill:#e07a3f;stroke:#e07a3f">vùng DevTools nhìn thấy</text>
+          <g transform="translate(110 165)">
+            <rect class="s" x="0" y="0" width="260" height="170" rx="10" fill="#fffdf5" />
+            <rect class="s3" x="0" y="0" width="260" height="28" rx="8" fill="#cfe0f5" />
+            <circle class="s3" cx="16" cy="14" r="5" fill="#e9937a" /><circle class="s3" cx="32" cy="14" r="5" fill="#f2b84b" /><circle class="s3" cx="48" cy="14" r="5" fill="#6fbf73" />
+            <path class="s2" d="M24 60 h150 M24 88 h200 M24 116 h120" />
+            <text class="t" x="130" y="155" font-size="20">Browser: trang đủ dữ liệu</text>
+          </g>
+          <g transform="translate(500 330) scale(1.1)">
+            <path class="s" d="M10 12 L34 36" fill="none" style="stroke-width:11"/><path d="M10 12 L34 36" fill="none" stroke="#f2b84b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle class="s" cx="-8" cy="-8" r="26" fill="#eaf4fd"/><path class="s2" d="M-24 4 l9 -11 l9 7 l12 -18" stroke="#e0652d"/><circle class="s3" cx="9" cy="-18" r="3" fill="#e0652d"/>
+          </g>
+          <text class="t" x="380" y="398" font-size="20">F12 → Network: chỉ thấy ① và ③</text>
+
+          <!-- ① ③ -->
+          <text class="t" x="600" y="190" font-size="22" style="fill:#2f80d8;stroke:#2f80d8">① GET /products</text>
+          <path class="blue" d="M385 205 H915" marker-end="url(#ah)" />
+          <text class="t" x="790" y="300" font-size="22">③ HTML có sẵn dữ liệu</text>
+          <path class="ink" d="M915 270 H385" stroke-dasharray="8 8" marker-end="url(#ad)" />
+
+          <!-- server -->
+          <g transform="translate(985 235) scale(2)">
+            <rect class="s" x="-22" y="-22" width="44" height="18" rx="4" fill="#cfd8e3"/>
+            <rect class="s" x="-22" y="0" width="44" height="18" rx="4" fill="#cfd8e3"/>
+            <circle cx="-13" cy="-13" r="3" fill="#2fa24a"/><circle cx="-13" cy="9" r="3" fill="#2fa24a"/>
+            <line class="s2" x1="0" y1="-13" x2="14" y2="-13"/><line class="s2" x1="0" y1="9" x2="14" y2="9"/>
+          </g>
+          <text class="t" x="985" y="320" font-size="22">Server (Node.js)</text>
+          <text class="t" x="985" y="346" font-size="18">render HTML trước khi trả</text>
+
+          <!-- ② -->
+          <text class="t" x="1195" y="210" font-size="22" style="fill:#2fa24a;stroke:#2fa24a">② server tự gọi</text>
+          <path d="M1065 225 H1320" stroke="#2fa24a" stroke-width="3" fill="none" stroke-linecap="round" marker-end="url(#ag)" />
+          <text class="t" x="1195" y="258" font-size="19" style="fill:#2fa24a;stroke:#2fa24a">mạng nội bộ, browser không biết</text>
+          <g transform="translate(1410 225) scale(1.5)">
+            <path class="s" d="M-30 -22 v44 a30 10 0 0 0 60 0 v-44" fill="#bfd9f2"/><path class="s2" d="M-30 -2 a30 10 0 0 0 60 0 M-30 14 a30 10 0 0 0 60 0"/><ellipse class="s" cx="0" cy="-22" rx="30" ry="10" fill="#fffdf5"/>
+          </g>
+          <text class="t" x="1410" y="320" font-size="22">DB / API nội bộ</text>
+
+          <rect x="60" y="424" width="1480" height="34" rx="10" fill="#cfe0f5" />
+          <text class="t" x="800" y="450" font-size="22">Kiểm chứng: Ctrl+U thấy dữ liệu trong HTML gốc = SSR · chỉ có &lt;div id="root"&gt; = CSR · nhớ mở F12 rồi mới reload</text>
+        </g>
+
+        <!-- ③ RENDER Ở ĐÂU -->
+        <g transform="translate(0 1320)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#e3d9f7" />
+          <text class="tl" x="55" y="46" font-size="36">③ Render ở đâu? Ba cách, chọn theo mức tương tác của UI</text>
+
+          <!-- Express + EJS -->
+          <rect class="s" x="35" y="90" width="480" height="400" rx="18" fill="#fffdf5" />
+          <rect class="s" x="75" y="104" width="400" height="50" rx="12" fill="#fbd3b4" />
+          <text class="t" x="275" y="140" font-size="30">Express + EJS</text>
+          <g transform="translate(160 180)">
+            <rect class="s" x="0" y="0" width="90" height="110" rx="6" fill="#ffffff" />
+            <rect class="s3" x="10" y="10" width="70" height="20" rx="4" fill="#fbd3b4" />
+            <text class="t" x="45" y="26" font-size="16" stroke-width="0.3">HTML</text>
+            <path class="s2" d="M12 48 h66 M12 66 h50 M12 84 h60" />
+          </g>
+          <g transform="translate(360 235)">
+            <circle class="s3" r="36" fill="#cdebd0"/><path class="ink" d="M-25.4 -9.2 A27 27 0 0 1 25.4 -9.2"/><polygon class="s3" points="28.4,-0.8 18.8,-9.0 30.6,-13.3" fill="#4fa355"/><path class="ink" d="M25.4 9.2 A27 27 0 0 1 -25.4 9.2"/><polygon class="s3" points="-28.4,0.8 -18.8,9.0 -30.6,13.3" fill="#4fa355"/>
+          </g>
+          <text class="t" x="275" y="340" font-size="24">server render HTML hoàn chỉnh</text>
+          <text class="t" x="275" y="372" font-size="24">mỗi click = reload cả trang</text>
+          <text class="t" x="275" y="404" font-size="20">(PHP, Rails, Django cũng vậy)</text>
+          <rect x="55" y="440" width="440" height="34" rx="10" fill="#cfe0f5" />
+          <text class="t" x="275" y="466" font-size="23">hợp: admin, blog, form CRUD</text>
+
+          <!-- SPA -->
+          <rect class="s" x="560" y="90" width="480" height="400" rx="18" fill="#fffdf5" />
+          <rect class="s" x="600" y="104" width="400" height="50" rx="12" fill="#fbd3b4" />
+          <text class="t" x="800" y="140" font-size="30">SPA (React thuần)</text>
+          <g transform="translate(650 180)">
+            <rect class="s" x="0" y="0" width="120" height="110" rx="6" fill="#ffffff" />
+            <text class="t" x="60" y="52" font-size="17" stroke-width="0.3">&lt;div id="root"&gt;</text>
+            <text class="t" x="60" y="76" font-size="17" stroke-width="0.3">(rỗng)</text>
+          </g>
+          <path class="ink" d="M840 235 H785" marker-end="url(#ad)" />
+          <g transform="translate(900 240)">
+            <polygon class="s3" points="-44,8 -36.3,0.3 -14.3,0.3 -22,8" fill="#fffdf5"/><polygon class="s3" points="-22,8 -14.3,0.3 -14.3,22.3 -22,30" fill="#cbd3dc"/><rect class="s" x="-44" y="8" width="22" height="22" fill="#bfd9f2"/><polygon class="s3" points="-11,-26 -3.3,-33.7 18.7,-33.7 11,-26" fill="#fffdf5"/><polygon class="s3" points="11,-26 18.7,-33.7 18.7,-11.7 11,-4" fill="#cbd3dc"/><rect class="s" x="-11" y="-26" width="22" height="22" fill="#f7da6a"/><polygon class="s3" points="18,6 25.7,-1.7 47.7,-1.7 40,6" fill="#fffdf5"/><polygon class="s3" points="40,6 47.7,-1.7 47.7,20.3 40,28" fill="#cbd3dc"/><rect class="s" x="18" y="6" width="22" height="22" fill="#f9c0b4"/>
+          </g>
+          <text class="t" x="905" y="300" font-size="18">bundle JS</text>
+          <text class="t" x="800" y="340" font-size="24">server trả HTML rỗng + bundle JS</text>
+          <text class="t" x="800" y="372" font-size="24">browser fetch API rồi tự render</text>
+          <text class="t" x="800" y="404" font-size="20">(F12 thấy rõ các request XHR)</text>
+          <rect x="580" y="440" width="440" height="34" rx="10" fill="#cfe0f5" />
+          <text class="t" x="800" y="466" font-size="23">hợp: dashboard tương tác dày, SEO kém</text>
+
+          <!-- Next.js -->
+          <rect class="s" x="1085" y="90" width="480" height="400" rx="18" fill="#fffdf5" />
+          <rect class="s" x="1125" y="104" width="400" height="50" rx="12" fill="#fbd3b4" />
+          <text class="t" x="1325" y="140" font-size="30">Next.js (SSR + hydrate)</text>
+          <g transform="translate(1235 222) scale(1.3)">
+            <g transform="rotate(35)"><path class="s" d="M-8 20 Q0 46 8 20 Z" fill="#f2b84b"/><polygon class="s" points="-12,6 -26,26 -12,20" fill="#e87a6a"/><polygon class="s" points="12,6 26,26 12,20" fill="#e87a6a"/><path class="s" d="M0 -40 C16 -24 16 4 12 20 H-12 C-16 4 -16 -24 0 -40 Z" fill="#fffdf5"/><path class="s3" d="M0 -40 C8 -32 12 -24 13 -18 H-13 C-12 -24 -8 -32 0 -40 Z" fill="#e87a6a"/><circle class="s" cx="0" cy="-6" r="7" fill="#bfd9f2"/></g>
+          </g>
+          <text class="t" x="1235" y="298" font-size="18">hiện nhanh</text>
+          <g transform="translate(1420 222)">
+            <path class="s" d="M0 -40 C22 -12 30 4 30 16 a30 30 0 0 1 -60 0 C-30 4 -22 -12 0 -40 Z" fill="#bfd9f2" />
+            <path class="s2" d="M-14 14 a14 14 0 0 0 12 14" />
+          </g>
+          <text class="t" x="1420" y="298" font-size="18">hydrate: gắn event</text>
+          <text class="t" x="1325" y="340" font-size="24">Node server render lần đầu</text>
+          <text class="t" x="1325" y="372" font-size="24">browser hydrate để bấm được</text>
+          <text class="t" x="1325" y="404" font-size="20">(Next.js chính là một Node server)</text>
+          <rect x="1105" y="440" width="440" height="34" rx="10" fill="#cfe0f5" />
+          <text class="t" x="1325" y="466" font-size="23">hợp: e-commerce cần SEO + tương tác</text>
+        </g>
+
+        <!-- CÂU CHỐT -->
+        <g transform="translate(0 1850)">
+          <rect class="s" x="40" y="0" width="1520" height="76" rx="16" fill="#fbe98a" />
+          <text class="t" x="800" y="52" font-size="40">Client lo trải nghiệm, server giữ sự thật. Render ở đâu là một đánh đổi.</text>
+        </g>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

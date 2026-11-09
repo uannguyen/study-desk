@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thiết kế bảng Postgres</title>
+<meta name="repos" content="" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  /* khổ rộng: thêm class wide vào thẻ main, cột Q giữ nguyên, cột nội dung tự giãn. render.sh nhận ra để chụp rộng 1440 */
+  .sheet.wide { max-width: 1440px; }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">PostgreSQL: thiết kế bảng đầu tiên</h1>
+  <p class="sub">chọn kiểu dữ liệu, đặt ràng buộc, sửa ràng buộc an toàn</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>Bảng users · wallets</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> Primary key nên dùng bigint hay UUID?
+        <small>từ khóa: IDENTITY · UUIDv4 · UUIDv7 · B-tree locality</small></div>
+      <div class="note hand">
+        <h3>① Id tăng dần giữ index gọn</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><g transform="translate(0 -8) rotate(-30)"><path class="s" d="M-4 0 H38 M26 0 v15 M37 0 v11" fill="none" style="stroke-width:7"/><path d="M-4 0 H38 M26 0 v15 M37 0 v11" fill="none" stroke="#f7da6a" stroke-width="3" stroke-linecap="round"/><circle class="s" cx="-20" cy="0" r="18" fill="#f7da6a"/><circle class="s2" cx="-20" cy="0" r="6" fill="#fbf9f2"/></g><text class="t" x="20" y="32" font-size="20" stroke-width="0.3">1, 2, 3</text></svg>
+          <figcaption>khóa định danh</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span><code>bigint GENERATED ALWAYS AS IDENTITY</code> sinh 1, 2, 3… (8 byte). UUID phải khai báo rõ: <code>gen_random_uuid()</code> (v4) hoặc <code>uuidv7()</code> (PG18).</p>
+        <p><span class="lb">Ví dụ</span>Mongo <code>ObjectId</code> đầu là timestamp, giống UUIDv7: gần tăng dần.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>UUIDv4 làm PK: insert rơi ngẫu nhiên khắp B-tree → page split, write chậm khi bảng vượt RAM. bigint lộ số lượng, đoán được id kế.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Nói được pattern "bigint nội bộ + UUIDv7 public" và lý do.</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> ⭐ Lưu tiền bằng kiểu gì?
+        <small>từ khóa: numeric · floating point · minor unit · bigint</small></div>
+      <div class="note hand">
+        <h3>② Tiền không bao giờ dùng float</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-28 26 v9 a28 9 0 0 0 56 0 v-9" fill="#f2b84b"/><ellipse class="s" cx="0" cy="26" rx="28" ry="9" fill="#f7da6a"/><path class="s" d="M-28 15 v9 a28 9 0 0 0 56 0 v-9" fill="#f2b84b"/><ellipse class="s" cx="0" cy="15" rx="28" ry="9" fill="#f7da6a"/><path class="s" d="M-28 4 v9 a28 9 0 0 0 56 0 v-9" fill="#f2b84b"/><ellipse class="s" cx="0" cy="4" rx="28" ry="9" fill="#f7da6a"/><path class="s" d="M-28 -7 v9 a28 9 0 0 0 56 0 v-9" fill="#f2b84b"/><ellipse class="s" cx="0" cy="-7" rx="28" ry="9" fill="#f7da6a"/><text class="t" x="0" y="-18" font-size="26">$</text></svg>
+          <figcaption>đếm từng đồng</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span><code>numeric(18,2)</code>: thập phân chính xác tuyệt đối, 18 chữ số, 2 số lẻ. <code>float</code> là nhị phân: <code>0.1 + 0.2 ≠ 0.3</code>.</p>
+        <p><span class="lb">Ví dụ</span><code>balance numeric(18,2) NOT NULL DEFAULT 0 CHECK (balance &gt;= 0)</code>. Hệ thống thật hay dùng <code>bigint</code> theo đơn vị nhỏ nhất (đồng, cent).</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Driver <code>pg</code> trả <code>numeric</code> về <b>string</b> trong Node. Đó là chủ ý, không phải bug.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Vì sao <code>balance</code> phải <code>NOT NULL</code>? (gợi ý: <code>NULL + 100</code>)</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> Khai báo khóa ngoại cần lưu ý gì?
+        <small>từ khóa: REFERENCES · composite UNIQUE · FK index · leftmost prefix</small></div>
+      <div class="note hand">
+        <h3>③ FK cần kiểu, NOT NULL, và index tự lo</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M0 -38 L32 -26 V0 C32 20 14 32 0 40 C-14 32 -32 20 -32 0 V-26 Z" fill="#bfd9f2"/><path class="s3" d="M0 -38 L-32 -26 V0 C-32 20 -14 32 0 40 Z" fill="#a8c8ea"/><circle class="s3" cx="0" cy="-6" r="7" fill="#1d2433"/><polygon class="s3" points="-3,0 3,0 6,17 -6,17" fill="#1d2433"/></svg>
+          <figcaption>DB tự bảo vệ dữ liệu</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span><code>REFERENCES</code> không thay được kiểu cột: phải viết <code>user_id bigint NOT NULL REFERENCES users(id)</code>, cùng kiểu với cột được trỏ. FK cho phép NULL nếu không chặn.</p>
+        <p><span class="lb">Ví dụ</span>Ràng buộc trên hai cột viết thành dòng riêng: <code>UNIQUE (user_id, currency)</code>.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Postgres chỉ tự tạo index cho <code>PRIMARY KEY</code> và <code>UNIQUE</code>, <b>không</b> cho cột FK (MySQL thì có).</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Tìm ví theo <code>user_id</code> có dùng được index của <code>UNIQUE (user_id, currency)</code> không?</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> <code>DEFAULT 0</code> + <code>CHECK (x &gt; 0)</code> sao tạo bảng không lỗi?
+        <small>từ khóa: DDL time · insert time · constraint evaluation</small></div>
+      <div class="note hand">
+        <h3>④ DEFAULT chỉ được tính lúc INSERT</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/></svg>
+          <figcaption>lỗi để dành đến lúc ghi</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span>Lúc <code>CREATE TABLE</code>, default chỉ là biểu thức được lưu lại. Lúc <code>INSERT</code> mới tính ra giá trị, rồi mới chạy <code>CHECK</code>. DDL chỉ kiểm tra cú pháp và kiểu, không kiểm tra logic giữa các ràng buộc.</p>
+        <p><span class="lb">Ví dụ</span><code>amount</code> của giao dịch: bỏ hẳn default, chỉ giữ <code>NOT NULL CHECK (amount &gt; 0)</code>.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Cột nào đáng có default? (gợi ý: <code>balance</code> ví mới, <code>created_at</code>)</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> Cột chỉ nhận vài giá trị (VND, USD) thì làm sao?
+        <small>từ khóa: CHECK IN · ENUM type · lookup table</small></div>
+      <div class="note hand">
+        <h3>⑤ Ba cách giới hạn giá trị</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-28" y="-34" width="56" height="70" rx="5" fill="#fffdf5"/><rect class="s" x="-10" y="-41" width="20" height="10" rx="3" fill="#cbd3dc"/><rect class="s3" x="-20" y="-20" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 -14 H18"/><path class="ink" d="M-18 -14 l4 5 l8 -11" stroke="#4fa355" style="stroke-width:3"/><rect class="s3" x="-20" y="-2" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 4 H18"/><path class="ink" d="M-18 4 l4 5 l8 -11" stroke="#4fa355" style="stroke-width:3"/><rect class="s3" x="-20" y="16" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 22 H18"/></svg>
+          <figcaption>danh sách được phép</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span><code>CHECK (currency IN ('VND','USD'))</code>: gọn, cho danh sách nhỏ ít đổi. <code>ENUM</code>: thêm giá trị dễ, xóa hoặc đổi tên khó. Bảng tra cứu + FK: thêm giá trị chỉ cần <code>INSERT</code>, dùng cho hệ thống thật.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Chuỗi dùng nháy đơn. <code>"VND"</code> là tên cột.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Currency cần thêm số chữ số lẻ, trạng thái active thì chọn cách nào?</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q6</b> Sửa một CHECK đang có thế nào cho an toàn?
+        <small>từ khóa: ALTER TABLE · transactional DDL · NOT VALID · VALIDATE</small></div>
+      <div class="note hand">
+        <h3>⑥ Xóa cũ, thêm mới, trong một transaction</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s3" r="36" fill="#cdebd0"/><path class="ink" d="M-25.4 -9.2 A27 27 0 0 1 25.4 -9.2"/><polygon class="s3" points="28.4,-0.8 18.8,-9.0 30.6,-13.3" fill="#4fa355"/><path class="ink" d="M25.4 9.2 A27 27 0 0 1 -25.4 9.2"/><polygon class="s3" points="-28.4,0.8 -18.8,9.0 -30.6,13.3" fill="#4fa355"/></svg>
+          <figcaption>thay mà không hở</figcaption>
+        </figure>
+        <p><span class="lb">Bên dưới</span>Tìm tên trong <code>pg_constraint</code> (mặc định <code>wallets_balance_check</code>). <code>BEGIN; DROP CONSTRAINT …; ADD CONSTRAINT …; COMMIT;</code> để không có khoảng hở. Postgres rollback được cả DDL.</p>
+        <p><span class="lb">Ví dụ</span><code>ADD CONSTRAINT</code> quét toàn bảng và giữ lock <code>ACCESS EXCLUSIVE</code>. Bảng lớn: <code>ADD … NOT VALID</code> trước, <code>VALIDATE CONSTRAINT</code> sau.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Có một dòng cũ vi phạm điều kiện mới thì cả transaction ra sao?</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>PoC <code>wallet-management</code>: Postgres + TypeORM, ví và chuyển tiền. Ở FV, kiểm tra số dư nằm trong code (Mongo <code>balance.available &gt;= amount</code>); ở Postgres, <code>CHECK</code> là tầng chặn cuối của DB. Tự hỏi: PoC dùng id kiểu gì?</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Id dùng <code>bigint IDENTITY</code>, tránh UUIDv4 làm PK; tiền dùng <code>numeric</code> hoặc <code>bigint</code> theo đơn vị nhỏ nhất, không bao giờ float. Ràng buộc (NOT NULL, CHECK, UNIQUE, FK) là tầng bảo vệ cuối, nhưng Postgres không tự index cột FK và không kiểm DEFAULT với CHECK lúc tạo bảng. Sửa constraint: drop + add trong một transaction; bảng lớn thì <code>NOT VALID</code> rồi <code>VALIDATE</code>.</p>
+    </div>
+  </section>
+
+  <p class="foot"><code>uuidv7()</code> có từ PostgreSQL 18, đã chạy thử trên container lab 18.6.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

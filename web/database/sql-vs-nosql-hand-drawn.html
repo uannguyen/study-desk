@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SQL vs NoSQL</title>
+    <meta name="repos" content="" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1024px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1024 1850"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="So sánh SQL (Postgres) và NoSQL (MongoDB): cách cất dữ liệu, đánh đổi, và vì sao có nhiều loại DB"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <!-- TIÊU ĐỀ -->
+        <rect class="s" x="40" y="30" width="944" height="100" rx="16" fill="#bcd9f5"/>
+        <text class="t" x="512" y="95" font-size="44">SQL vs NoSQL: tủ hồ sơ hay cặp riêng?</text>
+        <rect class="s" x="187" y="143" width="650" height="52" rx="26" fill="#f9c9b6"/>
+        <text class="t" x="512" y="179" font-size="28">NoSQL là cả một họ, MongoDB chỉ là một nhánh</text>
+
+        <!-- ① CẤT DỮ LIỆU -->
+        <g transform="translate(0 225)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#c5def5"/>
+          <text class="tl" x="55" y="45" font-size="34">① Cất dữ liệu kiểu nào?</text>
+
+          <!-- card trái: Postgres -->
+          <rect class="s" x="35" y="86" width="450" height="384" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="75" y="100" width="370" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="260" y="136" font-size="30">Postgres = tủ hồ sơ nhiều sổ</text>
+          <g transform="translate(60 170)">
+            <rect class="s" x="0" y="0" width="120" height="120" rx="6" fill="#ffffff"/>
+            <rect class="s3" x="0" y="0" width="120" height="32" fill="#bfd9f2"/>
+            <text class="t" x="60" y="23" font-size="19">Học sinh</text>
+            <path class="s2" d="M0 66 H120 M0 98 H120"/>
+            <text class="t" x="60" y="58" font-size="17" stroke-width="0.3">1 · An · lớp 1</text>
+            <text class="t" x="60" y="90" font-size="17" stroke-width="0.3">2 · Bình · lớp 1</text>
+          </g>
+          <g transform="translate(205 170)">
+            <rect class="s" x="0" y="0" width="120" height="120" rx="6" fill="#ffffff"/>
+            <rect class="s3" x="0" y="0" width="120" height="32" fill="#bfd9f2"/>
+            <text class="t" x="60" y="23" font-size="19">Lớp</text>
+            <path class="s2" d="M0 66 H120 M0 98 H120"/>
+            <text class="t" x="60" y="58" font-size="17" stroke-width="0.3">1 · 5A</text>
+            <text class="t" x="60" y="90" font-size="17" stroke-width="0.3">2 · 5B</text>
+          </g>
+          <g transform="translate(350 170)">
+            <rect class="s" x="0" y="0" width="120" height="120" rx="6" fill="#ffffff"/>
+            <rect class="s3" x="0" y="0" width="120" height="32" fill="#bfd9f2"/>
+            <text class="t" x="60" y="23" font-size="19">Điểm</text>
+            <path class="s2" d="M0 66 H120 M0 98 H120"/>
+            <text class="t" x="60" y="58" font-size="17" stroke-width="0.3">An · toán · 9</text>
+            <text class="t" x="60" y="90" font-size="17" stroke-width="0.3">Bình · toán · 8</text>
+          </g>
+          <path class="blue" d="M120 296 Q 192 330 265 296" marker-start="url(#ah)" marker-end="url(#ah)"/>
+          <path class="blue" d="M265 296 Q 337 330 410 296" marker-end="url(#ah)"/>
+          <text class="t" x="265" y="352" font-size="22" style="fill:#2f80d8;stroke:#2f80d8">JOIN lúc đọc</text>
+          <text class="t" x="260" y="390" font-size="20">tên lớp chỉ ghi ở đúng 1 chỗ</text>
+          <rect x="55" y="416" width="410" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="260" y="442" font-size="23">tách bảng (normalize) · ráp lại khi query</text>
+
+          <!-- giữa -->
+          <text class="t" x="533" y="262" font-size="30">hoặc</text>
+          <path class="blue" d="M508 286 L558 286" marker-start="url(#ah)" marker-end="url(#ah)"/>
+
+          <!-- card phải: MongoDB -->
+          <rect class="s" x="580" y="86" width="410" height="384" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="605" y="100" width="360" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="785" y="136" font-size="30">MongoDB = mỗi bạn một cặp</text>
+          <g transform="translate(605 178) scale(1.6)">
+            <path class="s" d="M0 0 h22 l5 7 h-27z" fill="#5cb87a"/>
+            <rect class="s" x="0" y="7" width="66" height="52" rx="4" fill="#7fd098"/>
+            <rect x="4" y="30" width="58" height="22" fill="#fffdf5"/>
+            <text class="t" x="33" y="46" font-size="12" stroke-width="0.3">An·5A·9</text>
+          </g>
+          <g transform="translate(732 178) scale(1.6)">
+            <path class="s" d="M0 0 h22 l5 7 h-27z" fill="#5cb87a"/>
+            <rect class="s" x="0" y="7" width="66" height="52" rx="4" fill="#7fd098"/>
+            <rect x="4" y="30" width="58" height="22" fill="#fffdf5"/>
+            <text class="t" x="33" y="46" font-size="12" stroke-width="0.3">Bình·5A·8</text>
+          </g>
+          <g transform="translate(859 178) scale(1.6)">
+            <path class="s" d="M0 0 h22 l5 7 h-27z" fill="#5cb87a"/>
+            <rect class="s" x="0" y="7" width="66" height="52" rx="4" fill="#7fd098"/>
+            <rect x="4" y="30" width="58" height="22" fill="#fffdf5"/>
+            <text class="t" x="33" y="46" font-size="12" stroke-width="0.3">Chi·5B·7</text>
+          </g>
+          <rect class="s3" x="610" y="300" width="350" height="40" rx="8" fill="#eaf6ec"/>
+          <text class="t" x="785" y="327" font-size="20">{ tên: "An", lớp: "5A", điểm: 9 }</text>
+          <text class="t" x="785" y="390" font-size="20">đổi tên lớp 5A = mở từng cặp ra sửa</text>
+          <rect x="600" y="416" width="370" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="785" y="442" font-size="23">gom 1 document (embed) · đọc 1 lần</text>
+        </g>
+
+        <!-- ② ĐÁNH ĐỔI -->
+        <g transform="translate(0 730)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#cdebd0"/>
+          <text class="tl" x="55" y="45" font-size="34">② Đánh đổi: được gì, mất gì?</text>
+
+          <g transform="translate(125 125) scale(0.85)">
+            <path class="ink" d="M0 -32 V30 M-16 32 H16"/><path class="ink" d="M-32 -18 L32 -22"/><path class="s2" d="M-32 -18 L-42 8 M-32 -18 L-22 8 M32 -22 L22 4 M32 -22 L42 4"/><path class="s" d="M-44 8 Q-32 24 -20 8 Z" fill="#bfd9f2"/><path class="s" d="M20 4 Q32 20 44 4 Z" fill="#7fd098"/><circle class="s3" cx="0" cy="-34" r="4" fill="#f7da6a"/>
+          </g>
+          <rect class="s" x="225" y="90" width="375" height="62" rx="10" fill="#c5def5"/>
+          <text class="t" x="412" y="131" font-size="28">Postgres (SQL)</text>
+          <rect class="s" x="610" y="90" width="380" height="62" rx="10" fill="#cdebd0"/>
+          <text class="t" x="800" y="131" font-size="28">MongoDB (document)</text>
+
+          <g font-size="22">
+            <rect class="s3" x="35" y="160" width="180" height="58" rx="8" fill="#f4ecd8"/>
+            <text class="t" x="125" y="196">Schema</text>
+            <rect class="s3" x="225" y="160" width="375" height="58" rx="8" fill="#fffdf5"/>
+            <text class="t" x="412" y="196">kiểm khi ghi, sai kiểu là reject</text>
+            <rect class="s3" x="610" y="160" width="380" height="58" rx="8" fill="#fffdf5"/>
+            <text class="t" x="800" y="196">linh hoạt, kiểm ở app / validator</text>
+
+            <rect class="s3" x="35" y="224" width="180" height="58" rx="8" fill="#f4ecd8"/>
+            <text class="t" x="125" y="260">Transaction</text>
+            <rect class="s3" x="225" y="224" width="375" height="58" rx="8" fill="#fffdf5"/>
+            <text class="t" x="412" y="260">ACID nhiều bảng, có sẵn</text>
+            <rect class="s3" x="610" y="224" width="380" height="58" rx="8" fill="#fffdf5"/>
+            <text class="t" x="800" y="260">atomic 1 doc · multi-doc từ 4.0, đắt</text>
+
+            <rect class="s3" x="35" y="288" width="180" height="58" rx="8" fill="#f4ecd8"/>
+            <text class="t" x="125" y="324">Scale</text>
+            <rect class="s3" x="225" y="288" width="375" height="58" rx="8" fill="#fffdf5"/>
+            <text class="t" x="412" y="324">máy to hơn + read replica</text>
+            <rect class="s3" x="610" y="288" width="380" height="58" rx="8" fill="#fffdf5"/>
+            <text class="t" x="800" y="324">sharding có sẵn, scale ngang</text>
+
+            <rect class="s3" x="35" y="352" width="180" height="58" rx="8" fill="#f4ecd8"/>
+            <text class="t" x="125" y="388">Câu hỏi mới</text>
+            <rect class="s3" x="225" y="352" width="375" height="58" rx="8" fill="#fffdf5"/>
+            <text class="t" x="412" y="388">JOIN tuỳ ý, làm báo cáo dễ</text>
+            <rect class="s3" x="610" y="352" width="380" height="58" rx="8" fill="#fffdf5"/>
+            <text class="t" x="800" y="388">nhanh đúng pattern, lệch là khó</text>
+          </g>
+
+          <rect class="s" x="35" y="430" width="955" height="84" rx="14" fill="#fde3dc"/>
+          <g transform="translate(92 474) scale(0.8)">
+            <polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/>
+          </g>
+          <text class="tl" x="150" y="466" font-size="25">Bẫy: “Mongo không có schema, không có transaction” → sai</text>
+          <text class="tl" x="150" y="498" font-size="21">schema nằm ở code app/validator · transaction nhiều document có từ 4.0</text>
+        </g>
+
+        <!-- ③ VÌ SAO NHIỀU LOẠI -->
+        <g transform="translate(0 1280)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#e3d9f5"/>
+          <text class="tl" x="55" y="45" font-size="34">③ Vì sao lại sinh ra nhiều loại DB?</text>
+
+          <rect class="s" x="35" y="86" width="291" height="270" rx="16" fill="#fffdf5"/>
+          <rect class="s" x="50" y="100" width="261" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="180" y="132" font-size="25">1970: đĩa rất đắt</text>
+          <g transform="translate(180 208) scale(1.3)">
+            <path class="s" d="M-30 -22 v44 a30 10 0 0 0 60 0 v-44" fill="#bfd9f2"/><path class="s2" d="M-30 -2 a30 10 0 0 0 60 0 M-30 14 a30 10 0 0 0 60 0"/><ellipse class="s" cx="0" cy="-22" rx="30" ry="10" fill="#fffdf5"/>
+          </g>
+          <text class="t" x="180" y="295" font-size="22">không được lặp dữ liệu</text>
+          <text class="t" x="180" y="328" font-size="22" style="fill:#2f80d8;stroke:#2f80d8">→ SQL, normalize</text>
+
+          <path class="ink" d="M332 220 L361 220" marker-end="url(#ad)"/>
+
+          <rect class="s" x="367" y="86" width="291" height="270" rx="16" fill="#fffdf5"/>
+          <rect class="s" x="382" y="100" width="261" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="512" y="132" font-size="25">2006: traffic khổng lồ</text>
+          <g transform="translate(512 212) scale(1.3)">
+            <polygon class="s3" points="-44,8 -36.3,0.3 -14.3,0.3 -22,8" fill="#fffdf5"/><polygon class="s3" points="-22,8 -14.3,0.3 -14.3,22.3 -22,30" fill="#cbd3dc"/><rect class="s" x="-44" y="8" width="22" height="22" fill="#bfd9f2"/><polygon class="s3" points="-11,-26 -3.3,-33.7 18.7,-33.7 11,-26" fill="#fffdf5"/><polygon class="s3" points="11,-26 18.7,-33.7 18.7,-11.7 11,-4" fill="#cbd3dc"/><rect class="s" x="-11" y="-26" width="22" height="22" fill="#f7da6a"/><polygon class="s3" points="18,6 25.7,-1.7 47.7,-1.7 40,6" fill="#fffdf5"/><polygon class="s3" points="40,6 47.7,-1.7 47.7,20.3 40,28" fill="#cbd3dc"/><rect class="s" x="18" y="6" width="22" height="22" fill="#7fd098"/>
+          </g>
+          <text class="t" x="512" y="295" font-size="22">bỏ JOIN để chia ra nhiều máy</text>
+          <text class="t" x="512" y="328" font-size="22" style="fill:#2fa24a;stroke:#2fa24a">→ NoSQL, scale ngang</text>
+
+          <path class="ink" d="M664 220 L693 220" marker-end="url(#ad)"/>
+
+          <rect class="s" x="699" y="86" width="291" height="270" rx="16" fill="#fffdf5"/>
+          <rect class="s" x="714" y="100" width="261" height="46" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="844" y="132" font-size="25">Nay: mỗi việc một DB</text>
+          <g transform="translate(844 210) scale(1.4)">
+            <path class="s" d="M0 0 L0.0 -30.0"/><path class="s" d="M0 0 L30.4 -9.3"/><path class="s" d="M0 0 L18.8 24.3"/><path class="s" d="M0 0 L-18.8 24.3"/><path class="s" d="M0 0 L-30.4 -9.3"/><circle class="s" cx="0.0" cy="-30.0" r="8" fill="#bfd9f2"/><circle class="s" cx="30.4" cy="-9.3" r="8" fill="#7fd098"/><circle class="s" cx="18.8" cy="24.3" r="8" fill="#f6a3c4"/><circle class="s" cx="-18.8" cy="24.3" r="8" fill="#b7a0e6"/><circle class="s" cx="-30.4" cy="-9.3" r="8" fill="#f7ad62"/><circle class="s" cx="0" cy="0" r="12" fill="#f7da6a"/>
+          </g>
+          <text class="t" x="844" y="295" font-size="22">cache · search · graph · log</text>
+          <text class="t" x="844" y="328" font-size="22" style="fill:#7a5cc0;stroke:#7a5cc0">→ polyglot persistence</text>
+        </g>
+
+        <!-- CÂU CHỐT -->
+        <g transform="translate(0 1668)">
+          <path class="s2" d="M30 30 l14 8 M28 56 l16 -4 M994 30 l-14 8 M996 56 l-16 -4" stroke="#e0a800"/>
+          <rect class="s" x="60" y="0" width="904" height="112" rx="16" fill="#fbe98a"/>
+          <text class="t" x="512" y="48" font-size="36">Chọn DB theo cách app đọc dữ liệu</text>
+          <text class="t" x="512" y="94" font-size="36">và mức nhất quán cần có, không theo phe.</text>
+          <text class="t" x="512" y="155" font-size="20">Ranh giới đã mờ: Postgres có JSONB, Mongo có transaction và schema validator.</text>
+        </g>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

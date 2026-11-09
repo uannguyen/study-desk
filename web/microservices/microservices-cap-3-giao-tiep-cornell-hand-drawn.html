@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Giao tiếp giữa service</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">Giao tiếp giữa service</h1>
+  <p class="sub">gọi chờ hay gửi rồi đi, và ai chỉ đường cho ai</p>
+  <section class="page">
+    <h2 class="page-no"><b>3</b>Giao tiếp giữa service</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> Khi nào gọi đồng bộ, khi nào bất đồng bộ?
+        <small>từ khóa: sync / async · temporal coupling · request-reply</small></div>
+      <div class="note hand">
+        <h3>① Chờ trả lời, hay gửi rồi đi</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-20 -31 H20 C20 -10 4 -4 4 0 C4 4 20 10 20 31 H-20 C-20 10 -4 4 -4 0 C-4 -4 -20 -10 -20 -31 Z" fill="#bfd9f2"/><path class="s3" d="M-13 -26 H13 C11 -16 5 -9 0 -5 C-5 -9 -11 -16 -13 -26 Z" fill="#f2b84b"/><path class="s3" d="M-16 29 H16 C14 22 6 16 0 14 C-6 16 -14 22 -16 29 Z" fill="#f2b84b"/><path class="s2" d="M0 -3 V14"/><rect class="s" x="-27" y="-39" width="54" height="8" rx="3" fill="#f7da6a"/><rect class="s" x="-27" y="31" width="54" height="8" rx="3" fill="#f7da6a"/></svg>
+          <figcaption>A đứng chờ B</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Gọi điện thì phải đợi bạn nghe máy. Gửi thư thì bạn đọc lúc nào cũng được, mình đi làm việc khác.</p>
+        <p><span class="lb">Bên dưới</span><b>Sync</b> (REST/gRPC): A chờ B trả lời, B chết thì A lỗi theo (temporal coupling) → dùng khi <b>cần kết quả ngay để trả lời user</b> (query, validate). <b>Async</b> (queue/event): message nằm chờ trong broker, B chết thì A vẫn chạy, B sống lại xử lý tiếp → dùng cho việc không cần kết quả ngay, fan-out, dàn tải lúc cao điểm.</p>
+        <p><span class="lb">Ví dụ</span>Kiểm tra số dư trước khi cho bấm thanh toán → sync. Gửi email xác nhận sau khi đặt hàng → async.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Request-reply qua queue: transport là async nhưng ngữ nghĩa vẫn là sync, vì A vẫn đứng chờ.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Payment chết 5 phút: tạo order sync còn chạy không? Gửi email async còn chạy không?</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> Command khác event thế nào?
+        <small>từ khóa: command · event · pub/sub · point-to-point</small></div>
+      <div class="note hand">
+        <h3>② “Hãy làm” và “đã xảy ra”</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-24" y="6" width="12" height="20" rx="3" fill="#f2b84b"/><path class="s" d="M-32 -8 H-12 L22 -28 V28 L-12 8 H-32 Z" fill="#f7da6a"/><path class="ink" d="M30 -12 q9 12 0 24 M36 -22 q16 22 0 44" style="stroke-width:2.5" stroke="#e0652d"/></svg>
+          <figcaption>phát cho ai nghe cũng được</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Nhờ riêng một bạn: “mang cho tớ quyển vở”. Khác với việc cô thông báo cả lớp: “đã có điểm thi”.</p>
+        <p><span class="lb">Bên dưới</span><b>Command</b> = “hãy làm X”: gửi cho <b>một</b> người nhận cụ thể, bên gửi biết ai xử lý. <b>Event</b> = “X đã xảy ra”: có N subscriber, bên phát không biết và không quan tâm ai nghe. Event giảm coupling hơn nhưng khó nhìn toàn bộ luồng hơn.</p>
+        <p><span class="lb">Ví dụ</span><code>ChargePayment</code> → đúng Payment service. <code>OrderPaid</code> → Shipping, Email, Analytics cùng nghe.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Event vẫn coupling qua <b>contract</b> của event. Tên event nên là thì quá khứ (<code>OrderPaid</code>), không phải mệnh lệnh.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Muốn thêm một bên nữa phản ứng với việc đã trả tiền mà không sửa Payment: command hay event?</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> Khi nào dùng gRPC thay REST?
+        <small>từ khóa: HTTP/2 · protobuf · streaming · gRPC-Web</small></div>
+      <div class="note hand">
+        <h3>③ Nội bộ nhanh, ngoài dễ</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="ink" d="M0 -32 V30 M-16 32 H16"/><path class="ink" d="M-32 -18 L32 -22"/><path class="s2" d="M-32 -18 L-42 8 M-32 -18 L-22 8 M32 -22 L22 4 M32 -22 L42 4"/><path class="s" d="M-44 8 Q-32 24 -20 8 Z" fill="#bfd9f2"/><path class="s" d="M20 4 Q32 20 44 4 Z" fill="#f9c0b4"/><circle class="s3" cx="0" cy="-34" r="4" fill="#f7da6a"/></svg>
+          <figcaption>mỗi bên một thế mạnh</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Nói chuyện với người trong nhà thì dùng ám hiệu riêng cho nhanh. Nói với khách thì dùng tiếng ai cũng hiểu.</p>
+        <p><span class="lb">Bên dưới</span><b>gRPC</b>: HTTP/2, binary protobuf (nhỏ, nhanh), file <code>.proto</code> sinh code client/server, streaming 2 chiều → gọi nội bộ giữa service, tần suất cao. <b>REST</b>: JSON, browser gọi thẳng, debug bằng curl, dùng được HTTP cache → public API, đối tác, frontend.</p>
+        <p><span class="lb">Ví dụ</span>Order gọi Pricing 5000 lần/giây → gRPC. Đối tác gọi API của mình → REST.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>gRPC không chạy thẳng trên browser; cần gRPC-Web và một proxy.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Frontend React gọi thẳng service nội bộ dùng gRPC được không? Cần gì thêm?</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> API Gateway làm gì? Rủi ro? BFF là gì?
+        <small>từ khóa: API Gateway · BFF · cross-cutting concerns · SPOF</small></div>
+      <div class="note hand">
+        <h3>④ Một cổng cho cả khu</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-36 36 V-2 A36 36 0 0 1 36 -2 V36 Z" fill="#cbd3dc"/><path class="s" d="M-22 36 V-2 A22 22 0 0 1 22 -2 V36 Z" fill="#fffdf5"/><path class="s2" d="M-11 -22 V36 M0 -24 V36 M11 -22 V36 M-22 6 H22"/></svg>
+          <figcaption>cổng vào duy nhất</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Khu nhà có một cổng bảo vệ: soát thẻ, chỉ đường. Nhà nào cũng khỏi tự thuê bảo vệ riêng.</p>
+        <p><span class="lb">Bên dưới</span>Cổng vào duy nhất cho client: routing, auth, rate limit, TLS termination, ghép response. Rủi ro: <b>SPOF</b> nên phải chạy nhiều instance. <b>BFF</b> (backend for frontend): mỗi loại client (mobile, web, đối tác) có một gateway riêng, trả đúng dữ liệu nó cần.</p>
+        <p><span class="lb">Ví dụ</span>Mobile cần response gọn một màn hình, web admin cần bảng đầy đủ → hai BFF, không nhét chung một gateway.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Không nhét <b>business logic</b> vào gateway: nó thành monolith mới và mọi team phải sửa chung.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Gateway chết thì chuyện gì xảy ra? Cách giảm rủi ro?</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> B scale từ 1 lên 5 instance, IP đổi liên tục. A tìm B bằng cách nào?
+        <small>từ khóa: service discovery · service registry · client-side / server-side discovery · K8s Service DNS</small></div>
+      <div class="note hand">
+        <h3>⑤ Gọi bằng tên, không gọi bằng IP</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><ellipse class="s2" cx="0" cy="38" rx="14" ry="4" fill="#cbd3dc"/><path class="s" d="M0 38 C-8 24 -28 8 -28 -10 A28 28 0 0 1 28 -10 C28 8 8 24 0 38 Z" fill="#e87a6a"/><circle class="s" cx="0" cy="-10" r="10" fill="#fffdf5"/></svg>
+          <figcaption>tên → địa chỉ đang sống</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Gọi tổng đài hỏi “quán phở ở đâu”, tổng đài biết quán nào đang mở thay vì mình nhớ địa chỉ từng quán.</p>
+        <p><span class="lb">Bên dưới</span>Vấn đề: instance lên xuống liên tục, IP đổi. <b>Registry</b> (Consul, Eureka, etcd) lưu danh sách instance đang sống kèm health check. Client-side: A hỏi registry rồi tự chọn instance. Server-side: A gọi qua load balancer, LB tự tìm. Trên <b>K8s</b>: gọi tên <code>order-svc</code> (DNS <code>order-svc.&lt;ns&gt;.svc.cluster.local</code>), K8s tự cân bằng giữa các pod ready.</p>
+        <p><span class="lb">Ví dụ</span>Với queue, <b>tên queue đóng vai trò địa chỉ</b>, broker thay cho discovery.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Trên K8s đừng tự dựng Consul/Eureka rồi nói là “cần”; K8s đã làm sẵn.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Pod B bị thay IP lúc đang chạy, A có phải sửa config không? (Không, gọi theo tên.)</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>request-reply qua ActiveMQ (có response queue) · mỗi app <code>eco-consumer</code> subscribe 1 queue riêng (tên queue = địa chỉ) · app <code>gateway</code> là API Gateway · <code>startOpenAPI.js</code> cho đối tác ≈ BFF.</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Cần kết quả ngay → <b>sync</b>; không cần, hoặc cần chịu lỗi và dàn tải → <b>async</b>. Command gửi một người, event cho N người nghe. Gateway gom auth/routing/rate limit nhưng là SPOF và không chứa business logic. Discovery là bài toán “IP đổi”, trên K8s đã có DNS sẵn, với queue thì tên queue là địa chỉ.</p>
+    </div>
+  </section>
+
+  <p class="foot">Nguồn: On-tap/01c cặp 3 (dòng FV chép từ file đó). Ví dụ đời thường để hiểu, không chép vào vở.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

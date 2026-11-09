@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Messaging tin cậy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">Messaging tin cậy</h1>
+  <p class="sub">event đến nơi, xử lý đúng một lần về hiệu ứng, dù crash hay trùng</p>
+  <section class="page">
+    <h2 class="page-no"><b>6</b>Nhất quán dữ liệu (2/2)</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> ⭐ Ghi DB xong mới publish event, crash ở giữa thì sao?
+        <small>từ khóa: dual-write problem</small></div>
+      <div class="note hand">
+        <h3>① Một việc, hai nơi, không chung transaction</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s" cx="-32" cy="0" r="9" fill="#f7da6a"/><path class="s2" d="M-23 -3 L-6 -20 M-23 3 L-6 20"/><polygon class="s3" points="-1.6,-24.4 -5.0,-12.1 -13.9,-21.0" fill="#1d2433"/><polygon class="s3" points="-1.6,24.4 -13.9,21.0 -5.0,12.1" fill="#1d2433"/><path class="s3" d="M5 -29 v14 a13 5 0 0 0 26 0 v-14" fill="#bfd9f2"/><ellipse class="s3" cx="18" cy="-29" rx="13" ry="5" fill="#fffdf5"/><rect class="s3" x="5" y="13" width="30" height="18" rx="2" fill="#fffdf5"/><path class="s2" d="M5 13 L20 24 L35 13"/><polygon class="s3" points="30,-6 20,6 27,6 22,16 36,2 28,2" fill="#e0652d"/></svg>
+          <figcaption>ghi DB + gửi broker</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Ghi “đã thu tiền” vào sổ rồi định gọi điện báo kho, nhưng điện thoại hỏng ngay sau đó. Sổ có giao dịch mà kho không biết để giao hàng.</p>
+        <p><span class="lb">Bên dưới</span>Payment cần commit <code>payment = PAID</code> vào DB <b>và</b> publish <code>PaymentCharged</code> vào broker: hai hệ, không có transaction chung. Crash giữa hai việc → dữ liệu lệch. Đảo thứ tự cũng không chữa được: event đã gửi mà DB ghi lỗi thì Shipping giao hàng dù chưa thu tiền.</p>
+        <p><span class="lb">Ví dụ</span>DB commit → process crash → chưa publish: đơn <code>PAID</code> nhưng Shipping không bao giờ biết.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Publish trong DB tx, <code>try/catch</code>, retry trong memory đều chết theo process. Cần lưu bền ý định gửi (outbox).</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Kill process ngay sau commit, restart: event cần gửi lấy lại từ đâu?</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> ⭐ Outbox hoạt động thế nào? Relay chết giữa chừng thì sao?
+        <small>từ khóa: transactional outbox · polling publisher · CDC · Debezium · change stream</small></div>
+      <div class="note hand">
+        <h3>② Ghi phiếu “cần báo” cùng lúc chốt sổ</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-20" y="-30" width="40" height="30" rx="3" fill="#fffdf5"/><path class="s2" d="M-20 -30 L0 -14 L20 -30"/><path class="s" d="M-36 -2 H36 L30 32 H-30 Z" fill="#fbe3a8"/><path class="s2" d="M-24 8 H24"/><path class="s2" d="M24 -14 H42" stroke="#4fa355" style="stroke-width:2.5"/><polygon class="s3" points="49.0,-14.0 38.0,-7.7 38.0,-20.3" fill="#4fa355"/></svg>
+          <figcaption>phiếu chờ gửi</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Lúc chốt sổ thu tiền, ghi luôn phiếu “cần báo kho”. Một người khác đọc các phiếu chưa gửi và gửi dần.</p>
+        <p><span class="lb">Bên dưới</span>Trong <b>cùng local DB transaction</b>: cập nhật payment và insert event vào bảng outbox (<code>eventId</code>, loại, payload, trạng thái). Cùng commit hoặc cùng rollback. <b>Relay</b> chuyển event sang broker, đợi broker xác nhận rồi mới đánh dấu đã gửi. Relay kiểu polling query bảng outbox, hoặc CDC đọc transaction log / change stream (Debezium).</p>
+        <p><span class="lb">Ví dụ</span>Relay crash trước publish → đọc lại và gửi. Crash sau khi broker nhận nhưng trước khi đánh dấu → gửi lại cùng <code>eventId</code>.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Outbox chỉ chặn <b>mất</b> event phía producer; vẫn có thể <b>trùng</b>, consumer phải chịu (④).</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Outbox cho exactly-once không? (Không, cho at-least-once.)</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> At-most / at-least / exactly-once? Exactly-once có thật không?
+        <small>từ khóa: delivery semantics · ack · effectively-once</small></div>
+      <div class="note hand">
+        <h3>③ Ack trước hay ack sau</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-20" y="-18" width="56" height="38" rx="3" fill="#fffdf5"/><path class="s2" d="M-20 -18 L8 6 L36 -18"/><path class="s2" d="M-42 -8 h14 M-44 3 h16 M-40 14 h12" stroke="#e0652d"/></svg>
+          <figcaption>giao nhiều lần đến khi xác nhận</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Người giao thư có thể giao một lần rồi bỏ cuộc, hoặc giao lại tới khi có xác nhận. Cách hai ít mất thư nhưng người nhận chịu thư trùng.</p>
+        <p><span class="lb">Bên dưới</span><b>At-most-once</b>: ack (hoặc commit offset) <b>trước</b> khi xử lý → crash thì mất message. <b>At-least-once</b>: xử lý xong mới ack → commit DB xong nhưng crash trước ack → broker giao lại → trùng. Exactly-once hỏi “trong phạm vi nào?”: Kafka transactions chỉ trong Kafka (topic → xử lý → topic), không bao trùm DB hay API ngoài.</p>
+        <p><span class="lb">Ví dụ</span>Thực tế là <b>effectively-once</b> = at-least-once + consumer idempotent: giao nhiều lần, hiệu ứng nghiệp vụ một lần.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>“Broker của tôi exactly-once nên không cần lo” là red flag.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Broker biết đã giao có chắc consumer đã trừ tiền xong chưa? (Không.)</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> Consumer nhận message trùng thì xử lý thế nào?
+        <small>từ khóa: idempotent consumer · inbox table · dedupe</small></div>
+      <div class="note hand">
+        <h3>④ Đánh dấu và làm trong cùng một giao dịch</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-9" y="-42" width="18" height="16" rx="8" fill="#e87a6a"/><rect class="s" x="-5" y="-28" width="10" height="16" fill="#f7da6a"/><rect class="s" x="-24" y="-14" width="48" height="10" rx="3" fill="#e87a6a"/><rect x="-26" y="6" width="52" height="26" rx="5" fill="none" stroke="#e0652d" stroke-width="2.5" style="stroke-dasharray:6 4"/><text class="t" x="0" y="26" font-size="17" style="fill:#e0652d;stroke:#e0652d">seen</text></svg>
+          <figcaption>mã này đã xử lý</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Thu ngân đánh dấu mã hóa đơn đã xử lý. Cùng mã đưa lại thì không thu nữa. Đánh dấu và thu tiền phải cùng thành công.</p>
+        <p><span class="lb">Bên dưới</span>Consumer mở DB tx, insert <code>(consumer, messageId)</code> vào <b>inbox</b> có unique constraint, rồi cập nhật nghiệp vụ <b>trong cùng tx</b>, commit xong mới ack. Message trùng đã commit → bỏ qua hiệu ứng và ack. Lỗi → rollback cả dấu inbox lẫn nghiệp vụ để lần giao sau làm lại được.</p>
+        <p><span class="lb">Ví dụ</span>Cùng <code>messageId</code> tới 2 worker đồng thời → unique constraint chặn, chỉ một thay đổi nghiệp vụ.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Check-then-insert bị race. Dedupe ở Redis rồi mới update DB là hai bước rời, vẫn có cửa sổ crash. Inbox không bảo vệ side effect ra ngoài (API Shipping, email): cần idempotency key phía bên kia.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Hai worker cùng nhận một messageId: mấy thay đổi nghiệp vụ? (Một.)</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> Event đến sai thứ tự thì sao?
+        <small>từ khóa: partition key · ordering · version · sequence number</small></div>
+      <div class="note hand">
+        <h3>⑤ Thứ tự theo từng đơn, kèm version</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-40" y="-12" width="24" height="30" rx="4" fill="#cdebd0"/><text class="t" x="-28" y="10" font-size="22">1</text><rect class="s" x="-12" y="-12" width="24" height="30" rx="4" fill="#f9c0b4"/><text class="t" x="0" y="10" font-size="22">3</text><rect class="s" x="16" y="-12" width="24" height="30" rx="4" fill="#f9c0b4"/><text class="t" x="28" y="10" font-size="22">2</text><path class="ink" d="M0 -16 Q16 -48 28 -28" stroke="#e0652d" style="stroke-width:2.5"/><polygon class="s3" points="32.3,-20.1 21.5,-26.7 32.6,-32.8" fill="#e0652d"/><path class="s2" d="M-36 28 H36"/></svg>
+          <figcaption>đến đúng chỗ, đúng số</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Hai phiếu “đóng gói” rồi “đã giao” có thể gửi đúng thứ tự nhưng người xử lý phiếu đầu chậm hơn. Đến trước chưa chắc xong trước.</p>
+        <p><span class="lb">Bên dưới</span>Thường chỉ cần thứ tự <b>theo một aggregate</b> (cùng <code>orderId</code>). Kafka giữ thứ tự trong partition → dùng <code>orderId</code> làm key, consumer xử lý tuần tự trong partition. Nhận version 5 khi state đang ở version 3: <b>snapshot</b> đầy đủ thì thay state, bỏ snapshot cũ đến muộn; <b>delta</b> (“cộng 10”) thì phải đợi version 4 hoặc lấy lại state.</p>
+        <p><span class="lb">Ví dụ</span>Kiểm tra version và cập nhật state phải atomic, không đọc ra rồi so ở ngoài.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Delta thiếu version mà bỏ event cũ đến muộn sẽ làm sai số dư.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>State v3, nhận delta v5 trước v4: có được bỏ v4 không? (Không.)</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q6</b> Message xử lý lỗi mãi thì sao?
+        <small>từ khóa: DLQ · poison message · max redelivery</small></div>
+      <div class="note hand">
+        <h3>⑥ Khay thư cần kiểm tra</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-14" y="-38" width="28" height="22" rx="2" fill="#fffdf5"/><path class="s2" d="M-14 -38 L0 -26 L14 -38"/><path class="s" d="M-24 -10 L-20 34 H20 L24 -10 Z" fill="#cbd3dc"/><rect class="s" x="-30" y="-20" width="60" height="10" rx="3" fill="#cbd3dc"/><path class="ink" d="M-8 6 l16 16 M8 6 l-16 16" stroke="#e0652d" style="stroke-width:4"/></svg>
+          <figcaption>thư sai địa chỉ</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Thư sai địa chỉ được chuyển sang khay cần kiểm tra để người giao khỏi lặp mãi. Khay ấy không tự sửa địa chỉ.</p>
+        <p><span class="lb">Bên dưới</span>Lỗi tạm thời (DB mất kết nối) → retry có backoff. Lỗi như payload thiếu trường là <b>poison message</b>, retry mãi không hết. Sau số lần hoặc thời gian giới hạn → chuyển sang <b>DLQ</b> kèm nguyên nhân và số lần thử, phát cảnh báo cho người xử lý. Sửa nguyên nhân rồi replay có kiểm soát, giữ <code>messageId</code> để dedupe.</p>
+        <p><span class="lb">Ví dụ</span>Event <code>OrderPaid</code> thiếu <code>orderId</code> → DLQ + alert → sửa producer → replay.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>DLQ ≠ đã xử lý xong. Event sau cùng <code>orderId</code> phụ thuộc event lỗi, cho chạy tiếp có thể làm sai state.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Ai nhận alert, sửa gì, replay bằng cách nào?</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q7</b> Giải thích eventual consistency cho PM thế nào? UX xử lý ra sao?
+        <small>từ khóa: eventual consistency · read-your-own-writes</small></div>
+      <div class="note hand">
+        <h3>⑦ Đã xong phần nào, đang chờ phần nào</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-20 -31 H20 C20 -10 4 -4 4 0 C4 4 20 10 20 31 H-20 C-20 10 -4 4 -4 0 C-4 -4 -20 -10 -20 -31 Z" fill="#bfd9f2"/><path class="s3" d="M-13 -26 H13 C11 -16 5 -9 0 -5 C-5 -9 -11 -16 -13 -26 Z" fill="#f2b84b"/><path class="s3" d="M-16 29 H16 C14 22 6 16 0 14 C-6 16 -14 22 -16 29 Z" fill="#f2b84b"/><path class="s2" d="M0 -3 V14"/><rect class="s" x="-27" y="-39" width="54" height="8" rx="3" fill="#f7da6a"/><rect class="s" x="-27" y="31" width="54" height="8" rx="3" fill="#f7da6a"/></svg>
+          <figcaption>đang chờ, chưa thất bại</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Bạn trả tiền ở quầy xong nhưng màn hình kho chưa cập nhật. Việc thu tiền đã xong, kho chỉ đang chờ nhận tin.</p>
+        <p><span class="lb">Bên dưới</span>Nói với PM: “Thanh toán đã được ghi nhận; trạng thái đơn hàng cập nhật sau khi xử lý thông báo. Trong lúc chờ hiển thị trạng thái và cho tra cứu bằng mã giao dịch.” <b>Read-your-own-writes</b>: người vừa ghi phải thấy thay đổi của mình, dùng dữ liệu trả về từ lệnh ghi, đọc từ primary, hoặc chờ read model bắt kịp version.</p>
+        <p><span class="lb">Ví dụ</span>UX: mã giao dịch + <code>PROCESSING</code> → <code>SUCCESS</code> / <code>FAILED</code>, báo bằng push/WebSocket hoặc polling.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Không hứa “luôn vài giây”: broker hoặc consumer lỗi thì trễ kéo dài, kẹt DLQ thì không tự hội tụ.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Read model chưa thấy đơn → kết luận tạo đơn thất bại? (Không.)</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span><code>eco-invoice/src/libs/utils/kafka.util.ts</code> (<code>sendInvoiceReleaseResult()</code>) publish kết quả hóa đơn qua topic <code>INVOICE_RELEASE_RESULT_V1</code>: bằng chứng có dùng Kafka, chưa đủ khẳng định có outbox/dedupe. Tự hỏi: consumer nhận trùng có gây hiệu ứng hai lần không? Đối chiếu On-tap/06-message-queue.md.</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Ghi DB rồi publish là <b>dual-write</b>: crash giữa chừng thì lệch. <b>Outbox</b> ghi event cùng tx với nghiệp vụ, relay gửi sau; chặn mất nhưng vẫn có thể trùng. Thực tế là <b>at-least-once + idempotent consumer</b> (inbox unique cùng tx với nghiệp vụ). Thứ tự theo aggregate qua partition key + version; message lỗi mãi → DLQ + replay có kiểm soát; UX nói rõ “đang xử lý”.</p>
+    </div>
+  </section>
+
+  <p class="foot">Nguồn: On-tap/01c cặp 6 (dòng FV chép từ file đó). Ví dụ Payment → Shipping là giả định để học, không mô tả hệ FV.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sơ đồ vẽ tay — Danh mục</title>
+<style>
+  :root { --canvas:#faf9f5; --card:#efe9de; --ink:#252523; --muted:#6c6a64; --line:#e6dfd8; --accent:#a9583e; --accent-soft:#f3e3db; --teal:#2f6f6a; --teal-soft:#dcebe8; }
+  * { box-sizing:border-box; }
+  body { margin:0; color:var(--ink); background:var(--canvas); font:14px/1.55 "Segoe UI",sans-serif; }
+  .workspace { --sidebar-width:380px; --sidebar-size:min(var(--sidebar-width),50vw); position:relative; display:grid; grid-template-columns:var(--sidebar-size) minmax(0,1fr); height:100vh; height:100dvh; transition:grid-template-columns .2s ease; }
+  aside { display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden; border-right:1px solid var(--line); }
+  aside > * { width:var(--sidebar-size); flex-shrink:0; }
+  aside > nav { flex-shrink:1; }
+  #resize { position:absolute; z-index:2; left:var(--sidebar-size); top:0; bottom:0; width:10px; transform:translateX(-50%); cursor:col-resize; touch-action:none; transition:left .2s ease; }
+  #resize::after { content:""; position:absolute; inset:0 4px; background:transparent; }
+  #resize:hover::after, #resize:focus-visible::after, .resizing #resize::after { background:var(--accent); }
+  .workspace.resizing, .resizing #resize { transition:none; }
+  .resizing { cursor:col-resize; user-select:none; }
+  .resizing iframe { pointer-events:none; }
+  .intro { padding:24px 24px 16px; }
+  .eyebrow { margin:0 0 8px; font-size:11px; letter-spacing:2px; color:var(--muted); text-transform:uppercase; }
+  h1 { margin:0 0 8px; font:400 32px/1.15 Georgia,serif; letter-spacing:-.5px; }
+  .intro p:last-child { margin:0; color:var(--muted); }
+  .search { padding:0 16px 16px; }
+  input { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:8px; background:var(--canvas); font:inherit; color:var(--ink); }
+  nav { overflow:auto; padding:0 12px 24px; }
+  h2 { margin:12px 0 4px; font-size:15px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--ink); }
+  h2 button { display:flex; align-items:center; gap:10px; width:100%; padding:10px 12px; border:0; border-radius:8px; background:var(--card); font:inherit; letter-spacing:inherit; text-transform:inherit; color:inherit; text-align:left; cursor:pointer; }
+  h2 button:hover { background:var(--accent-soft); }
+  h2 button::before { content:"▾"; display:inline-block; width:12px; color:var(--accent); transition:transform .15s; }
+  section.collapsed h2 button::before { transform:rotate(-90deg); }
+  nav:not(.searching) section.collapsed > :not(h2) { display:none; }
+  /* Nhóm con: <details> gốc của trình duyệt, mặc định gập. */
+  summary { margin:10px 0 2px 14px; padding:8px 12px; border-radius:8px; font-size:14.5px; font-weight:600; color:var(--ink); cursor:pointer; }
+  summary:hover { background:var(--card); }
+  summary::marker { color:var(--accent); }
+  nav a { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px; margin:3px 0 3px 14px; font-size:14px; border-radius:8px; color:var(--ink); text-decoration:none; border-left:3px solid transparent; }
+  nav a:hover { background:var(--card); }
+  /* Mục con thụt vào, có vạch dẫn: mục trong nhóm con, hoặc biến thể N.1+ trong nhóm phẳng. */
+  details a, nav a.sub { margin-left:40px; font-size:13.5px; border-left:2px solid var(--line); }
+  nav a.sub { margin-left:34px; color:var(--muted); }
+  nav a.sub[aria-current="page"] { color:var(--ink); }
+  nav a[aria-current="page"] { background:var(--card); border-left-color:var(--accent); box-shadow:inset 0 0 0 1px var(--line); font-weight:500; }
+  .meta { display:flex; flex-shrink:0; align-items:center; gap:4px; }
+  .repo { display:none; } /* repo chỉ hiện qua tooltip, vẫn tìm kiếm được */
+  .tag { flex-shrink:0; padding:1px 8px; border-radius:999px; font-size:11px; font-weight:500; line-height:18px; }
+  .mh { background:var(--accent-soft); color:var(--accent); }
+  .mm { background:var(--teal-soft); color:var(--teal); }
+  .td { background:var(--card); color:var(--muted); }
+  .cn { background:#f6ecc4; color:#7a5d12; }
+  .fl { background:#fbe2d4; color:#9a4a1f; }
+  .fc { background:#e6ddf6; color:#5b3f9e; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  [hidden] { display:none!important; }
+  #empty { padding:12px; color:var(--muted); }
+  .reader { display:flex; flex-direction:column; min-width:0; min-height:0; }
+  .toolbar { min-height:80px; padding:16px 24px; display:flex; gap:16px; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
+  .workspace.closed { grid-template-columns:0px minmax(0,1fr); }
+  .workspace.closed aside { border:0; }
+  .workspace.closed #resize { visibility:hidden; }
+  .title { display:flex; align-items:center; gap:12px; min-width:0; }
+  #toggle { flex-shrink:0; width:40px; height:40px; border:1px solid var(--line); border-radius:8px; background:var(--canvas); color:var(--ink); font-size:18px; line-height:1; cursor:pointer; }
+  #toggle:hover { background:var(--card); }
+  #current { margin:0; font-size:16px; font-weight:500; }
+  .toolbar small { color:var(--muted); }
+  #open { flex-shrink:0; padding:10px 14px; border:1px solid var(--line); border-radius:8px; color:var(--accent); text-decoration:none; }
+  .actions { display:flex; flex-shrink:0; align-items:center; gap:12px; }
+  .zoom { display:flex; align-items:center; gap:4px; }
+  .zoom button { display:grid; place-items:center; width:40px; height:40px; padding:0; border:1px solid var(--line); border-radius:8px; background:var(--canvas); color:var(--ink); cursor:pointer; }
+  .zoom button:hover:not(:disabled) { background:var(--card); }
+  .zoom button:disabled { color:var(--muted); opacity:.5; cursor:default; }
+  .zoom svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+  .zoom .level { width:auto; min-width:52px; padding:0 6px; font:inherit; font-size:13px; color:var(--muted); }
+  .viewer { position:relative; flex:1; min-height:0; overflow:hidden; background:var(--canvas); }
+  iframe { --zoom:1; position:absolute; top:0; left:0; width:calc(100% / var(--zoom)); height:calc(100% / var(--zoom)); border:0; background:var(--canvas); transform:scale(var(--zoom)); transform-origin:0 0; }
+  @media(max-width:760px) {
+    .workspace { grid-template-columns:1fr; grid-template-rows: max(200px,35dvh) minmax(0,1fr); transition:grid-template-rows .2s ease; }
+    .workspace.closed { grid-template-columns:1fr; grid-template-rows:0px minmax(0,1fr); }
+    aside > * { width:100%; }
+    #resize { display:none; }
+    aside { border-right:0; border-bottom:1px solid var(--line); }
+    .intro { padding:12px 16px 8px; }
+    h1 { font-size:24px; }
+    .intro .eyebrow,.intro p:last-child { display:none; }
+    .search { padding-bottom:8px; }
+    .toolbar { padding:12px; min-height:72px; }
+    #current { font-size:14px; }
+  }
+  @media(prefers-reduced-motion:reduce) {
+    .workspace, #resize { transition:none; }
+  }
+</style>
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#faf9f5"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icon-192.png"><link rel="stylesheet" href="pwa.css"></head>
+<body>
+<div class="workspace">
+  <aside id="sidebar" aria-label="Danh mục tài liệu">
+    <header class="intro">
+      <p class="eyebrow">_diagrams · Tự sinh bởi build-index.py</p>
+      <h1>Sơ đồ vẽ tay</h1>
+      <p id="count">Tài liệu & hình minh họa</p>
+    </header>
+    <div class="search"><input id="search" type="search" aria-label="Tìm tài liệu" placeholder="Tìm chủ đề, repo, mindmap…" autocomplete="off"></div>
+    <nav aria-label="Chọn tài liệu">
+      <section>
+        <h2>01 / Finviet</h2>
+        <a href="finviet/finviet-mo-hinh-kinh-doanh-v2-hand-drawn.html" target="document-view" title=""><span class="name">1.0 - Mô hình kinh doanh · bản 2</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+      </section>
+      <section>
+        <h2>02 / Monolithic</h2>
+        <a href="monolithic/monolithic-hand-drawn.html" target="document-view" title=""><span class="name">1.0 - Kiến trúc và repository</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+      </section>
+      <section>
+        <h2>03 / Microservices</h2>
+        <details>
+          <summary>1. Bản chất</summary>
+        <a href="microservices/microservices-cap-1-ban-chat-cornell-hand-drawn.html" target="document-view" title=""><span class="name">1.0 - Bản chất microservices</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="microservices/microservices-cap-1-ban-chat-hand-drawn.html" target="document-view" title=""><span class="name">1.1 - Bản chất microservices</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="microservices/microservices-cap-1-ban-chat-mindmap-hand-drawn.html" target="document-view" title=""><span class="name">1.2 - Bản chất microservices</span><span class="meta"><span class="tag mm">Mindmap</span></span></a>
+        </details>
+        <details>
+          <summary>2. Tách service và dữ liệu</summary>
+        <a href="microservices/microservices-cap-2-tach-service-du-lieu-cornell-hand-drawn.html" target="document-view" title=""><span class="name">2.0 - Tách service và dữ liệu</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="microservices/microservices-cap-2-tach-service-du-lieu-hand-drawn.html" target="document-view" title=""><span class="name">2.1 - Tách service và dữ liệu</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="microservices/microservices-cap-2-tach-service-du-lieu-mindmap-hand-drawn.html" target="document-view" title=""><span class="name">2.2 - Tách service và dữ liệu</span><span class="meta"><span class="tag mm">Mindmap</span></span></a>
+        </details>
+        <details>
+          <summary>3. Giao tiếp giữa service</summary>
+        <a href="microservices/microservices-cap-3-giao-tiep-cornell-hand-drawn.html" target="document-view" title=""><span class="name">3.0 - Giao tiếp giữa service</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="microservices/microservices-cap-3-giao-tiep-hand-drawn.html" target="document-view" title=""><span class="name">3.1 - Giao tiếp giữa service</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="microservices/microservices-cap-3-giao-tiep-mindmap-hand-drawn.html" target="document-view" title=""><span class="name">3.2 - Giao tiếp giữa service</span><span class="meta"><span class="tag mm">Mindmap</span></span></a>
+        </details>
+        <details>
+          <summary>4. Chịu lỗi</summary>
+        <a href="microservices/microservices-cap-4-chiu-loi-cornell-hand-drawn.html" target="document-view" title=""><span class="name">4.0 - Chịu lỗi</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="microservices/microservices-cap-4-chiu-loi-hand-drawn.html" target="document-view" title=""><span class="name">4.1 - Chịu lỗi</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="microservices/microservices-cap-4-chiu-loi-mindmap-hand-drawn.html" target="document-view" title=""><span class="name">4.2 - Chịu lỗi</span><span class="meta"><span class="tag mm">Mindmap</span></span></a>
+        </details>
+        <details>
+          <summary>5. Saga và transaction phân tán</summary>
+        <a href="microservices/microservices-cap-5-saga-cornell-hand-drawn.html" target="document-view" title=""><span class="name">5.0 - Saga và transaction phân tán</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="microservices/microservices-cap-5-saga-hand-drawn.html" target="document-view" title=""><span class="name">5.1 - Saga và transaction phân tán</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="microservices/microservices-cap-5-saga-mindmap-hand-drawn.html" target="document-view" title=""><span class="name">5.2 - Saga và transaction phân tán</span><span class="meta"><span class="tag mm">Mindmap</span></span></a>
+        <a href="microservices/microservices-cap-5-saga-phan-cap-hand-drawn.html" target="document-view" title=""><span class="name">5.3 - Phân cấp khái niệm Saga</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        </details>
+        <details>
+          <summary>6. Messaging tin cậy</summary>
+        <a href="microservices/microservices-cap-6-messaging-tin-cay-cornell-hand-drawn.html" target="document-view" title=""><span class="name">6.0 - Messaging tin cậy</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="microservices/microservices-cap-6-messaging-tin-cay-hand-drawn.html" target="document-view" title=""><span class="name">6.1 - Messaging tin cậy</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="microservices/microservices-cap-6-messaging-tin-cay-mindmap-hand-drawn.html" target="document-view" title=""><span class="name">6.2 - Messaging tin cậy</span><span class="meta"><span class="tag mm">Mindmap</span></span></a>
+        <a href="microservices/microservices-cap-6-vi-du-kafka-offset-retention-hand-drawn.html" target="document-view" title=""><span class="name">6.3 - Kafka: offset và retention</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="microservices/microservices-cap-6-vi-du-queue-vs-topic-hand-drawn.html" target="document-view" title=""><span class="name">6.4 - Queue, topic và consumer group</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        </details>
+        <details>
+          <summary>7. Vận hành</summary>
+        <a href="microservices/microservices-cap-7-van-hanh-cornell-hand-drawn.html" target="document-view" title=""><span class="name">7.0 - Vận hành microservices</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="microservices/microservices-cap-7-van-hanh-hand-drawn.html" target="document-view" title=""><span class="name">7.1 - Vận hành microservices</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="microservices/microservices-cap-7-van-hanh-mindmap-hand-drawn.html" target="document-view" title=""><span class="name">7.2 - Vận hành microservices</span><span class="meta"><span class="tag mm">Mindmap</span></span></a>
+        </details>
+      </section>
+      <section>
+        <h2>04 / Idempotency</h2>
+        <a href="idempotency/idempotency-cornell-hand-drawn.html" target="document-view" title=""><span class="name">1.0 - Idempotency</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a class="sub" href="idempotency/idempotency-hand-drawn.html" target="document-view" title=""><span class="name">1.1 - Idempotency</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+      </section>
+      <section>
+        <h2>05 / Auth</h2>
+        <details>
+          <summary>1. Tổng quan</summary>
+        <a href="auth/auth-0-buc-tranh-tong-the-hand-drawn.html" target="document-view" title=""><span class="name">1.0 - Bức tranh tổng quan</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="auth/auth-1-authn-authz-cornell-hand-drawn.html" target="document-view" title=""><span class="name">1.1 - Auth là gì: AuthN và AuthZ</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        </details>
+        <details>
+          <summary>2. Công cụ mật mã</summary>
+        <a href="auth/auth-2-0-cong-cu-mat-ma-hand-drawn.html" target="document-view" title=""><span class="name">2.0 - Công cụ mật mã</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="auth/auth-2-1-hash-cornell-hand-drawn.html" target="document-view" title=""><span class="name">2.1 - Hash</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="auth/auth-2-2-ma-hoa-doi-xung-cornell-hand-drawn.html" target="document-view" title=""><span class="name">2.2 - Mã hoá đối xứng</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="auth/auth-2-3-ma-hoa-bat-doi-xung-cornell-hand-drawn.html" target="document-view" title=""><span class="name">2.3 - Mã hoá bất đối xứng</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        </details>
+        <details>
+          <summary>3. HMAC và chữ ký số</summary>
+        <a href="auth/auth-3-0-hmac-chu-ky-so-hand-drawn.html" target="document-view" title=""><span class="name">3.0 - HMAC và chữ ký số</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="auth/auth-3-1-hmac-cornell-hand-drawn.html" target="document-view" title=""><span class="name">3.1 - HMAC</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="auth/auth-3-2-chu-ky-so-cornell-hand-drawn.html" target="document-view" title=""><span class="name">3.2 - Chữ ký số</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        </details>
+        <details>
+          <summary>4. Session và JWT</summary>
+        <a href="auth/auth-4-0-session-jwt-hand-drawn.html" target="document-view" title=""><span class="name">4.0 - Session và JWT</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="auth/auth-4-1-session-cornell-hand-drawn.html" target="document-view" title=""><span class="name">4.1 - Session</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="auth/auth-4-2-jwt-cornell-hand-drawn.html" target="document-view" title=""><span class="name">4.2 - JWT</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="auth/auth-4-3-dung-jwt-cho-dung-cornell-hand-drawn.html" target="document-view" title=""><span class="name">4.3 - Dùng JWT cho đúng</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        </details>
+        <details>
+          <summary>5. OAuth2 và OIDC</summary>
+        <a href="auth/auth-5-0-oauth2-oidc-hand-drawn.html" target="document-view" title=""><span class="name">5.0 - OAuth2 và OIDC</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="auth/auth-5-1-oauth2-cornell-hand-drawn.html" target="document-view" title=""><span class="name">5.1 - OAuth2</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="auth/auth-5-2-oidc-cornell-hand-drawn.html" target="document-view" title=""><span class="name">5.2 - OIDC</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="auth/auth-5-3-client-credentials-cornell-hand-drawn.html" target="document-view" title=""><span class="name">5.3 - Client Credentials</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        </details>
+        <details>
+          <summary>6. Chỗ hay thủng (OWASP)</summary>
+        <a href="auth/auth-6-0-owasp-hand-drawn.html" target="document-view" title=""><span class="name">6.0 - Chỗ hay thủng (OWASP)</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="auth/auth-6-1-broken-access-control-cornell-hand-drawn.html" target="document-view" title=""><span class="name">6.1 - Broken Access Control</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="auth/auth-6-2-cryptographic-failures-cornell-hand-drawn.html" target="document-view" title=""><span class="name">6.2 - Cryptographic Failures</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="auth/auth-6-3-injection-ssrf-cornell-hand-drawn.html" target="document-view" title=""><span class="name">6.3 - Injection và SSRF</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        </details>
+      </section>
+      <section>
+        <h2>06 / Tư duy học</h2>
+        <a href="tu-duy/tu-duy-phan-bien-cornell-hand-drawn.html" target="document-view" title=""><span class="name">1.0 - Tư duy phản biện</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a class="sub" href="tu-duy/tu-duy-phan-bien-hand-drawn.html" target="document-view" title=""><span class="name">1.1 - Tư duy phản biện</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+      </section>
+      <section>
+        <h2>07 / API · Protocol</h2>
+        <details>
+          <summary>1. Tổng quan: API và ba tầng</summary>
+        <a href="api/api-0-api-la-gi-hand-drawn.html" target="document-view" title=""><span class="name">1.0 - API là gì</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="api/api-1-ba-tang-hand-drawn.html" target="document-view" title=""><span class="name">1.1 - Ba tầng: API style, Protocol, Transport</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        </details>
+        <details>
+          <summary>2. Transport</summary>
+        <a href="api/api-2-0-transport-hand-drawn.html" target="document-view" title=""><span class="name">2.0 - Transport: chở byte</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="api/api-2-1-transport-cornell-hand-drawn.html" target="document-view" title=""><span class="name">2.1 - TCP, UDP, QUIC</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="api/api-2-2-transport-thay-the-hand-drawn.html" target="document-view" title=""><span class="name">2.2 - Transport thay nhau được không</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        </details>
+        <details>
+          <summary>3. Protocol</summary>
+        <a href="api/api-3-0-protocol-hand-drawn.html" target="document-view" title=""><span class="name">3.0 - Protocol: cắt byte thành message</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="api/api-3-1-protocol-cornell-hand-drawn.html" target="document-view" title=""><span class="name">3.1 - HTTP, WebSocket, broker</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="api/api-3-2-tls-https-hand-drawn.html" target="document-view" title=""><span class="name">3.2 - TLS và HTTPS</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        </details>
+        <details>
+          <summary>4. API style</summary>
+        <a href="api/api-4-0-api-style-hand-drawn.html" target="document-view" title=""><span class="name">4.0 - API style: chia lời gọi</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="api/api-4-1-api-style-cornell-hand-drawn.html" target="document-view" title=""><span class="name">4.1 - REST, gRPC, GraphQL, webhook</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="api/api-4-2-rpc-grpc-protobuf-hand-drawn.html" target="document-view" title=""><span class="name">4.2 - RPC, gRPC và Protobuf</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        </details>
+      </section>
+      <section>
+        <h2>08 / Client · Server</h2>
+        <a href="client-server/client-server-side-hand-drawn.html" target="document-view" title=""><span class="name">1.0 - Client side vs Server side</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+      </section>
+      <section>
+        <h2>09 / Database</h2>
+        <details>
+          <summary>1. Khái niệm</summary>
+        <a href="database/postgres-thiet-ke-bang-cornell-hand-drawn.html" target="document-view" title=""><span class="name">1.0 - Thiết kế bảng Postgres</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="database/postgres-to-chuc-du-lieu-cornell-hand-drawn.html" target="document-view" title=""><span class="name">1.1 - Postgres tổ chức dữ liệu</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="database/sql-vs-nosql-hand-drawn.html" target="document-view" title=""><span class="name">1.2 - SQL vs NoSQL</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="database/toc-do-redis-mongo-postgres-hand-drawn.html" target="document-view" title=""><span class="name">1.3 - Redis vs Mongo vs Postgres</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        <a href="database/xu-ly-ben-duoi-db-cornell-hand-drawn.html" target="document-view" title=""><span class="name">1.4 - DB bên dưới chạy thế nào</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="database/xu-ly-ben-duoi-db-ket-noi-pool-hand-drawn.html" target="document-view" title=""><span class="name">1.5 - Process, thread và pool</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        </details>
+        <details>
+          <summary>2. Cú pháp SQL</summary>
+        <a href="database/sql-2-0-doc-du-lieu-cornell-hand-drawn.html" target="document-view" title=""><span class="name">2.0 - Cú pháp SQL: đọc dữ liệu</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="database/sql-2-1-ghi-transaction-cornell-hand-drawn.html" target="document-view" title=""><span class="name">2.1 - Cú pháp SQL: ghi và transaction</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="database/sql-2-2-ddl-migration-cornell-hand-drawn.html" target="document-view" title=""><span class="name">2.2 - Cú pháp SQL: DDL và migration</span><span class="meta"><span class="tag cn">Cornell</span></span></a>
+        <a href="database/sql-2-3-tra-cuu-nhanh.html" target="document-view" title=""><span class="name">2.3 - Tra cứu nhanh SQL</span><span class="meta"><span class="tag td">Tài liệu</span></span></a>
+        <a href="database/sql-2-4-thu-tu-chay-hand-drawn.html" target="document-view" title=""><span class="name">2.4 - Thứ tự chạy SQL</span><span class="meta"><span class="tag mh">Minh họa</span></span></a>
+        </details>
+      </section>
+    </nav>
+  </aside>
+  <div id="resize" role="separator" tabindex="0" aria-label="Chỉnh chiều rộng danh mục" aria-orientation="vertical" aria-controls="sidebar" aria-valuemin="180" aria-valuemax="640" aria-valuenow="380" title="Kéo để đổi chiều rộng; kéo sát trái để đóng"></div>
+  <main class="reader">
+    <header class="toolbar">
+      <div class="title">
+        <button id="toggle" type="button" aria-label="Ẩn danh mục" title="Ẩn/hiện danh mục" aria-controls="sidebar" aria-expanded="true">☰</button>
+        <div><p id="current"></p><small id="kind"></small></div>
+      </div>
+      <div class="actions">
+        <div class="zoom" role="group" aria-label="Phóng to / thu nhỏ nội dung">
+          <button id="zoom-out" type="button" aria-label="Thu nhỏ" title="Thu nhỏ"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/></svg></button>
+          <button id="zoom-level" class="level" type="button" aria-label="Về 100%" title="Về 100%">100%</button>
+          <button id="zoom-in" type="button" aria-label="Phóng to" title="Phóng to"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6M11 8v6"/></svg></button>
+        </div>
+        <a id="open" href="#" target="_blank" rel="noopener">Mở riêng ↗</a>
+      </div>
+    </header>
+    <div class="viewer"><iframe name="document-view" title="Nội dung tài liệu"></iframe></div>
+  </main>
+</div>
+<script>
+  const links = [...document.querySelectorAll('nav a')];
+  const frame = document.querySelector('iframe');
+  // Nhóm gập/mở: tự bọc tiêu đề h2 thành nút, nhóm mới không cần thêm markup. Mặc định gập.
+  document.querySelectorAll('nav h2').forEach(h2 => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.setAttribute('aria-expanded', 'false');
+    button.textContent = h2.textContent;
+    h2.replaceChildren(button);
+    h2.closest('section').classList.add('collapsed');
+    button.addEventListener('click', () => {
+      const collapsed = h2.closest('section').classList.toggle('collapsed');
+      button.setAttribute('aria-expanded', String(!collapsed));
+    });
+  });
+  // Nút ☰: ẩn/hiện sidebar để vùng xem rộng hơn.
+  const toggle = document.getElementById('toggle');
+  const workspace = document.querySelector('.workspace');
+  const sidebar = document.getElementById('sidebar');
+  const resize = document.getElementById('resize');
+  let sidebarWidth = 380;
+  let drag = null;
+  const maxWidth = () => Math.min(640, window.innerWidth / 2);
+  function setWidth(width) {
+    sidebarWidth = Math.max(180, Math.min(width, maxWidth()));
+    workspace.style.setProperty('--sidebar-width', sidebarWidth + 'px');
+    resize.setAttribute('aria-valuenow', String(Math.round(sidebarWidth)));
+    resize.setAttribute('aria-valuemax', String(Math.round(maxWidth())));
+  }
+  function setClosed(closed) {
+    workspace.classList.toggle('closed', closed);
+    sidebar.inert = closed;
+    toggle.setAttribute('aria-expanded', String(!closed));
+    toggle.setAttribute('aria-label', closed ? 'Hiện danh mục' : 'Ẩn danh mục');
+    if (closed) toggle.focus({preventScroll:true});
+  }
+  function endDrag() {
+    if (!drag) return;
+    const pointerId = drag.pointerId;
+    drag = null;
+    workspace.classList.remove('resizing');
+    if (resize.hasPointerCapture(pointerId)) resize.releasePointerCapture(pointerId);
+  }
+  toggle.addEventListener('click', () => setClosed(!workspace.classList.contains('closed')));
+  resize.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || drag) return;
+    event.preventDefault();
+    drag = {pointerId:event.pointerId, startX:event.clientX, startWidth:sidebar.getBoundingClientRect().width};
+    resize.setPointerCapture(event.pointerId);
+    workspace.classList.add('resizing');
+  });
+  resize.addEventListener('pointermove', event => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const width = drag.startWidth + event.clientX - drag.startX;
+    if (width < 180) {
+      endDrag();
+      setClosed(true);
+      return;
+    }
+    setWidth(width);
+  });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(type => resize.addEventListener(type, endDrag));
+  window.addEventListener('blur', endDrag);
+  resize.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const width = event.key === 'Home' ? 180 : event.key === 'End' ? maxWidth() : sidebarWidth + (event.key === 'ArrowLeft' ? -20 : 20);
+    if (width < 180) setClosed(true);
+    else setWidth(width);
+  });
+  window.addEventListener('resize', () => {
+    endDrag();
+    if (window.innerWidth > 760) setWidth(sidebarWidth);
+  });
+  setWidth(sidebarWidth);
+  // Nút phóng to/thu nhỏ: scale chính iframe (iframe file:// khác origin nên không chỉnh được bên trong).
+  const zoomSteps = [50, 67, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300];
+  let zoomIndex = zoomSteps.indexOf(100);
+  const zoomOut = document.getElementById('zoom-out');
+  const zoomIn = document.getElementById('zoom-in');
+  const zoomLevel = document.getElementById('zoom-level');
+  function setZoom(index) {
+    zoomIndex = Math.max(0, Math.min(index, zoomSteps.length - 1));
+    frame.style.setProperty('--zoom', String(zoomSteps[zoomIndex] / 100));
+    zoomLevel.textContent = zoomSteps[zoomIndex] + '%';
+    zoomOut.disabled = zoomIndex === 0;
+    zoomIn.disabled = zoomIndex === zoomSteps.length - 1;
+  }
+  zoomOut.addEventListener('click', () => setZoom(zoomIndex - 1));
+  zoomIn.addEventListener('click', () => setZoom(zoomIndex + 1));
+  zoomLevel.addEventListener('click', () => setZoom(zoomSteps.indexOf(100)));
+  setZoom(zoomIndex);
+  const groupOf = link => [link.closest('section').querySelector('h2'), link.closest('details')?.querySelector('summary')]
+    .filter(Boolean).map(el => el.textContent.replace(/^\d+\s*[\/.]\s*/, '')).join(' · ');
+  function select(link) {
+    links.forEach(item => item.removeAttribute('aria-current'));
+    link.setAttribute('aria-current', 'page');
+    const title = link.querySelector('.name').textContent;
+    const kind = groupOf(link) + ' · ' + link.querySelector('.tag').textContent;
+    document.getElementById('current').textContent = title;
+    document.getElementById('kind').textContent = kind;
+    document.getElementById('open').href = link.href;
+    frame.title = title + ' — ' + kind;
+    try { history.replaceState(null, '', '#' + link.getAttribute('href')); } catch {}
+  }
+  links.forEach(link => link.addEventListener('click', event => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    select(link);
+  }));
+  // Khôi phục mục đang xem sau reload từ URL hash, đồng thời mở nhóm chứa nó.
+  const initial = links.find(link => link.getAttribute('href') === decodeURIComponent(location.hash.slice(1))) || links[0];
+  const initialSection = initial.closest('section');
+  initialSection.classList.remove('collapsed');
+  initialSection.querySelector('h2 button').setAttribute('aria-expanded', 'true');
+  if (initial.closest('details')) initial.closest('details').open = true;
+  select(initial);
+  frame.src = initial.href;
+  document.getElementById('count').textContent = links.length + ' tài liệu · Chọn để đọc ngay';
+  const normalize = value => value.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+  document.getElementById('search').addEventListener('input', event => {
+    const query = normalize(event.target.value.trim());
+    document.querySelector('nav').classList.toggle('searching', query !== '');
+    const words = query.split(/\s+/);  // khớp đủ mọi từ, không cần đúng thứ tự/dấu gạch
+    links.forEach(link => {
+      const text = normalize(link.textContent + ' ' + groupOf(link));
+      link.hidden = !words.every(word => text.includes(word));
+    });
+    document.querySelectorAll('nav details').forEach(details => {
+      details.hidden = ![...details.querySelectorAll('a')].some(link => !link.hidden);
+      if (query) details.open = true;
+    });
+    document.querySelectorAll('nav section').forEach(section => {
+      section.hidden = ![...section.querySelectorAll('a')].some(link => !link.hidden);
+    });
+    document.getElementById('empty').hidden = links.some(link => !link.hidden);
+  });
+</script>
+<script src="pwa.js"></script></body>
+</html>

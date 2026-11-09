@@ -1,0 +1,1191 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vận hành microservices</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 2200px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      } /* max-width = W của viewBox */
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .twig {
+        stroke-width: 5;
+        fill: none;
+        stroke-linecap: round;
+      } /* nhánh cấp 2: đặt stroke="màu nhánh cha" */
+    </style>
+  </head>
+  <body>
+    <!-- Mindmap ngang: viewBox mặc định 1600x920 (tăng H tới ~1200 nếu cần). Đổi W thì đổi luôn max-width ở CSS.
+     Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Thứ tự vẽ: LỚP 1 nhánh → LỚP 2 node (node đè lên gốc/ngọn nhánh nên nhánh trông như mọc ra từ node). -->
+    <svg
+      viewBox="0 0 2200 928"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Mindmap cặp trang 7: observability, deploy, test, security"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <!-- LỚP 1: NHÁNH + CÀNH CON -->
+        <path
+          class="s"
+          fill="#e9937a"
+          d="M1241.1 426.8 L1253.8 425.5 L1266.8 422.4 L1278.8 417.6 L1289.7 411.5 L1299.7 404.1 L1308.9 395.7 L1317.2 386.5 L1324.9 376.6 L1332.0 366.2 L1338.7 355.4 L1345.0 344.2 L1351.1 332.7 L1356.9 321.2 L1362.7 309.6 L1368.4 298.1 L1374.2 286.7 L1380.0 275.7 L1386.0 265.1 L1392.1 255.0 L1398.6 245.6 L1405.3 236.9 L1412.3 229.0 L1419.8 222.1 L1427.7 216.1 L1436.2 211.3 L1445.3 207.6 L1455.2 205.1 L1466.4 204.0 L1465.6 192.0 L1453.4 192.5 L1441.6 194.6 L1430.4 198.3 L1420.0 203.4 L1410.2 209.8 L1401.1 217.2 L1392.6 225.6 L1384.5 234.8 L1377.0 244.6 L1369.8 255.0 L1362.9 265.7 L1356.2 276.8 L1349.7 288.0 L1343.3 299.2 L1336.9 310.4 L1330.6 321.4 L1324.1 332.0 L1317.6 342.2 L1310.9 351.7 L1304.1 360.6 L1297.0 368.6 L1289.7 375.6 L1282.3 381.7 L1274.6 386.6 L1266.7 390.3 L1258.4 393.0 L1249.6 394.5 L1238.9 394.8 Z"
+        />
+        <path
+          class="twig"
+          stroke="#e9937a"
+          d="M1680 198 C1736 198 1736 116 1792 116"
+        />
+        <path
+          class="twig"
+          stroke="#e9937a"
+          d="M1680 198 C1736 198 1736 198 1792 198"
+        />
+        <path
+          class="twig"
+          stroke="#e9937a"
+          d="M1680 198 C1736 198 1736 280 1792 280"
+        />
+        <path
+          class="s"
+          fill="#6fbf73"
+          d="M1240.0 480.0 L1251.7 479.6 L1262.6 479.3 L1272.7 478.9 L1282.2 478.6 L1291.0 478.2 L1299.3 477.9 L1307.1 477.5 L1314.5 477.1 L1321.4 476.8 L1328.1 476.4 L1334.6 476.1 L1340.8 475.7 L1346.9 475.4 L1353.0 475.0 L1359.1 474.6 L1365.2 474.3 L1371.4 473.9 L1377.9 473.6 L1384.6 473.2 L1391.5 472.9 L1398.9 472.5 L1406.7 472.1 L1415.0 471.8 L1423.8 471.4 L1433.3 471.1 L1443.4 470.7 L1454.3 470.4 L1466.0 470.0 L1466.0 458.0 L1454.3 457.6 L1443.4 457.3 L1433.3 456.9 L1423.8 456.6 L1415.0 456.2 L1406.7 455.9 L1398.9 455.5 L1391.5 455.1 L1384.6 454.8 L1377.9 454.4 L1371.4 454.1 L1365.2 453.7 L1359.1 453.4 L1353.0 453.0 L1346.9 452.6 L1340.8 452.3 L1334.6 451.9 L1328.1 451.6 L1321.4 451.2 L1314.5 450.9 L1307.1 450.5 L1299.3 450.1 L1291.0 449.8 L1282.2 449.4 L1272.7 449.1 L1262.6 448.7 L1251.7 448.4 L1240.0 448.0 Z"
+        />
+        <path
+          class="twig"
+          stroke="#6fbf73"
+          d="M1680 464 C1736 464 1736 382 1792 382"
+        />
+        <path
+          class="twig"
+          stroke="#6fbf73"
+          d="M1680 464 C1736 464 1736 464 1792 464"
+        />
+        <path
+          class="twig"
+          stroke="#6fbf73"
+          d="M1680 464 C1736 464 1736 546 1792 546"
+        />
+        <path
+          class="s"
+          fill="#a58fd6"
+          d="M1238.9 533.2 L1249.6 533.5 L1258.4 535.0 L1266.7 537.7 L1274.6 541.4 L1282.3 546.3 L1289.7 552.4 L1297.0 559.4 L1304.1 567.4 L1310.9 576.3 L1317.6 585.8 L1324.1 596.0 L1330.6 606.6 L1336.9 617.6 L1343.3 628.8 L1349.7 640.0 L1356.2 651.2 L1362.9 662.3 L1369.8 673.0 L1377.0 683.4 L1384.5 693.2 L1392.6 702.4 L1401.1 710.8 L1410.2 718.2 L1420.0 724.6 L1430.4 729.7 L1441.6 733.4 L1453.4 735.5 L1465.6 736.0 L1466.4 724.0 L1455.2 722.9 L1445.3 720.4 L1436.2 716.7 L1427.7 711.9 L1419.8 705.9 L1412.3 699.0 L1405.3 691.1 L1398.6 682.4 L1392.1 673.0 L1386.0 662.9 L1380.0 652.3 L1374.2 641.3 L1368.4 629.9 L1362.7 618.4 L1356.9 606.8 L1351.1 595.3 L1345.0 583.8 L1338.7 572.6 L1332.0 561.8 L1324.9 551.4 L1317.2 541.5 L1308.9 532.3 L1299.7 523.9 L1289.7 516.5 L1278.8 510.4 L1266.8 505.6 L1253.8 502.5 L1241.1 501.2 Z"
+        />
+        <path
+          class="twig"
+          stroke="#a58fd6"
+          d="M1680 730 C1736 730 1736 648 1792 648"
+        />
+        <path
+          class="twig"
+          stroke="#a58fd6"
+          d="M1680 730 C1736 730 1736 730 1792 730"
+        />
+        <path
+          class="twig"
+          stroke="#a58fd6"
+          d="M1680 730 C1736 730 1736 812 1792 812"
+        />
+        <path
+          class="s"
+          fill="#5fc4c0"
+          d="M961.1 394.8 L950.4 394.5 L941.6 393.0 L933.3 390.3 L925.4 386.6 L917.7 381.7 L910.3 375.6 L903.0 368.6 L895.9 360.6 L889.1 351.7 L882.4 342.2 L875.9 332.0 L869.4 321.4 L863.1 310.4 L856.7 299.2 L850.3 288.0 L843.8 276.8 L837.1 265.7 L830.2 255.0 L823.0 244.6 L815.5 234.8 L807.4 225.6 L798.9 217.2 L789.8 209.8 L780.0 203.4 L769.6 198.3 L758.4 194.6 L746.6 192.5 L734.4 192.0 L733.6 204.0 L744.8 205.1 L754.7 207.6 L763.8 211.3 L772.3 216.1 L780.2 222.1 L787.7 229.0 L794.7 236.9 L801.4 245.6 L807.9 255.0 L814.0 265.1 L820.0 275.7 L825.8 286.7 L831.6 298.1 L837.3 309.6 L843.1 321.2 L848.9 332.7 L855.0 344.2 L861.3 355.4 L868.0 366.2 L875.1 376.6 L882.8 386.5 L891.1 395.7 L900.3 404.1 L910.3 411.5 L921.2 417.6 L933.2 422.4 L946.2 425.5 L958.9 426.8 Z"
+        />
+        <path
+          class="twig"
+          stroke="#5fc4c0"
+          d="M520 198 C464 198 464 116 408 116"
+        />
+        <path
+          class="twig"
+          stroke="#5fc4c0"
+          d="M520 198 C464 198 464 198 408 198"
+        />
+        <path
+          class="twig"
+          stroke="#5fc4c0"
+          d="M520 198 C464 198 464 280 408 280"
+        />
+        <path
+          class="s"
+          fill="#f6a3c4"
+          d="M960.0 448.0 L948.3 448.4 L937.4 448.7 L927.3 449.1 L917.8 449.4 L909.0 449.8 L900.7 450.1 L892.9 450.5 L885.5 450.9 L878.6 451.2 L871.9 451.6 L865.4 451.9 L859.2 452.3 L853.1 452.6 L847.0 453.0 L840.9 453.4 L834.8 453.7 L828.6 454.1 L822.1 454.4 L815.4 454.8 L808.5 455.1 L801.1 455.5 L793.3 455.9 L785.0 456.2 L776.2 456.6 L766.7 456.9 L756.6 457.3 L745.7 457.6 L734.0 458.0 L734.0 470.0 L745.7 470.4 L756.6 470.7 L766.7 471.1 L776.2 471.4 L785.0 471.8 L793.3 472.1 L801.1 472.5 L808.5 472.9 L815.4 473.2 L822.1 473.6 L828.6 473.9 L834.8 474.3 L840.9 474.6 L847.0 475.0 L853.1 475.4 L859.2 475.7 L865.4 476.1 L871.9 476.4 L878.6 476.8 L885.5 477.1 L892.9 477.5 L900.7 477.9 L909.0 478.2 L917.8 478.6 L927.3 478.9 L937.4 479.3 L948.3 479.6 L960.0 480.0 Z"
+        />
+        <path
+          class="twig"
+          stroke="#f6a3c4"
+          d="M520 464 C464 464 464 382 408 382"
+        />
+        <path
+          class="twig"
+          stroke="#f6a3c4"
+          d="M520 464 C464 464 464 464 408 464"
+        />
+        <path
+          class="twig"
+          stroke="#f6a3c4"
+          d="M520 464 C464 464 464 546 408 546"
+        />
+        <path
+          class="s"
+          fill="#f2b84b"
+          d="M958.9 501.2 L946.2 502.5 L933.2 505.6 L921.2 510.4 L910.3 516.5 L900.3 523.9 L891.1 532.3 L882.8 541.5 L875.1 551.4 L868.0 561.8 L861.3 572.6 L855.0 583.8 L848.9 595.3 L843.1 606.8 L837.3 618.4 L831.6 629.9 L825.8 641.3 L820.0 652.3 L814.0 662.9 L807.9 673.0 L801.4 682.4 L794.7 691.1 L787.7 699.0 L780.2 705.9 L772.3 711.9 L763.8 716.7 L754.7 720.4 L744.8 722.9 L733.6 724.0 L734.4 736.0 L746.6 735.5 L758.4 733.4 L769.6 729.7 L780.0 724.6 L789.8 718.2 L798.9 710.8 L807.4 702.4 L815.5 693.2 L823.0 683.4 L830.2 673.0 L837.1 662.3 L843.8 651.2 L850.3 640.0 L856.7 628.8 L863.1 617.6 L869.4 606.6 L875.9 596.0 L882.4 585.8 L889.1 576.3 L895.9 567.4 L903.0 559.4 L910.3 552.4 L917.7 546.3 L925.4 541.4 L933.3 537.7 L941.6 535.0 L950.4 533.5 L961.1 533.2 Z"
+        />
+        <path
+          class="twig"
+          stroke="#f2b84b"
+          d="M520 730 C464 730 464 648 408 648"
+        />
+        <path
+          class="twig"
+          stroke="#f2b84b"
+          d="M520 730 C464 730 464 730 408 730"
+        />
+        <path
+          class="twig"
+          stroke="#f2b84b"
+          d="M520 730 C464 730 464 812 408 812"
+        />
+        <!-- LỚP 2: NODE -->
+        <ellipse class="s" cx="1100" cy="464" rx="190" ry="95" fill="#bcd9f5" />
+        <text class="t" x="1100" y="460" font-size="54">VẬN HÀNH</text>
+        <text class="t" x="1100" y="504" font-size="23">
+          debug · deploy · test · bảo mật
+        </text>
+        <rect
+          class="s"
+          x="895"
+          y="312"
+          width="411"
+          height="44"
+          rx="22"
+          fill="#f9c9b6"
+        />
+        <text class="t" x="1100" y="343" font-size="24">
+          tìm lỗi, đổi service, bảo vệ lệnh
+        </text>
+        <g transform="translate(850 738)">
+          <polygon
+            class="s"
+            points="0,0 500,0 500,125 472,152 0,152"
+            fill="#fbe98a"
+          />
+          <polygon class="s3" points="472,152 472,125 500,125" fill="#e8d36a" />
+          <text class="t" x="250" y="60" font-size="26">
+            Deploy độc lập = contract + migration
+          </text>
+          <text class="t" x="250" y="106" font-size="26">
+            mTLS không thay authorization
+          </text>
+        </g>
+        <g transform="translate(1770 80)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#fbd3b4"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#fffdf5"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            chốt
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Metrics = số tổng hợp → phạm vi ·
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            trace → đường đi · log → chi tiết
+          </text>
+        </g>
+        <g transform="translate(1770 162)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#fbd3b4"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#fffdf5"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            vd
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Metrics → trace lỗi → span bất
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            thường → log
+          </text>
+        </g>
+        <g transform="translate(1770 244)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#fbd3b4"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#cdebd0"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            thử
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Span Payment 2s: chậm DB, đối
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            tác hay queue?
+          </text>
+        </g>
+        <g transform="translate(1440 154)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="260"
+            height="88"
+            rx="20"
+            fill="#fbd3b4"
+          />
+          <text class="t" x="130.0" y="42" font-size="32">Observability</text>
+          <text class="t" x="130.0" y="70" font-size="18" stroke-width="0.4">
+            request đi 7 service rồi lỗi
+          </text>
+          <circle class="s" cx="2" cy="2" r="16" fill="#f9c9b6" />
+          <text class="t" x="2" y="8" font-size="20" stroke-width="0.4">1</text>
+          <g transform="translate(130.0 -52) scale(1.2)">
+            <path
+              class="s"
+              d="M10 12 L34 36"
+              fill="none"
+              style="stroke-width: 11"
+            />
+            <path
+              d="M10 12 L34 36"
+              fill="none"
+              stroke="#f2b84b"
+              stroke-width="6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <circle class="s" cx="-8" cy="-8" r="26" fill="#eaf4fd" />
+            <path class="s2" d="M-24 4 l9 -11 l9 7 l12 -18" stroke="#e0652d" />
+            <circle class="s3" cx="9" cy="-18" r="3" fill="#e0652d" />
+          </g>
+        </g>
+        <g transform="translate(1770 346)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#cdebd0"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#fffdf5"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            chốt
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Caller inject traceparent →
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            callee extract → span con
+          </text>
+        </g>
+        <g transform="translate(1770 428)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#cdebd0"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#fffdf5"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            vd
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Qua queue: producer inject
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            header, consumer extract
+          </text>
+        </g>
+        <g transform="translate(1770 510)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#cdebd0"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#f9c0b4"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            ⚠
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            AsyncLocalStorage không tự
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            truyền qua network
+          </text>
+        </g>
+        <g transform="translate(1440 420)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="260"
+            height="88"
+            rx="20"
+            fill="#cdebd0"
+          />
+          <text class="t" x="130.0" y="42" font-size="32">Trace context</text>
+          <text class="t" x="130.0" y="70" font-size="21" stroke-width="0.4">
+            traceId đi qua đâu?
+          </text>
+          <circle class="s" cx="2" cy="2" r="16" fill="#f9c9b6" />
+          <text class="t" x="2" y="8" font-size="20" stroke-width="0.4">2</text>
+          <g transform="translate(130.0 -52) scale(1.2)">
+            <path
+              class="s2"
+              d="M-32 24 L-12 -10 L10 14 L30 -12"
+              style="stroke-dasharray: 5 5"
+            />
+            <circle class="s" cx="-32" cy="24" r="7.5" fill="#cdebd0" />
+            <circle class="s" cx="-12" cy="-10" r="7.5" fill="#bfd9f2" />
+            <circle class="s" cx="10" cy="14" r="7.5" fill="#bfd9f2" />
+            <circle class="s" cx="30" cy="-12" r="7.5" fill="#f7da6a" />
+            <path class="s" d="M30 -18 V-40" />
+            <polygon class="s3" points="30,-40 44,-34 30,-28" fill="#e87a6a" />
+          </g>
+        </g>
+        <g transform="translate(1770 612)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#ddd2f3"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#fffdf5"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            chốt
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Thêm field optional + tolerant
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            reader: thường an toàn
+          </text>
+        </g>
+        <g transform="translate(1770 694)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#ddd2f3"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#f9c0b4"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            ⚠
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Đổi đơn vị amount, enum mới →
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            breaking
+          </text>
+        </g>
+        <g transform="translate(1770 776)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#ddd2f3"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#fffdf5"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            vd
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Expand-contract: thêm mới,
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            giữ cũ, migrate, bỏ cũ
+          </text>
+        </g>
+        <g transform="translate(1440 686)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="260"
+            height="88"
+            rx="20"
+            fill="#ddd2f3"
+          />
+          <text class="t" x="130.0" y="42" font-size="32">Contract</text>
+          <text class="t" x="130.0" y="70" font-size="21" stroke-width="0.4">
+            đổi API không vỡ ai
+          </text>
+          <circle class="s" cx="2" cy="2" r="16" fill="#f9c9b6" />
+          <text class="t" x="2" y="8" font-size="20" stroke-width="0.4">3</text>
+          <g transform="translate(130.0 -52) scale(1.2)">
+            <path
+              class="s"
+              d="M-24 -36 H12 L24 -24 V34 H-24 Z"
+              fill="#fffdf5"
+            />
+            <path class="s3" d="M12 -36 V-24 H24 Z" fill="#cbd3dc" />
+            <path class="s2" d="M-15 -20 H3 M-15 -10 H12 M-15 0 H12" />
+            <path
+              class="ink"
+              d="M-16 20 q4 -12 8 0 q4 8 8 -4 q4 -6 10 0"
+              stroke="#e0652d"
+              style="stroke-width: 2.5"
+            />
+            <circle class="s" cx="14" cy="26" r="9" fill="#e87a6a" />
+            <circle class="s3" cx="14" cy="26" r="3" fill="#f7da6a" />
+          </g>
+        </g>
+        <g transform="translate(40 80)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#cdeeed"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#fffdf5"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            chốt
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Zero trust: mạng nội bộ vẫn
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            kiểm danh tính + quyền
+          </text>
+        </g>
+        <g transform="translate(40 162)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#cdeeed"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#f9c0b4"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            ⚠
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Có cert mTLS hợp lệ ≠ được
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            Refund tùy ý
+          </text>
+        </g>
+        <g transform="translate(40 244)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#cdeeed"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#fffdf5"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            ý
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            JWT downstream tự verify ·
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            HMAC: replay cần nonce
+          </text>
+        </g>
+        <g transform="translate(500 154)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="260"
+            height="88"
+            rx="20"
+            fill="#cdeeed"
+          />
+          <text class="t" x="130.0" y="42" font-size="32">Security</text>
+          <text class="t" x="130.0" y="70" font-size="20" stroke-width="0.4">
+            gọi nhau có cần xác thực?
+          </text>
+          <circle class="s" cx="2" cy="2" r="16" fill="#f9c9b6" />
+          <text class="t" x="2" y="8" font-size="20" stroke-width="0.4">6</text>
+          <g transform="translate(130.0 -52) scale(1.2)">
+            <path
+              class="s"
+              d="M0 -38 L32 -26 V0 C32 20 14 32 0 40 C-14 32 -32 20 -32 0 V-26 Z"
+              fill="#bfd9f2"
+            />
+            <path
+              class="s3"
+              d="M0 -38 L-32 -26 V0 C-32 20 -14 32 0 40 Z"
+              fill="#a8c8ea"
+            />
+            <circle class="s3" cx="0" cy="-6" r="7" fill="#1d2433" />
+            <polygon class="s3" points="-3,0 3,0 6,17 -6,17" fill="#1d2433" />
+          </g>
+        </g>
+        <g transform="translate(40 346)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#fbd5e4"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#fffdf5"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            chốt
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Unit nhiều · integration với
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            DB, broker thật
+          </text>
+        </g>
+        <g transform="translate(40 428)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#fbd5e4"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#fffdf5"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            vd
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Contract: consumer ghi kỳ
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            vọng, provider verify (Pact)
+          </text>
+        </g>
+        <g transform="translate(40 510)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#fbd5e4"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#cdebd0"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            thử
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Mock DB pass ≠ chứng minh
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            inbox atomic
+          </text>
+        </g>
+        <g transform="translate(500 420)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="260"
+            height="88"
+            rx="20"
+            fill="#fbd5e4"
+          />
+          <text class="t" x="130.0" y="42" font-size="32">Test</text>
+          <text class="t" x="130.0" y="70" font-size="21" stroke-width="0.4">
+            test hệ nhiều service
+          </text>
+          <circle class="s" cx="2" cy="2" r="16" fill="#f9c9b6" />
+          <text class="t" x="2" y="8" font-size="20" stroke-width="0.4">5</text>
+          <g transform="translate(130.0 -52) scale(1.2)">
+            <rect
+              class="s"
+              x="-28"
+              y="-34"
+              width="56"
+              height="70"
+              rx="5"
+              fill="#fffdf5"
+            />
+            <rect
+              class="s"
+              x="-10"
+              y="-41"
+              width="20"
+              height="10"
+              rx="3"
+              fill="#cbd3dc"
+            />
+            <rect
+              class="s3"
+              x="-20"
+              y="-20"
+              width="12"
+              height="12"
+              rx="2"
+              fill="#fffdf5"
+            />
+            <path class="s2" d="M-2 -14 H18" />
+            <path
+              class="ink"
+              d="M-18 -14 l4 5 l8 -11"
+              stroke="#4fa355"
+              style="stroke-width: 3"
+            />
+            <rect
+              class="s3"
+              x="-20"
+              y="-2"
+              width="12"
+              height="12"
+              rx="2"
+              fill="#fffdf5"
+            />
+            <path class="s2" d="M-2 4 H18" />
+            <path
+              class="ink"
+              d="M-18 4 l4 5 l8 -11"
+              stroke="#4fa355"
+              style="stroke-width: 3"
+            />
+            <rect
+              class="s3"
+              x="-20"
+              y="16"
+              width="12"
+              height="12"
+              rx="2"
+              fill="#fffdf5"
+            />
+            <path class="s2" d="M-2 22 H18" />
+          </g>
+        </g>
+        <g transform="translate(40 612)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#fbe3a8"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#fffdf5"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            chốt
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Release riêng + contract /
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            migration tương thích
+          </text>
+        </g>
+        <g transform="translate(40 694)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#fbe3a8"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#fffdf5"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            vd
+          </text>
+          <text class="tl" x="78" y="30.7" font-size="22" stroke-width="0.35">
+            Rolling · blue-green · canary
+          </text>
+          <text class="tl" x="78" y="55.4" font-size="22" stroke-width="0.35">
+            (% nhỏ, đo rồi tăng)
+          </text>
+        </g>
+        <g transform="translate(40 776)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="390"
+            height="72"
+            rx="16"
+            fill="#fbe3a8"
+          />
+          <rect
+            class="s3"
+            x="10"
+            y="22"
+            width="56"
+            height="28"
+            rx="9"
+            fill="#f9c0b4"
+          />
+          <text class="t" x="38" y="42" font-size="17" stroke-width="0.3">
+            ⚠
+          </text>
+          <text class="tl" x="78" y="43.0" font-size="22" stroke-width="0.35">
+            Rollback code ≠ rollback data
+          </text>
+        </g>
+        <g transform="translate(500 686)">
+          <rect
+            class="s"
+            x="0"
+            y="0"
+            width="260"
+            height="88"
+            rx="20"
+            fill="#fbe3a8"
+          />
+          <text class="t" x="130.0" y="42" font-size="32">Deploy độc lập</text>
+          <text class="t" x="130.0" y="70" font-size="21" stroke-width="0.4">
+            điều kiện là gì?
+          </text>
+          <circle class="s" cx="2" cy="2" r="16" fill="#f9c9b6" />
+          <text class="t" x="2" y="8" font-size="20" stroke-width="0.4">4</text>
+          <g transform="translate(130.0 -52) scale(1.2)">
+            <g transform="rotate(35)">
+              <path class="s" d="M-8 20 Q0 46 8 20 Z" fill="#f2b84b" />
+              <polygon class="s" points="-12,6 -26,26 -12,20" fill="#e87a6a" />
+              <polygon class="s" points="12,6 26,26 12,20" fill="#e87a6a" />
+              <path
+                class="s"
+                d="M0 -40 C16 -24 16 4 12 20 H-12 C-16 4 -16 -24 0 -40 Z"
+                fill="#fffdf5"
+              />
+              <path
+                class="s3"
+                d="M0 -40 C8 -32 12 -24 13 -18 H-13 C-12 -24 -8 -32 0 -40 Z"
+                fill="#e87a6a"
+              />
+              <circle class="s" cx="0" cy="-6" r="7" fill="#bfd9f2" />
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mô hình kinh doanh · bản 2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1024px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1024 1665"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Finviet nối nhãn hàng, nhà phân phối, tiệm tạp hóa và người mua bằng ba luồng hàng hóa, tiền, dữ liệu; hai app ECO Merchant và ECO Me; giá trị gồm chuỗi cung ứng, ECO Pay, ECO Finance, ECO Marketing."
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <marker
+          id="ag"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2fa24a"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <marker
+          id="ao"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#e07a3f"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <g id="shop">
+          <rect
+            class="s"
+            x="-58"
+            y="-20"
+            width="116"
+            height="83"
+            rx="4"
+            fill="#f5f0e8"
+          />
+          <path class="s" d="M-66 -20 L-48 -53 H48 L66 -20 Z" fill="#e9937a" />
+          <path
+            class="s2"
+            d="M-26 -52 L-35 -20 M10 -52 L12 -20 M44 -52 L56 -20"
+          />
+          <rect class="s" x="-41" y="4" width="37" height="34" fill="#d5e8e2" />
+          <rect class="s" x="15" y="4" width="29" height="59" fill="#e8e0d2" />
+          <path class="s2" d="M-40 22 H-5 M-22 5 V37" />
+          <circle cx="36" cy="36" r="2.5" fill="#1d2433" />
+        </g>
+        <g id="phone">
+          <rect
+            class="s"
+            x="-39"
+            y="-60"
+            width="78"
+            height="120"
+            rx="13"
+            fill="#6aa0d8"
+          />
+          <rect
+            class="s3"
+            x="-30"
+            y="-43"
+            width="60"
+            height="81"
+            rx="4"
+            fill="#faf9f5"
+          />
+          <path class="s2" d="M-10 -51 H10" />
+          <circle class="s3" cx="0" cy="49" r="4" fill="#faf9f5" />
+        </g>
+        <g id="wallet">
+          <rect
+            class="s"
+            x="-42"
+            y="-26"
+            width="84"
+            height="56"
+            rx="9"
+            fill="#f2b84b"
+          />
+          <path class="s2" d="M-34 -25 V-37 L25 -43 V-26" />
+          <rect
+            class="s"
+            x="12"
+            y="-11"
+            width="36"
+            height="25"
+            rx="6"
+            fill="#f5f0e8"
+          />
+          <circle cx="25" cy="1" r="3" fill="#1d2433" />
+        </g>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <!-- TIÊU ĐỀ -->
+        <rect
+          class="s"
+          x="35"
+          y="28"
+          width="954"
+          height="92"
+          rx="16"
+          fill="#bcd9f5"
+        />
+        <text class="t" x="512" y="88" font-size="44">
+          FINVIET — MÔ HÌNH KINH DOANH
+        </text>
+        <rect
+          class="s"
+          x="145"
+          y="133"
+          width="734"
+          height="48"
+          rx="24"
+          fill="#f9c9b6"
+        />
+        <text class="t" x="512" y="167" font-size="29">
+          Số hóa kênh bán lẻ truyền thống bằng hệ sinh thái ECO
+        </text>
+
+        <!-- ① HÀNG ĐI ĐÂU, TIỀN ĐI ĐÂU? -->
+        <g transform="translate(0 215)">
+          <circle class="s" cx="62" cy="24" r="22" fill="#f9c9b6" />
+          <text class="t" x="62" y="34" font-size="28">1</text>
+          <rect
+            class="s"
+            x="95"
+            y="0"
+            width="560"
+            height="48"
+            rx="24"
+            fill="#ddd2f3"
+          />
+          <text class="tl" x="120" y="34" font-size="30">
+            HÀNG ĐI ĐÂU, TIỀN ĐI ĐÂU?
+          </text>
+
+          <rect
+            class="s"
+            x="35"
+            y="70"
+            width="214"
+            height="235"
+            rx="16"
+            fill="#c5def5"
+          />
+          <rect
+            class="s"
+            x="282"
+            y="70"
+            width="214"
+            height="235"
+            rx="16"
+            fill="#ddd2f3"
+          />
+          <rect
+            class="s"
+            x="529"
+            y="70"
+            width="214"
+            height="235"
+            rx="16"
+            fill="#cdebd0"
+          />
+          <rect
+            class="s"
+            x="776"
+            y="70"
+            width="214"
+            height="235"
+            rx="16"
+            fill="#fbd3b4"
+          />
+
+          <g transform="translate(142 150)">
+            <path
+              class="s"
+              d="M-62 40 V-16 L-24 5 V-16 L13 5 V-39 H34 V40 Z"
+              fill="#a8c4e8"
+            />
+            <path
+              class="s2"
+              d="M-47 16 H-34 V28 H-47 Z M-14 16 H-1 V28 H-14 Z M18 16 H29 V28 H18 Z"
+            />
+            <path class="s2" d="M24 -43 Q4 -51 21 -58 Q38 -60 32 -65" />
+          </g>
+          <text class="t" x="142" y="223" font-size="27">NHÃN HÀNG</text>
+          <text class="t" x="142" y="255" font-size="22">Nhà sản xuất</text>
+          <text class="t" x="142" y="285" font-size="21">Làm ra sản phẩm</text>
+
+          <g transform="translate(389 148)">
+            <rect
+              class="s"
+              x="-68"
+              y="-37"
+              width="83"
+              height="64"
+              rx="4"
+              fill="#fbe3a8"
+            />
+            <path class="s" d="M15 -18 H43 L65 8 V27 H15 Z" fill="#a58fd6" />
+            <path class="s" d="M27 -9 H40 L52 6 H27 Z" fill="#faf9f5" />
+            <circle class="s" cx="-41" cy="29" r="13" fill="#faf9f5" />
+            <circle class="s" cx="40" cy="29" r="13" fill="#faf9f5" />
+            <path class="s2" d="M-83 -21 H-72 M-90 -4 H-72" />
+          </g>
+          <text class="t" x="389" y="223" font-size="27">NHÀ PHÂN PHỐI</text>
+          <text class="t" x="389" y="255" font-size="22">
+            Cung ứng cho tiệm
+          </text>
+          <text class="t" x="389" y="285" font-size="21">
+            Đưa hàng đến tiệm
+          </text>
+
+          <use href="#shop" transform="translate(636 128)" />
+          <text class="t" x="636" y="223" font-size="27">ĐIỂM BÁN</text>
+          <text class="t" x="636" y="255" font-size="22">Chủ tiệm tạp hóa</text>
+          <text class="t" x="636" y="285" font-size="21">
+            Nhập hàng, bán lẻ
+          </text>
+
+          <g transform="translate(878 150)">
+            <path class="s" d="M-40 47 Q-38 1 0 1 Q36 3 39 47" fill="#e9937a" />
+            <circle class="s" cx="0" cy="-22" r="29" fill="#fbe9dc" />
+            <path
+              class="s"
+              d="M-29 -25 Q-30 -62 5 -55 Q31 -53 29 -23 Q8 -26 -5 -44 Q-16 -25 -29 -25"
+              fill="#3d3d3a"
+            />
+            <path class="s2" d="M-9 -11 Q0 -3 9 -11" />
+            <rect
+              class="s"
+              x="28"
+              y="2"
+              width="27"
+              height="42"
+              rx="4"
+              fill="#faf9f5"
+            />
+            <path class="s2" d="M35 14 H47 M35 23 H47" />
+          </g>
+          <text class="t" x="883" y="223" font-size="27">NGƯỜI MUA</text>
+          <text class="t" x="883" y="255" font-size="22">Khách mua hàng</text>
+          <text class="t" x="883" y="285" font-size="21">Mua sắm tiện lợi</text>
+
+          <path class="ink" d="M253 190 H278" marker-end="url(#ad)" />
+          <path class="ink" d="M500 190 H525" marker-end="url(#ad)" />
+          <path class="ink" d="M747 190 H772" marker-end="url(#ad)" />
+
+          <!-- ba làn luồng: hàng hóa / tiền / dữ liệu -->
+          <text
+            class="tl"
+            x="45"
+            y="352"
+            font-size="24"
+            style="fill: #2f80d8; stroke: #2f80d8"
+          >
+            Hàng hóa
+          </text>
+          <text
+            class="t"
+            x="580"
+            y="336"
+            font-size="19"
+            style="fill: #2f80d8; stroke: #2f80d8"
+          >
+            sản phẩm đi từ nhãn hàng đến người mua
+          </text>
+          <path class="blue" d="M205 344 H958" marker-end="url(#ah)" />
+          <text
+            class="tl"
+            x="45"
+            y="404"
+            font-size="24"
+            style="fill: #2fa24a; stroke: #2fa24a"
+          >
+            Thanh toán
+          </text>
+          <text
+            class="t"
+            x="580"
+            y="388"
+            font-size="19"
+            style="fill: #2fa24a; stroke: #2fa24a"
+          >
+            tiền chảy ngược về nhà phân phối &amp; nhãn hàng
+          </text>
+          <path
+            d="M958 396 H205"
+            stroke="#2fa24a"
+            stroke-width="3"
+            fill="none"
+            stroke-linecap="round"
+            marker-end="url(#ag)"
+          />
+          <text
+            class="tl"
+            x="45"
+            y="456"
+            font-size="24"
+            style="fill: #e07a3f; stroke: #e07a3f"
+          >
+            Dữ liệu
+          </text>
+          <text
+            class="t"
+            x="580"
+            y="440"
+            font-size="19"
+            style="fill: #e07a3f; stroke: #e07a3f"
+          >
+            đơn hàng, hành vi mua → báo cáo thị trường
+          </text>
+          <path
+            d="M958 448 H205"
+            stroke="#e07a3f"
+            stroke-width="3"
+            fill="none"
+            stroke-linecap="round"
+            stroke-dasharray="9 8"
+            marker-end="url(#ao)"
+          />
+          <text class="t" x="512" y="495" font-size="22">
+            M2C: nối nhà sản xuất tới người mua, có NPP và tiệm tham gia
+          </text>
+        </g>
+
+        <!-- ② AI DÙNG APP NÀO? -->
+        <g transform="translate(0 750)">
+          <circle class="s" cx="62" cy="24" r="22" fill="#f9c9b6" />
+          <text class="t" x="62" y="34" font-size="28">2</text>
+          <rect
+            class="s"
+            x="95"
+            y="0"
+            width="420"
+            height="48"
+            rx="24"
+            fill="#fbe3a8"
+          />
+          <text class="tl" x="120" y="34" font-size="30">AI DÙNG APP NÀO?</text>
+
+          <rect
+            class="s"
+            x="35"
+            y="70"
+            width="461"
+            height="265"
+            rx="16"
+            fill="#cdebd0"
+          />
+          <rect
+            class="s"
+            x="528"
+            y="70"
+            width="461"
+            height="265"
+            rx="16"
+            fill="#fde3cf"
+          />
+          <rect
+            class="s"
+            x="65"
+            y="86"
+            width="401"
+            height="44"
+            rx="12"
+            fill="#b8dcd1"
+          />
+          <rect
+            class="s"
+            x="558"
+            y="86"
+            width="401"
+            height="44"
+            rx="12"
+            fill="#edc6ae"
+          />
+          <text class="t" x="265" y="119" font-size="32">ECO MERCHANT</text>
+          <text class="t" x="758" y="119" font-size="32">ECO ME</text>
+
+          <g transform="translate(104 218)">
+            <use href="#phone" />
+            <use href="#shop" transform="scale(.35) translate(0 -15)" />
+          </g>
+          <text class="tl" x="164" y="190" font-size="25">• Đặt hàng 24/7</text>
+          <text class="tl" x="164" y="226" font-size="25">
+            • Thanh toán, nạp tiền
+          </text>
+          <text class="tl" x="164" y="262" font-size="25">
+            • Tiếp cận vốn nhập hàng
+          </text>
+          <rect
+            class="s3"
+            x="54"
+            y="287"
+            width="423"
+            height="35"
+            rx="10"
+            fill="#b8dcd1"
+          />
+          <text class="t" x="265" y="312" font-size="23">
+            Chủ tiệm nhập hàng dễ hơn
+          </text>
+
+          <g transform="translate(597 218)">
+            <use href="#phone" />
+            <use href="#wallet" transform="scale(.47)" />
+          </g>
+          <text class="tl" x="657" y="190" font-size="25">
+            • Ví điện tử, thanh toán
+          </text>
+          <text class="tl" x="657" y="226" font-size="25">
+            • Hóa đơn, học phí
+          </text>
+          <text class="tl" x="657" y="262" font-size="25">
+            • Voucher, ưu đãi
+          </text>
+          <rect
+            class="s3"
+            x="547"
+            y="287"
+            width="423"
+            height="35"
+            rx="10"
+            fill="#f9c9b6"
+          />
+          <text class="t" x="758" y="312" font-size="23">
+            Người mua thanh toán &amp; tiêu dùng
+          </text>
+        </g>
+
+        <!-- ③ FINVIET TẠO GIÁ TRỊ Ở ĐÂU? -->
+        <g transform="translate(0 1115)">
+          <circle class="s" cx="62" cy="24" r="22" fill="#f9c9b6" />
+          <text class="t" x="62" y="34" font-size="28">3</text>
+          <rect
+            class="s"
+            x="95"
+            y="0"
+            width="600"
+            height="48"
+            rx="24"
+            fill="#cdebd0"
+          />
+          <text class="tl" x="120" y="34" font-size="30">
+            FINVIET TẠO GIÁ TRỊ Ở ĐÂU?
+          </text>
+
+          <rect
+            class="s"
+            x="35"
+            y="70"
+            width="222"
+            height="208"
+            rx="16"
+            fill="#c5def5"
+          />
+          <rect
+            class="s"
+            x="279"
+            y="70"
+            width="222"
+            height="208"
+            rx="16"
+            fill="#cdebd0"
+          />
+          <rect
+            class="s"
+            x="523"
+            y="70"
+            width="222"
+            height="208"
+            rx="16"
+            fill="#fbe3a8"
+          />
+          <rect
+            class="s"
+            x="767"
+            y="70"
+            width="222"
+            height="208"
+            rx="16"
+            fill="#fbd5e4"
+          />
+
+          <text class="t" x="146" y="107" font-size="27">CHUỖI CUNG ỨNG</text>
+          <g transform="translate(146 162)">
+            <rect
+              class="s"
+              x="-41"
+              y="-26"
+              width="82"
+              height="58"
+              fill="#f5f0e8"
+            />
+            <path
+              class="s2"
+              d="M-41 -26 L0 -8 L41 -26 M0 -8 V32 M-15 -38 L26 -20"
+            />
+          </g>
+          <text class="t" x="146" y="224" font-size="24">Kết nối đặt hàng</text>
+          <text class="t" x="146" y="253" font-size="24">&amp; phân phối</text>
+
+          <text class="t" x="390" y="107" font-size="27">ECO PAY</text>
+          <use href="#wallet" transform="translate(390 162)" />
+          <text class="t" x="390" y="224" font-size="24">
+            Ví • cổng thanh toán
+          </text>
+          <text class="t" x="390" y="253" font-size="24">
+            QR • thu hộ / chi hộ
+          </text>
+
+          <text class="t" x="634" y="107" font-size="27">ECO FINANCE</text>
+          <g transform="translate(634 162)">
+            <ellipse class="s" cx="-13" cy="21" rx="30" ry="9" fill="#e9937a" />
+            <path class="s" d="M-43 6 V21 M17 6 V21" fill="none" />
+            <ellipse class="s" cx="-13" cy="6" rx="30" ry="9" fill="#fbd3b4" />
+            <circle class="s" cx="20" cy="-12" r="25" fill="#f2b84b" />
+            <text class="t" x="20" y="-2" font-size="30">₫</text>
+          </g>
+          <text class="t" x="634" y="224" font-size="24">Giải pháp vốn</text>
+          <text class="t" x="634" y="253" font-size="24">
+            &amp; dịch vụ tài chính
+          </text>
+
+          <text class="t" x="878" y="107" font-size="27">ECO MARKETING</text>
+          <g transform="translate(878 162)">
+            <path class="s" d="M-43 -10 L29 -34 V25 L-43 8 Z" fill="#e9937a" />
+            <path class="s" d="M-23 13 L-12 38 H2 L-7 13" fill="#faf9f5" />
+            <path class="s2" d="M41 -18 L54 -26 M44 -3 H59 M41 12 L54 20" />
+          </g>
+          <text class="t" x="878" y="224" font-size="24">
+            Chiến dịch ưu đãi
+          </text>
+          <text class="t" x="878" y="253" font-size="24">
+            &amp; đo lường hiệu quả
+          </text>
+        </g>
+
+        <!-- BACKEND + CÂU CHỐT + FOOTNOTE -->
+        <g transform="translate(0 1415)">
+          <rect
+            class="s"
+            x="35"
+            y="0"
+            width="954"
+            height="69"
+            rx="14"
+            fill="#e8e0d2"
+          />
+          <text class="t" x="512" y="30" font-size="26">VAI TRÒ BACKEND</text>
+          <text class="t" x="512" y="58" font-size="24">
+            Đặt hàng • ví / thanh toán • đối soát • ưu đãi • tuân thủ
+          </text>
+        </g>
+        <g transform="translate(0 1505)">
+          <rect
+            class="s"
+            x="35"
+            y="0"
+            width="954"
+            height="100"
+            rx="16"
+            fill="#fbe98a"
+          />
+          <text class="t" x="512" y="44" font-size="36">
+            Finviet nối NHÃN HÀNG → TIỆM → NGƯỜI MUA
+          </text>
+          <text class="t" x="512" y="82" font-size="29">
+            bằng công cụ kinh doanh, thanh toán, tài chính &amp; marketing.
+          </text>
+        </g>
+        <text class="t" x="512" y="1642" font-size="18">
+          Nguồn thu (phí nền tảng, hoa hồng, marketing) là suy luận từ sản phẩm;
+          mức phí và bên trả phí chưa xác nhận.
+        </text>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

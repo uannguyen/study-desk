@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TLS và HTTPS</title>
+    <meta name="repos" content="" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1600px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1600 2170"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="HTTPS là HTTP chạy trong kênh TLS; TLS mã hoá, giữ toàn vẹn và xác thực server bằng chứng chỉ"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <!-- TIÊU ĐỀ -->
+        <rect class="s" x="40" y="30" width="1520" height="100" rx="16" fill="#bcd9f5"/>
+        <text class="t" x="800" y="97" font-size="54">HTTPS = HTTP + TLS</text>
+        <rect class="s" x="420" y="143" width="760" height="52" rx="26" fill="#f9c9b6"/>
+        <text class="t" x="800" y="179" font-size="28">Ổ khoá = đường truyền an toàn, KHÔNG phải trang đáng tin</text>
+
+        <!-- ① BƯU THIẾP vs HỘP KHOÁ -->
+        <g transform="translate(0 225)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#c5def5"/>
+          <text class="tl" x="55" y="46" font-size="34">① HTTP là bưu thiếp, HTTPS là hộp có khoá kèm thẻ căn cước</text>
+
+          <!-- card HTTP -->
+          <rect class="s" x="35" y="86" width="480" height="330" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="125" y="100" width="300" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="275" y="136" font-size="30">HTTP = bưu thiếp</text>
+          <g transform="translate(75 195) rotate(-6)">
+            <rect class="s" x="0" y="0" width="200" height="120" rx="6" fill="#fbf3dc"/>
+            <path class="s2" d="M120 12 V108"/>
+            <rect class="s3" x="150" y="12" width="36" height="40" fill="#f6a3c4"/>
+            <text class="tl" x="12" y="40" font-size="18">user=an</text>
+            <text class="tl" x="12" y="66" font-size="18">pass=123456</text>
+            <text class="tl" x="12" y="92" font-size="18">card=4111...</text>
+          </g>
+          <g transform="translate(400 330)">
+            <circle class="s" cx="0" cy="-78" r="14" fill="#ffe3c2"/>
+            <path class="s" d="M0 -64 V-26 M0 -52 L-20 -34 M0 -52 L-34 -60 M0 -26 L-16 0 M0 -26 L16 0" fill="none"/>
+            <rect class="s" x="-24" y="-90" width="48" height="10" rx="4" fill="#1d2433"/>
+            <circle class="s" cx="-52" cy="-66" r="14" fill="#cfe7f7"/>
+            <path class="s" d="M-42 -56 L-34 -46" fill="none"/>
+          </g>
+          <text class="t" x="420" y="210" font-size="19">kẻ nghe lén</text>
+          <rect x="55" y="368" width="440" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="275" y="394" font-size="22">ai trên đường cũng đọc và sửa được</text>
+
+          <!-- card HTTPS -->
+          <rect class="s" x="560" y="86" width="480" height="330" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="640" y="100" width="320" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="800" y="136" font-size="30">HTTPS = hộp có khoá</text>
+          <rect class="s" x="600" y="200" width="190" height="130" rx="10" fill="#a8723f"/>
+          <path class="s2" d="M600 240 H790"/>
+          <g transform="translate(695 285) scale(0.9)">
+            <path class="s" d="M-15 -6 V-20 A15 15 0 0 1 15 -20 V-6" fill="none" style="stroke-width:9"/><path d="M-15 -6 V-20 A15 15 0 0 1 15 -20 V-6" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><rect class="s" x="-26" y="-8" width="52" height="42" rx="6" fill="#f7da6a"/><circle class="s3" cx="0" cy="12" r="5.5" fill="#1d2433"/><path class="ink" d="M0 14 V24"/>
+          </g>
+          <!-- thẻ căn cước -->
+          <g transform="translate(820 200)">
+            <rect class="s" x="0" y="0" width="190" height="120" rx="10" fill="#d4ecd0"/>
+            <circle class="s" cx="38" cy="48" r="20" fill="#ffe3c2"/>
+            <text class="tl" x="70" y="40" font-size="17">shop.vn</text>
+            <text class="tl" x="70" y="64" font-size="17">hạn: 2027</text>
+            <circle class="s" cx="150" cy="94" r="18" fill="#e87a6a"/>
+            <text class="t" x="150" y="100" font-size="15">CA</text>
+            <text class="tl" x="14" y="104" font-size="16">chứng chỉ</text>
+          </g>
+          <rect x="580" y="368" width="440" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="800" y="394" font-size="22">khoá kín + kiểm thẻ người nhận trước</text>
+
+          <!-- card ngăn xếp -->
+          <rect class="s" x="1085" y="86" width="480" height="330" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="1185" y="100" width="280" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="1325" y="136" font-size="30">TLS nằm ở đâu?</text>
+          <rect class="s" x="1115" y="172" width="200" height="54" rx="10" fill="#e6dcf5"/>
+          <text class="t" x="1215" y="208" font-size="26">HTTP</text>
+          <rect class="s" x="1115" y="236" width="200" height="54" rx="10" fill="#fbe98a"/>
+          <text class="t" x="1215" y="272" font-size="26">TLS</text>
+          <rect class="s" x="1115" y="300" width="200" height="54" rx="10" fill="#c5def5"/>
+          <text class="t" x="1215" y="336" font-size="26">TCP</text>
+          <text class="tl" x="1330" y="206" font-size="19">nội dung y nguyên</text>
+          <text class="tl" x="1330" y="270" font-size="19">bọc mã hoá</text>
+          <text class="tl" x="1330" y="334" font-size="19">chở bytes</text>
+          <rect x="1105" y="368" width="440" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="1325" y="394" font-size="22">SSL là tên cũ, đã khai tử</text>
+        </g>
+
+        <!-- ② 3 VIỆC CỦA TLS -->
+        <g transform="translate(0 685)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#d4ecd0"/>
+          <text class="tl" x="55" y="46" font-size="34">② TLS làm đúng 3 việc</text>
+
+          <!-- mã hoá -->
+          <rect class="s" x="35" y="86" width="480" height="290" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="165" y="100" width="220" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="275" y="136" font-size="30">Mã hoá</text>
+          <g transform="translate(140 240)">
+            <circle class="s" cx="0" cy="0" r="46" fill="#bfd9f2"/>
+            <text class="t" x="0" y="10" font-size="26">x9#k</text>
+          </g>
+          <text class="tl" x="215" y="222" font-size="22">chống nghe lén</text>
+          <text class="tl" x="215" y="254" font-size="19">WiFi quán cà phê, ISP</text>
+          <text class="tl" x="215" y="280" font-size="19">chỉ thấy rác vô nghĩa</text>
+          <rect x="55" y="326" width="440" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="275" y="352" font-size="22">khoá đối xứng, trao đổi qua ECDHE</text>
+
+          <!-- toàn vẹn -->
+          <rect class="s" x="560" y="86" width="480" height="290" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="690" y="100" width="220" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="800" y="136" font-size="30">Toàn vẹn</text>
+          <g transform="translate(605 195)">
+            <rect class="s" x="0" y="0" width="120" height="84" rx="6" fill="#fffdf5"/>
+            <path class="s2" d="M0 0 L60 46 L120 0"/>
+            <circle class="s" cx="60" cy="56" r="17" fill="#d9453a"/>
+            <circle class="s3" cx="60" cy="56" r="7" fill="#f6a3c4"/>
+          </g>
+          <text class="tl" x="745" y="222" font-size="22">chống sửa trên đường</text>
+          <text class="tl" x="745" y="254" font-size="19">chèn quảng cáo, mã độc</text>
+          <text class="tl" x="745" y="280" font-size="19">sửa 1 bit là dấu niêm vỡ</text>
+          <rect x="580" y="326" width="440" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="800" y="352" font-size="22">mỗi bản ghi có tag xác thực (AEAD)</text>
+
+          <!-- xác thực -->
+          <rect class="s" x="1085" y="86" width="480" height="290" rx="18" fill="#fffdf5" style="stroke:#2fa24a;stroke-width:4"/>
+          <rect class="s" x="1175" y="100" width="300" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="1325" y="136" font-size="30">Xác thực server</text>
+          <g transform="translate(1185 245)">
+            <path class="s" d="M0 -38 L32 -26 V0 C32 20 14 32 0 40 C-14 32 -32 20 -32 0 V-26 Z" fill="#bfd9f2"/><path class="s3" d="M0 -38 L-32 -26 V0 C-32 20 -14 32 0 40 Z" fill="#a8c8ea"/><circle class="s3" cx="0" cy="-6" r="7" fill="#1d2433"/><polygon class="s3" points="-3,0 3,0 6,17 -6,17" fill="#1d2433"/>
+          </g>
+          <text class="tl" x="1240" y="222" font-size="22">chống giả mạo (MITM)</text>
+          <text class="tl" x="1240" y="254" font-size="19">chứng chỉ do CA ký</text>
+          <text class="tl" x="1240" y="280" font-size="19">đúng tên miền, còn hạn</text>
+          <rect x="1105" y="326" width="440" height="36" rx="10" fill="#d4ecd0"/>
+          <text class="t" x="1325" y="352" font-size="22">xương sống: thiếu nó, 2 việc kia vô dụng</text>
+
+          <!-- bẫy -->
+          <g transform="translate(90 432) scale(0.7)">
+            <polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/>
+          </g>
+          <text class="tl" x="135" y="444" font-size="26">Bẫy: mã hoá mà không xác thực = nói chuyện bí mật… với chính kẻ gian.</text>
+        </g>
+
+        <!-- ③ 3 LOẠI CẢNH BÁO CHROME -->
+        <g transform="translate(0 1180)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#e6dcf5"/>
+          <text class="tl" x="55" y="46" font-size="34">③ Chrome cảnh báo: 3 loại khác nhau, đừng trộn</text>
+
+          <!-- not secure -->
+          <rect class="s" x="35" y="86" width="480" height="380" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="135" y="100" width="280" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="275" y="136" font-size="30">"Not secure"</text>
+          <rect class="s" x="65" y="172" width="420" height="50" rx="25" fill="#eceae4"/>
+          <polygon class="s3" points="95,186 110,212 80,212" fill="#f7da6a"/>
+          <text class="tl" x="122" y="205" font-size="20">Not secure | http://shop.vn</text>
+          <text class="tl" x="65" y="268" font-size="22">Vì: không có TLS</text>
+          <text class="tl" x="65" y="304" font-size="19">· trang chạy HTTP thường</text>
+          <text class="tl" x="65" y="334" font-size="19">· hoặc mixed content: trang HTTPS</text>
+          <text class="tl" x="65" y="360" font-size="19">  nhưng tải script/form qua HTTP</text>
+          <rect x="55" y="416" width="440" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="275" y="442" font-size="22">vẫn mở được, chỉ là bưu thiếp</text>
+
+          <!-- cert error -->
+          <rect class="s" x="560" y="86" width="480" height="380" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="590" y="100" width="420" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="800" y="136" font-size="27">"Connection is not private"</text>
+          <g transform="translate(588 168)">
+            <rect class="s" x="0" y="0" width="60" height="70" rx="6" fill="#f6b5ae"/>
+            <path d="M18 22 l24 24 M42 22 l-24 24" stroke="#d9453a" stroke-width="6" stroke-linecap="round"/>
+          </g>
+          <text class="tl" x="662" y="196" font-size="20">Vì: chứng chỉ không qua được</text>
+          <text class="tl" x="662" y="222" font-size="20">bước xác thực (trang đỏ)</text>
+          <text class="tl" x="588" y="270" font-size="18" style="fill:#d9453a;stroke:#d9453a">DATE_INVALID</text>
+          <text class="tl" x="760" y="270" font-size="18">hết hạn / đồng hồ máy sai</text>
+          <text class="tl" x="588" y="306" font-size="18" style="fill:#d9453a;stroke:#d9453a">COMMON_NAME</text>
+          <text class="tl" x="760" y="306" font-size="18">cấp cho tên miền khác</text>
+          <text class="tl" x="588" y="342" font-size="18" style="fill:#d9453a;stroke:#d9453a">AUTHORITY</text>
+          <text class="tl" x="760" y="342" font-size="18">tự ký / CA lạ / proxy soi</text>
+          <text class="tl" x="588" y="378" font-size="18" style="fill:#d9453a;stroke:#d9453a">REVOKED</text>
+          <text class="tl" x="760" y="378" font-size="18">CA đã thu hồi (lộ key)</text>
+          <rect x="580" y="416" width="440" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="800" y="442" font-size="22">lỗi tầng TLS: NET::ERR_CERT_…</text>
+
+          <!-- safe browsing -->
+          <rect class="s" x="1085" y="86" width="480" height="380" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="1155" y="100" width="340" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="1325" y="136" font-size="30">"Deceptive site"</text>
+          <g transform="translate(1160 235)">
+            <polygon class="s" points="-16,-38 16,-38 38,-16 38,16 16,38 -16,38 -38,16 -38,-16" fill="#e87a6a"/>
+            <path class="ink" d="M-20 0 H20" style="stroke:#fffdf5;stroke-width:7"/>
+          </g>
+          <text class="tl" x="1215" y="222" font-size="22">Vì: Google Safe Browsing</text>
+          <text class="tl" x="1215" y="254" font-size="19">trang nằm trong danh sách</text>
+          <text class="tl" x="1215" y="280" font-size="19">phishing / malware</text>
+          <text class="tl" x="1115" y="334" font-size="20">Không liên quan TLS: trang lừa đảo</text>
+          <text class="tl" x="1115" y="362" font-size="20">vẫn có ổ khoá hợp lệ (cert miễn phí</text>
+          <text class="tl" x="1115" y="390" font-size="20">chỉ chứng minh sở hữu tên miền)</text>
+          <rect x="1105" y="416" width="440" height="36" rx="10" fill="#d4ecd0"/>
+          <text class="t" x="1325" y="442" font-size="22">ổ khoá ≠ trang đáng tin</text>
+        </g>
+
+        <!-- ④ BACKEND -->
+        <g transform="translate(0 1690)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#fde3c8"/>
+          <text class="tl" x="55" y="46" font-size="34">④ Ở phía backend Node: debug đúng tầng, đừng tắt kiểm tra</text>
+
+          <rect class="s" x="35" y="86" width="720" height="200" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="60" y="108" width="380" height="150" rx="10" fill="#1d2433"/>
+          <circle cx="80" cy="124" r="5" fill="#e87a6a"/><circle cx="98" cy="124" r="5" fill="#f7da6a"/><circle cx="116" cy="124" r="5" fill="#6fbf73"/>
+          <text x="76" y="168" font-size="18" style="fill:#f6b5ae;font-family:monospace">CERT_HAS_EXPIRED</text>
+          <text x="76" y="200" font-size="18" style="fill:#f6b5ae;font-family:monospace">UNABLE_TO_VERIFY_LEAF</text>
+          <text x="76" y="232" font-size="18" style="fill:#f6b5ae;font-family:monospace">ERR_TLS_CERT_ALTNAME</text>
+          <path class="blue" d="M452 183 L500 183" marker-end="url(#ah)"/>
+          <text class="tl" x="512" y="172" font-size="22">lỗi tầng TLS,</text>
+          <text class="tl" x="512" y="202" font-size="22">không phải lỗi API</text>
+
+          <rect class="s" x="845" y="86" width="720" height="200" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="870" y="112" width="440" height="56" rx="10" fill="#fbf3dc"/>
+          <text class="tl" x="885" y="148" font-size="21" style="font-family:monospace">NODE_TLS_REJECT_UNAUTHORIZED=0</text>
+          <path d="M875 118 L1305 162" stroke="#d9453a" stroke-width="6" stroke-linecap="round"/>
+          <text class="tl" x="1330" y="135" font-size="20">= tắt bước</text>
+          <text class="tl" x="1330" y="160" font-size="20">xác thực</text>
+          <text class="tl" x="870" y="214" font-size="22">tự mở cửa cho MITM, mất luôn việc thứ 3 ở ②</text>
+          <text class="tl" x="870" y="252" font-size="22" style="fill:#2fa24a;stroke:#2fa24a">Sửa đúng: cấu hình CA (NODE_EXTRA_CA_CERTS) / gia hạn cert</text>
+        </g>
+
+        <!-- CÂU CHỐT -->
+        <g transform="translate(0 2010)">
+          <rect class="s" x="60" y="0" width="1480" height="76" rx="16" fill="#fbe98a"/>
+          <text class="t" x="800" y="51" font-size="38">HTTPS = HTTP chạy trong kênh TLS. Xác thực (chứng chỉ) mới là xương sống.</text>
+          <text class="t" x="800" y="118" font-size="19">Chrome 154 (kế hoạch 10/2026) bật "Always Use Secure Connections" mặc định: hỏi trước khi mở site công khai chỉ có HTTP</text>
+        </g>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

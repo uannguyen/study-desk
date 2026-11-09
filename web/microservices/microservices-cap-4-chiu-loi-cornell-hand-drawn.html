@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chịu lỗi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">Chịu lỗi (resilience)</h1>
+  <p class="sub">B chậm hoặc chết thì A không được chết theo</p>
+  <section class="page">
+    <h2 class="page-no"><b>4</b>Chịu lỗi</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> B chậm hoặc chết, A làm gì? Kể theo thứ tự các lớp phòng thủ.
+        <small>từ khóa: timeout · retry · circuit breaker · bulkhead · fallback</small></div>
+      <div class="note hand">
+        <h3>① Timeout trước, rồi các lớp sau</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-7" y="-46" width="14" height="9" rx="3" fill="#cbd3dc"/><path class="s2" d="M24 -28 l7 -7"/><circle class="s" cx="0" cy="3" r="34" fill="#fffdf5"/><path class="s3" d="M0 3 L0 -27 A30 30 0 0 1 30 3 Z" fill="#f9c0b4"/><path class="s2" d="M0 -29 v5 M29 3 h-5 M0 35 v-5 M-29 3 h5"/><path class="s" d="M0 3 L0 -22"/><circle class="s3" cx="0" cy="3" r="3.5" fill="#1d2433"/></svg>
+          <figcaption>đừng chờ vô hạn</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Gọi điện bạn mãi không bắt máy thì sau một lúc mình cúp, thử lại vài lần, rồi thôi và làm việc khác.</p>
+        <p><span class="lb">Bên dưới</span>Mọi network call <b>bắt buộc có timeout</b>, không có thì request treo và pool cạn. Timeout tầng dưới nhỏ hơn tầng trên; truyền deadline còn lại xuống (<b>deadline propagation</b>). Sau đó: <b>retry</b> (có kiểm soát) → <b>circuit breaker</b> → <b>fallback</b> (cache cũ, giá trị mặc định); <b>bulkhead</b> tách pool theo từng downstream.</p>
+        <p><span class="lb">Ví dụ</span>Gateway timeout 3s, Order → Payment timeout 2s, Payment → đối tác timeout 1s: mỗi tầng còn dư thời gian để trả lỗi.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Quên timeout là lỗi kinh điển. Nói được thứ tự các lớp mới đạt, không chỉ nói “retry”.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Timeout tầng dưới lớn hơn tầng trên thì chuyện gì xảy ra? (Tầng trên bỏ cuộc mà tầng dưới vẫn chạy tốn tài nguyên.)</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> Retry thế nào mới đúng? Khi nào không được retry?
+        <small>từ khóa: exponential backoff · jitter · transient error · retry storm</small></div>
+      <div class="note hand">
+        <h3>② Thử lại có kỷ luật</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s3" r="36" fill="#cdebd0"/><path class="ink" d="M-25.4 -9.2 A27 27 0 0 1 25.4 -9.2"/><polygon class="s3" points="28.4,-0.8 18.8,-9.0 30.6,-13.3" fill="#4fa355"/><path class="ink" d="M25.4 9.2 A27 27 0 0 1 -25.4 9.2"/><polygon class="s3" points="-28.4,0.8 -18.8,9.0 -30.6,13.3" fill="#4fa355"/></svg>
+          <figcaption>lặp có giới hạn</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Gõ cửa nhà bạn không ai mở thì đợi một chút rồi gõ lại, chứ đứng đập cửa liên tục sẽ làm phiền cả xóm.</p>
+        <p><span class="lb">Bên dưới</span>Chỉ retry <b>lỗi tạm thời</b> (timeout, 503, connection reset), không retry 4xx. <b>Exponential backoff</b> (100ms → 200 → 400) kèm <b>jitter</b> (ngẫu nhiên) để các client không retry cùng lúc. Giới hạn số lần. Và chỉ retry thao tác <b>idempotent</b> (xem ④).</p>
+        <p><span class="lb">Ví dụ</span><b>Retry storm</b>: 3 tầng × 3 lần retry = 27 request dội xuống B đang yếu.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Retry không idempotent (POST trừ tiền) là trừ tiền nhiều lần. Retry ở mọi tầng sẽ nhân lên.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Lỗi 400 “thiếu trường amount” có retry không? (Không, retry mãi vẫn lỗi.)</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> Circuit breaker hoạt động ra sao?
+        <small>từ khóa: closed / open / half-open · fail fast</small></div>
+      <div class="note hand">
+        <h3>③ Cầu dao tự ngắt</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-42" y="-8" width="84" height="46" rx="8" fill="#fffdf5"/><circle class="s" cx="-26" cy="22" r="7" fill="#f2b84b"/><circle class="s" cx="26" cy="22" r="7" fill="#f2b84b"/><path class="ink" d="M-26 22 L14 -28" style="stroke-width:6"/><path class="s2" d="M2 -2 l-4 8 l8 -3 l-4 8" stroke="#e0652d"/></svg>
+          <figcaption>lỗi nhiều thì ngắt mạch</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Điện chập thì cầu dao nhảy để khỏi cháy nhà. Một lúc sau thử bật lại, ổn thì dùng tiếp.</p>
+        <p><span class="lb">Bên dưới</span><b>Closed</b> —lỗi vượt ngưỡng→ <b>Open</b> —hết thời gian chờ→ <b>Half-open</b> —thử OK→ Closed, thử lỗi→ Open. Open = <b>fail fast</b>, không gọi B nữa: B có thời gian hồi, A không tốn tài nguyên chờ. Kèm fallback. Node: thư viện <code>opossum</code>.</p>
+        <p><span class="lb">Ví dụ</span>Payment lỗi 50% trong 10s → breaker mở, 30s sau cho 1 request thử. Thử OK thì đóng lại.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Breaker không thay timeout; chúng bổ sung nhau. Bulkhead chống một downstream chậm ăn hết cả pool.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Breaker đang Open thì request đến sẽ đi đâu? (Trả lỗi hoặc fallback ngay, không gọi B.)</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> ⭐ Client retry API trừ tiền, làm sao không trừ 2 lần? Hai request trùng đến cùng lúc thì sao?
+        <small>từ khóa: idempotency · idempotency key · unique constraint · SET NX</small></div>
+      <div class="note hand">
+        <h3>④ Một chìa cho một lần làm</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-9" y="-42" width="18" height="16" rx="8" fill="#e87a6a"/><rect class="s" x="-5" y="-28" width="10" height="16" fill="#f7da6a"/><rect class="s" x="-24" y="-14" width="48" height="10" rx="3" fill="#e87a6a"/><rect x="-26" y="6" width="52" height="26" rx="5" fill="none" stroke="#e0652d" stroke-width="2.5" style="stroke-dasharray:6 4"/><text class="t" x="0" y="26" font-size="17" style="fill:#e0652d;stroke:#e0652d">seen</text></svg>
+          <figcaption>đã xử lý thì đóng dấu</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Phiếu thu có số. Nhận lại đúng phiếu đã đóng dấu thì không thu tiền lần nữa mà đưa lại biên lai cũ.</p>
+        <p><span class="lb">Bên dưới</span><b>Idempotent</b> = gọi N lần cho kết quả như gọi 1 lần. GET/PUT/DELETE idempotent theo HTTP; POST thì không. Client gửi <b>idempotency key</b>; server lưu (key → response), request trùng thì <b>trả lại response cũ</b>. Lưu ở Redis có TTL hoặc bảng DB có unique index.</p>
+        <p><span class="lb">Ví dụ</span>Hai request cùng key đến đồng thời: dùng <code>SET NX</code> hoặc unique index để chỉ một request thắng, request kia nhận “đang xử lý”.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>“Check rồi mới insert” bị race condition. Bước chiếm key phải nguyên tử.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>App timeout rồi retry cùng key, lần 1 đã trừ tiền thành công: server trả gì? (Response cũ, không trừ lần hai.)</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> Vì sao một service chậm làm sập cả hệ?
+        <small>từ khóa: cascading failure · deadline propagation · load shedding</small></div>
+      <div class="note hand">
+        <h3>⑤ Chậm còn nguy hơn chết</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s2" d="M-44 34 H44"/><g transform="translate(-26 34) rotate(0) translate(-14 -48)"><rect class="s" x="0" y="0" width="14" height="48" rx="3" fill="#fffdf5"/><circle cx="7" cy="14" r="2.2" fill="#1d2433"/><circle cx="7" cy="33" r="2.2" fill="#1d2433"/></g><g transform="translate(-6 34) rotate(10) translate(-14 -48)"><rect class="s" x="0" y="0" width="14" height="48" rx="3" fill="#fbe3a8"/><circle cx="7" cy="14" r="2.2" fill="#1d2433"/><circle cx="7" cy="33" r="2.2" fill="#1d2433"/></g><g transform="translate(16 34) rotate(32) translate(-14 -48)"><rect class="s" x="0" y="0" width="14" height="48" rx="3" fill="#f9c0b4"/><circle cx="7" cy="14" r="2.2" fill="#1d2433"/><circle cx="7" cy="33" r="2.2" fill="#1d2433"/></g><g transform="translate(38 34) rotate(68) translate(-14 -48)"><rect class="s" x="0" y="0" width="14" height="48" rx="3" fill="#e87a6a"/><circle cx="7" cy="14" r="2.2" fill="#1d2433"/><circle cx="7" cy="33" r="2.2" fill="#1d2433"/></g></svg>
+          <figcaption>một quân đổ, cả hàng đổ</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Một người đứng chắn cửa quá lâu thì cả hàng phía sau dồn lại, rồi hàng nối đến cả con phố.</p>
+        <p><span class="lb">Bên dưới</span>B chậm → A giữ kết nối chờ → A cạn tài nguyên → C gọi A cũng chậm → lan ra cả hệ. Node: event loop không bị block nhưng pending promise, socket, memory dồn lên → OOM, latency tăng vọt. Chặn bằng timeout + circuit breaker + <b>load shedding</b> (quá tải thì từ chối sớm bằng 503) + rate limit.</p>
+        <p><span class="lb">Ví dụ</span>Service B chậm 10s, A có 1000 request đang chờ B → A hết socket, mọi API của A đều lỗi, dù phần lớn không liên quan B.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Đừng nghĩ Node “không sợ” vì đơn luồng: tài nguyên bên ngoài event loop vẫn cạn.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Vì sao từ chối sớm (503) lại tốt hơn cố xử lý hết mọi request?</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>chống replay bằng Redis dedupe + clock drift 5s · HMAC request signing · đối chiếu On-tap/02-auth-va-ma-hoa.md.</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Thứ tự phòng thủ: <b>timeout → retry (backoff + jitter, chỉ lỗi tạm thời) → circuit breaker → fallback</b>, thêm bulkhead. Retry chỉ an toàn khi thao tác <b>idempotent</b>, nên API trừ tiền cần idempotency key (unique constraint / SET NX). Một service chậm làm cạn tài nguyên rồi lan dây chuyền; chặn bằng timeout, breaker, load shedding.</p>
+    </div>
+  </section>
+
+  <p class="foot">Nguồn: On-tap/01c cặp 4 (dòng FV chép từ file đó). Ví dụ đời thường để hiểu, không chép vào vở.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>REST, gRPC, GraphQL, webhook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .note pre { font: 16px/23px ui-monospace, 'SFMono-Regular', Menlo, monospace; background: #efe9de; border-radius: 6px; padding: 6px 10px; margin: 4px 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* khung khối gọn: Nôm na → Chốt → Ví dụ → Áp dụng → Bẫy → Tự kiểm */
+  .note h3 small { font-size: 21px; color: #5a6475; }
+  .chot .lb { background: #fbe98a; } .vd .lb { background: #f9c9b6; } .ap .lb { background: #c5def5; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 6px; }
+  .flow span { border: 2px solid #1d2433; border-radius: 10px; padding: 0 9px; background: #fff; font-size: 19px; line-height: 28px; }
+  .flow span.ok { background: #cfe8cf; } .flow span.no { background: #f6b3a8; }
+  .flow i { font-style: normal; color: #2f80d8; font-size: 22px; }
+  table.mini { border-collapse: collapse; font-size: 19px; line-height: 26px; margin: 4px 0 8px; }
+  table.mini th, table.mini td { border: 2px solid #1d2433; padding: 2px 10px; text-align: left; vertical-align: top; }
+  table.mini th { background: var(--c); font-weight: normal; }
+  .ap ul, .vd ol { margin: 0; padding-left: 24px; }
+  .vd { clear: right; }  /* ví dụ luôn nằm dưới doodle để đủ bề ngang */
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">4.1 · API style: REST, gRPC, GraphQL, webhook</h1>
+  <p class="sub">Cách chia nghiệp vụ thành lời gọi: tài nguyên, hàm, truy vấn, sự kiện</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>REST và RPC</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> ⭐ REST thật sự là gì? API thế nào thì gọi là RESTful?
+        <small>từ khóa: resource · HTTP method · status code · stateless · idempotent</small></div>
+      <div class="note hand">
+        <h3>Danh từ trong URL, động tác là method</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><polygon class="s3" points="-44,8 -36.3,0.3 -14.3,0.3 -22,8" fill="#fffdf5"/><polygon class="s3" points="-22,8 -14.3,0.3 -14.3,22.3 -22,30" fill="#cbd3dc"/><rect class="s" x="-44" y="8" width="22" height="22" fill="#bfd9f2"/><polygon class="s3" points="-11,-26 -3.3,-33.7 18.7,-33.7 11,-26" fill="#fffdf5"/><polygon class="s3" points="11,-26 18.7,-33.7 18.7,-11.7 11,-4" fill="#cbd3dc"/><rect class="s" x="-11" y="-26" width="22" height="22" fill="#f7da6a"/><polygon class="s3" points="18,6 25.7,-1.7 47.7,-1.7 40,6" fill="#fffdf5"/><polygon class="s3" points="40,6 47.7,-1.7 47.7,20.3 40,28" fill="#cbd3dc"/><rect class="s" x="18" y="6" width="22" height="22" fill="#f9c0b4"/></svg>
+          <figcaption>mỗi tài nguyên một địa chỉ</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Tủ hồ sơ có nhãn: mỗi ngăn một loại giấy tờ. Muốn gì thì nói động tác (xem, thêm, sửa, xoá) cộng tên ngăn.</p>
+        <p class="chot"><span class="lb">Chốt</span>REST là một <b>style</b> (Roy Fielding, 2000), không phải protocol. URL là danh từ (tài nguyên), động tác là HTTP method, kết quả là status code, server không giữ trạng thái phiên giữa các request (<b>stateless</b>).</p>
+        <div class="vd"><span class="lb">Ví dụ</span><table class="mini"><tr><th>Việc</th><th>REST</th><th>Kiểu RPC qua HTTP</th></tr><tr><td>Xem đơn</td><td><code>GET /orders/42</code></td><td><code>POST /getOrder</code></td></tr><tr><td>Tạo đơn</td><td><code>POST /orders</code> → 201</td><td><code>POST /createOrder</code></td></tr><tr><td>Huỷ đơn</td><td><code>POST /orders/42/cancel</code></td><td><code>POST /cancelOrder</code></td></tr></table></div>
+        <div class="ap"><span class="lb">Áp dụng</span><ul><li>GET, PUT, DELETE là <b>idempotent</b>: gọi lại cho cùng kết quả → retry an toàn. POST thì không → retry thanh toán cần <code>Idempotency-Key</code>.</li><li>Lỗi trả đúng 4xx (client sai) hoặc 5xx (server lỗi), đừng trả 200 kèm <code>{"error": …}</code>.</li></ul></div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>“Dùng HTTP + JSON là REST.” Nhiều API thật ra là RPC qua HTTP (<code>POST /doSomething</code>). Không sai, nhưng khi phỏng vấn nên gọi đúng tên.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>PUT và POST khác gì về idempotency? (gửi lại PUT cùng body → cùng trạng thái; gửi lại POST → có thể tạo hai bản ghi)</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> ⭐ gRPC khác REST thế nào? Khi nào chọn gRPC?
+        <small>từ khóa: RPC · Protobuf · .proto · HTTP/2 streaming · gRPC-Web</small></div>
+      <div class="note hand">
+        <h3>Gọi hàm từ xa theo hợp đồng in sẵn</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-24 -36 H12 L24 -24 V34 H-24 Z" fill="#fffdf5"/><path class="s3" d="M12 -36 V-24 H24 Z" fill="#cbd3dc"/><path class="s2" d="M-15 -20 H3 M-15 -10 H12 M-15 0 H12"/><path class="ink" d="M-16 20 q4 -12 8 0 q4 8 8 -4 q4 -6 10 0" stroke="#e0652d" style="stroke-width:2.5"/><circle class="s" cx="14" cy="26" r="9" fill="#e87a6a"/><circle class="s3" cx="14" cy="26" r="3" fill="#f7da6a"/></svg>
+          <figcaption>file .proto là hợp đồng</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>REST như viết thư tay theo ý mình. gRPC như điền mẫu đơn in sẵn ô: hai bên đã thống nhất ô nào ghi gì, đọc rất nhanh nhưng người ngoài nhìn vào khó hiểu.</p>
+        <p class="chot"><span class="lb">Chốt</span>gRPC là RPC: gọi hàm ở máy khác như gọi hàm local. Hợp đồng viết trong <code>.proto</code>, sinh code cho client và server; dữ liệu <b>Protobuf binary</b> (nhỏ, parse nhanh); chạy trên <b>HTTP/2</b> nên có 4 kiểu gọi: unary, server streaming, client streaming, hai chiều. Đổi lại: debug bằng mắt khó, browser không gọi thẳng được (cần gRPC-Web + proxy).</p>
+        <div class="vd"><span class="lb">Ví dụ</span><pre>service OrderService {
+  rpc GetOrder (GetOrderReq) returns (Order);          // unary
+  rpc WatchOrders (Filter) returns (stream Order);     // server streaming
+}
+message GetOrderReq { int64 id = 1; }</pre></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Chọn khi: service nội bộ gọi nhau dày đặc, cần độ trễ thấp, nhiều team cần hợp đồng chặt, cần streaming. Không chọn cho API public hay đối tác: họ cần gọi được bằng curl, nên dùng REST + OpenAPI.</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Đổi số field trong <code>.proto</code> (<code>= 1</code>, <code>= 2</code>) là phá tương thích: client cũ đọc nhầm field. Chỉ thêm field mới, không đổi và không tái dùng số cũ.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Trả lời trong 60 giây: “em chưa dùng gRPC” + hiểu biết + so với request–reply qua ActiveMQ (cùng dùng cho nội bộ; gRPC đồng bộ, nhanh, hợp đồng chặt; queue chịu được service chết tạm thời).</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>REST: <code>startBackendRestful.js</code>, SmartPos Open API, Swagger cho đối tác. gRPC: chưa dùng; giữa các service dùng request–reply qua ActiveMQ/STOMP.</p>
+    <div class="summary hand"><h3>Summary</h3><p>REST là style: URL là tài nguyên, method là động tác, status là kết quả, stateless; GET/PUT/DELETE idempotent nên retry an toàn. gRPC là RPC với hợp đồng .proto, dữ liệu Protobuf binary, chạy trên HTTP/2 có streaming; hợp cho nội bộ cần nhanh, không hợp cho API public.</p></div>
+  </section>
+
+  <section class="page">
+    <h2 class="page-no"><b>2</b>GraphQL, webhook, chọn style</h2>
+
+    <div class="row c4">
+      <div class="cue"><b>Q3</b> GraphQL là gì? Một ưu, một nhược?
+        <small>từ khóa: schema · resolver · over-fetching · N+1 · DataLoader</small></div>
+      <div class="note hand">
+        <h3>Client tự chọn field</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-28" y="-34" width="56" height="70" rx="5" fill="#fffdf5"/><rect class="s" x="-10" y="-41" width="20" height="10" rx="3" fill="#cbd3dc"/><rect class="s3" x="-20" y="-20" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 -14 H18"/><path class="ink" d="M-18 -14 l4 5 l8 -11" stroke="#4fa355" style="stroke-width:3"/><rect class="s3" x="-20" y="-2" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 4 H18"/><path class="ink" d="M-18 4 l4 5 l8 -11" stroke="#4fa355" style="stroke-width:3"/><rect class="s3" x="-20" y="16" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 22 H18"/></svg>
+          <figcaption>tick đúng món cần</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Phiếu gọi món: tick đúng món mình cần, bếp chỉ làm đúng mấy món đó, không thừa không thiếu.</p>
+        <p class="chot"><span class="lb">Chốt</span>Một endpoint, client gửi truy vấn chọn đúng field cần. <b>Ưu</b>: hết over-fetching (thừa dữ liệu) và under-fetching (phải gọi nhiều lần). <b>Nhược</b>: dễ dính <b>N+1 query</b> ở resolver, và khó cache HTTP vì mọi thứ là <code>POST /graphql</code>.</p>
+        <div class="vd"><span class="lb">Ví dụ</span>Lấy 20 đơn kèm <code>customer { name }</code> → resolver customer chạy 20 lần → 1 + 20 query. Sửa bằng DataLoader: gom 20 id thành một query <code>WHERE id IN (…)</code>.</div>
+        <div class="ap"><span class="lb">Áp dụng</span>Hợp làm BFF (backend for frontend) cho nhiều loại client (web, app) cần dữ liệu khác nhau. Backend fintech nội bộ ít khi cần.</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Client gửi truy vấn lồng sâu tuỳ ý → một request làm sập DB. Phải giới hạn độ sâu và độ phức tạp truy vấn.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Nói trong 20 giây: một câu định nghĩa + một ưu + một nhược.</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q4</b> ⭐ Webhook là gì? Đối tác gọi webhook trùng thì xử lý sao?
+        <small>từ khóa: callback · at-least-once · idempotency key · HMAC signature · retry</small></div>
+      <div class="note hand">
+        <h3>Bên kia gọi ngược, có thể gọi trùng</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s3" r="36" fill="#cdebd0"/><path class="ink" d="M-25.4 -9.2 A27 27 0 0 1 25.4 -9.2"/><polygon class="s3" points="28.4,-0.8 18.8,-9.0 30.6,-13.3" fill="#4fa355"/><path class="ink" d="M25.4 9.2 A27 27 0 0 1 -25.4 9.2"/><polygon class="s3" points="-28.4,0.8 -18.8,9.0 -30.6,13.3" fill="#4fa355"/></svg>
+          <figcaption>timeout là gửi lại</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Thay vì 5 phút gọi điện hỏi “xong chưa” một lần, mình để lại số; xong việc bên kia gọi báo. Họ không chắc mình đã nghe thì gọi lại lần nữa.</p>
+        <p class="chot"><span class="lb">Chốt</span>Webhook: bên có sự kiện chủ động gọi HTTP vào URL bên kia đã đăng ký. Đối tác thường gửi <b>at-least-once</b>: timeout là gửi lại → có thể trùng. Xử lý bằng <b>idempotency</b> theo id sự kiện hoặc id giao dịch, kiểm chữ ký, trả 2xx nhanh.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><div class="flow"><span>nhận POST</span><i>→</i><span>kiểm chữ ký HMAC</span><i>→</i><span>INSERT event_id (unique)</span><i>→</i><span class="ok">mới: xử lý, trả 200</span><span class="no">trùng: trả 200, bỏ qua</span></div></div>
+        <div class="ap"><span class="lb">Áp dụng</span><ul><li>Unique constraint trên event_id / bill id là chốt chặn cuối; Redis <code>SET NX</code> chỉ là lớp chặn nhanh phía trước.</li><li>Đừng làm việc nặng trước khi trả 200: đối tác timeout sẽ gửi lại, tạo thêm trùng.</li></ul></div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>SELECT “có chưa” rồi mới INSERT → hai request trùng tới cùng lúc đều thấy “chưa có”. Phải dựa vào unique constraint hoặc lock.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Nói trong 60 giây, có đủ hai chữ <i>idempotency</i> và <i>at-least-once</i>.</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> Thiết kế API mới thì chọn style nào?
+        <small>từ khóa: public API · internal · BFF · async callback · trade-off</small></div>
+      <div class="note hand">
+        <h3>Chọn theo ai gọi và họ cần gì</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s" cx="-32" cy="0" r="9" fill="#f7da6a"/><path class="s2" d="M-23 -3 L-6 -20 M-23 3 L-6 20"/><polygon class="s3" points="-1.6,-24.4 -5.0,-12.1 -13.9,-21.0" fill="#1d2433"/><polygon class="s3" points="-1.6,24.4 -13.9,21.0 -5.0,12.1" fill="#1d2433"/><path class="s3" d="M5 -29 v14 a13 5 0 0 0 26 0 v-14" fill="#bfd9f2"/><ellipse class="s3" cx="18" cy="-29" rx="13" ry="5" fill="#fffdf5"/><rect class="s3" x="5" y="13" width="30" height="18" rx="2" fill="#fffdf5"/><path class="s2" d="M5 13 L20 24 L35 13"/></svg>
+          <figcaption>mỗi người nhận một đường</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Gửi cho khách lạ thì dùng thư bưu điện chuẩn; nói với đồng nghiệp cùng phòng thì gọi nội bộ; ai cần báo khi xong thì để lại số.</p>
+        <p class="chot"><span class="lb">Chốt</span>Không có style tốt nhất, chỉ có style hợp tình huống. Một hệ thường trộn: REST ra ngoài, gRPC hoặc queue bên trong, webhook báo đối tác.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><table class="mini"><tr><th>Tình huống</th><th>Chọn</th><th>Vì sao</th></tr><tr><td>API cho đối tác</td><td>REST + OpenAPI</td><td>ai cũng gọi được, tool sẵn</td></tr><tr><td>Service nội bộ gọi dày</td><td>gRPC</td><td>nhanh, hợp đồng chặt, streaming</td></tr><tr><td>Web + app cần dữ liệu khác nhau</td><td>GraphQL (BFF)</td><td>client tự chọn field</td></tr><tr><td>Báo kết quả việc xử lý lâu</td><td>webhook</td><td>client khỏi hỏi liên tục</td></tr><tr><td>Nội bộ, chịu được chậm, cần chịu lỗi</td><td>queue / event</td><td>bên nhận chết tạm vẫn không mất việc</td></tr></table></div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Trả lời “GraphQL tốt hơn REST” hay ngược lại. Luôn nói kèm cái giá của lựa chọn.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Kể trong 30 giây 3 chỗ ở FV dùng 3 style khác nhau. (REST cho đối tác, request–reply qua queue nội bộ, IPN/webhook từ đối tác)</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>Webhook/IPN: Ministop IPN, IPN redirect ở payment webview SDK; chống trùng merchant bill id bằng idempotency, dedupe request trên Redis. GraphQL: chưa dùng.</p>
+    <div class="summary hand"><h3>Summary</h3><p>GraphQL cho client tự chọn field, đổi lại dễ dính N+1 (sửa bằng DataLoader) và khó cache. Webhook là bên kia gọi ngược khi có sự kiện, gửi at-least-once nên phải idempotent theo id, dựa vào unique constraint. Chọn style theo người gọi: REST cho ngoài, gRPC/queue cho trong, webhook để báo kết quả.</p></div>
+  </section>
+
+  <p class="foot">Nguồn: grpc.io “Introduction to gRPC”. Trước: 4.0 API style (hình) · Xem thêm: 04 / Idempotency.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

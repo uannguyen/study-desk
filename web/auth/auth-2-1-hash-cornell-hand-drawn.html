@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .note pre { font: 16px/23px ui-monospace, 'SFMono-Regular', Menlo, monospace; background: #efe9de; border-radius: 6px; padding: 6px 10px; margin: 4px 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* khung khối gọn: Nôm na → Chốt → Ví dụ → Áp dụng → Bẫy → Tự kiểm */
+  .note h3 small { font-size: 21px; color: #5a6475; }
+  .chot .lb { background: #fbe98a; } .vd .lb { background: #f9c9b6; } .ap .lb { background: #c5def5; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 6px; }
+  .flow span { border: 2px solid #1d2433; border-radius: 10px; padding: 0 9px; background: #fff; font-size: 19px; line-height: 28px; }
+  .flow span.ok { background: #cfe8cf; } .flow span.no { background: #f6b3a8; }
+  .flow i { font-style: normal; color: #2f80d8; font-size: 22px; }
+  table.mini { border-collapse: collapse; font-size: 19px; line-height: 26px; margin: 4px 0 8px; }
+  table.mini th, table.mini td { border: 2px solid #1d2433; padding: 2px 10px; text-align: left; vertical-align: top; }
+  table.mini th { background: var(--c); font-weight: normal; }
+  .ap ul, .vd ol { margin: 0; padding-left: 24px; }
+  .vd { clear: right; }  /* ví dụ luôn nằm dưới doodle để đủ bề ngang */
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">2.1 · Hash: một chiều, không khoá</h1>
+  <p class="sub">2.1 Hash → 2.1.1 SHA-256 (MD5, SHA-1 đã hỏng) → 2.1.2 bcrypt, argon2 cho password</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>Hash: một chiều, không khoá</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> ⭐ Hash khác mã hoá ở chỗ nào?
+        <small>từ khóa: one-way · deterministic · fixed length · reversible</small></div>
+      <div class="note hand">
+        <h3>2.1 Hash: máy xay một chiều</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-34 -38 H34 L8 -6 V8 H-8 V-6 Z" fill="#f9c0b4"/><circle class="s3" cx="-12" cy="-30" r="5" fill="#f7da6a"/><circle class="s3" cx="6" cy="-28" r="6" fill="#cdebd0"/><circle class="s3" cx="20" cy="-31" r="4" fill="#bfd9f2"/><path class="ink" d="M0 12 V18" stroke="#2f80d8"/><rect class="s" x="-34" y="20" width="68" height="22" rx="5" fill="#fffdf5"/><text class="t" x="0" y="37" font-size="16" stroke-width="0.3">a3f9c2…</text></svg>
+          <figcaption>vào gì cũng ra mã ngắn</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Máy xay sinh tố: chuối thành sinh tố, không ai ráp lại được quả chuối. Mã hoá thì như két sắt: có chìa là lấy ra nguyên vẹn.</p>
+        <p class="chot"><span class="lb">Chốt</span>Vào gì cũng ra chuỗi dài cố định; cùng vào thì cùng ra; <b>không có khoá, không đảo ngược</b>. Dùng để kiểm “có bị sửa không”.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><div class="flow"><span>"hello"</span><i>→</i><span>SHA-256</span><i>→</i><span>2cf24dba…9824 (64 ký tự hex)</span></div><div class="flow"><span>"hello<b>!</b>"</span><i>→</i><span>SHA-256</span><i>→</i><span>ce06092f…308b (khác hẳn)</span></div></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Checksum file tải về, ETag, fingerprint body cho idempotency key. Dữ liệu cần lấy lại nguyên vẹn thì dùng mã hoá (2.2), không dùng hash.</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Nói “mã hoá password bằng SHA-256” là sai thuật ngữ: password được <b>hash</b>.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Kẻ gian sửa file rồi sửa luôn checksum đi kèm, hash có phát hiện được không? (không, cần thêm khoá → mục 3)</p>
+      </div>
+    </div>
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> Vì sao MD5, SHA-1 bị bỏ? SHA-256 dùng cho việc gì?
+        <small>từ khóa: collision · SHA-2 · SHAttered · integrity</small></div>
+      <div class="note hand">
+        <h3>2.1.1 SHA-256 dùng được; MD5, SHA-1 đã hỏng</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/></svg>
+          <figcaption>MD5, SHA-1: đã có collision</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Hash là vân tay của dữ liệu. Hai người khác nhau mà trùng vân tay thì vân tay hết giá trị làm bằng chứng.</p>
+        <p class="chot"><span class="lb">Chốt</span>“Hỏng” = tìm được <b>collision</b>: hai đầu vào khác nhau, cùng hash. MD5 có từ 2004, SHA-1 từ 2017 (SHAttered). SHA-256 chưa có.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><div class="flow"><span>Hợp đồng A: “trả 1 triệu”</span><i>→</i><span>MD5</span><i>→</i><span>mã X</span></div><div class="flow"><span>Hợp đồng B: “trả 1 tỉ”</span><i>→</i><span>MD5</span><i>→</i><span>cùng mã X</span><i>→</i><span class="no">✗ ký A = ký luôn B</span></div></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Mặc định <code>createHash('sha256')</code>. Gặp MD5/SHA-1 trong chữ ký, token, chống giả → đánh dấu cần thay. MD5 chỉ còn dùng được cho việc không dính bảo mật (phát hiện file hỏng do mạng).</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>SHA-256 chống collision tốt nhưng quá nhanh → không dùng để hash password (2.1.2).</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Nói trong 1 câu: “một hàm hash bị hỏng” nghĩa là gì?</p>
+      </div>
+    </div>
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> ⭐ Lưu password thế nào cho đúng? Vì sao không dùng SHA-256?
+        <small>từ khóa: salt · work factor · bcrypt · argon2id · rainbow table</small></div>
+      <div class="note hand">
+        <h3>2.1.2 bcrypt, argon2: hash cố ý chậm cho password</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-20 -31 H20 C20 -10 4 -4 4 0 C4 4 20 10 20 31 H-20 C-20 10 -4 4 -4 0 C-4 -4 -20 -10 -20 -31 Z" fill="#bfd9f2"/><path class="s3" d="M-13 -26 H13 C11 -16 5 -9 0 -5 C-5 -9 -11 -16 -13 -26 Z" fill="#f2b84b"/><path class="s3" d="M-16 29 H16 C14 22 6 16 0 14 C-6 16 -14 22 -16 29 Z" fill="#f2b84b"/><path class="s2" d="M0 -3 V14"/><rect class="s" x="-27" y="-39" width="54" height="8" rx="3" fill="#f7da6a"/><rect class="s" x="-27" y="31" width="54" height="8" rx="3" fill="#f7da6a"/></svg>
+          <figcaption>chậm là tính năng</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Ổ khoá số 4 chữ: mỗi lần xoay mất 1 giây thì thử hết 10.000 tổ hợp mất gần 3 tiếng; xoay nhanh như chớp thì vài giây là mở.</p>
+        <p class="chot"><span class="lb">Chốt</span>Password ngắn, đoán được. Kẻ trộm DB sẽ thử từng từ. Hash <b>chậm</b> + <b>salt riêng</b> mỗi user làm mỗi lần thử tốn kém và không dùng được bảng tra sẵn.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><table class="mini"><tr><th></th><th>SHA-256</th><th>bcrypt cost 12</th></tr><tr><td>Một GPU thử được</td><td>hàng tỉ lần/giây</td><td>chỉ cỡ nghìn lần/giây</td></tr><tr><td>Hai user cùng “123456”</td><td>cùng một hash</td><td>hash khác nhau (salt khác)</td></tr></table></div>
+        <div class="ap"><span class="lb">Áp dụng</span><pre>const hash = await bcrypt.hash(pw, 12);     // đăng ký
+const ok   = await bcrypt.compare(pw, hash); // login</pre>Salt tự sinh và nằm sẵn trong chuỗi hash. Dự án mới: argon2id (OWASP xếp đầu); bcrypt vẫn chấp nhận.</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Salt không cần giữ bí mật. bcrypt chỉ lấy 72 byte đầu của password.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Vì sao “chậm” là tính năng mà không phải khuyết điểm? (user login 1 lần thấy chậm 0,2s; kẻ thử tỉ lần thì chịu không nổi)</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>Tự hỏi: password user ở hệ cũ hash bằng gì, cost bao nhiêu? Chỗ nào còn MD5?</p>
+    <div class="summary hand"><h3>Summary</h3><p>Hash một chiều, không khoá, dùng để kiểm “có bị sửa không”. SHA-256 dùng được; MD5 và SHA-1 đã có collision nên bỏ. Password phải dùng hash cố ý chậm có salt (argon2id, bcrypt), không dùng SHA-256 vì nó quá nhanh.</p></div>
+  </section>
+
+  <p class="foot">Nguồn: OWASP Password Storage Cheat Sheet, SHAttered (2017). Tốc độ thử là ước lượng, tuỳ phần cứng. Tiếp theo: 2.2 Mã hoá đối xứng.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

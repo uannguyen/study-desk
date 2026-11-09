@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tư duy phản biện</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  /* khổ rộng: thêm class wide vào thẻ main, cột Q giữ nguyên, cột nội dung tự giãn. render.sh nhận ra để chụp rộng 1440 */
+  .sheet.wide { max-width: 1440px; }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">TƯ DUY PHẢN BIỆN KHI HỌC &amp; LÀM VIỆC</h1>
+  <p class="sub">Thói quen hỏi vài câu cố định trước khi tin, trước khi chọn, và khi học một thứ mới.</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>Hỏi gì · hỏi sâu · học thế nào</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> ⭐ Tư duy phản biện là gì, khác “nghi ngờ mọi thứ” ở đâu?
+        <small>từ khóa: critical thinking · assumption · evidence · reasoning</small></div>
+      <div class="note hand">
+        <h3>① Hỏi trước khi tin, không phải cãi cho thắng</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M10 12 L34 36" fill="none" style="stroke-width:11"/><path d="M10 12 L34 36" fill="none" stroke="#f2b84b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle class="s" cx="-8" cy="-8" r="26" fill="#eaf4fd"/><path class="s2" d="M-24 4 l9 -11 l9 7 l12 -18" stroke="#e0652d"/><circle class="s3" cx="9" cy="-18" r="3" fill="#e0652d"/></svg>
+          <figcaption>soi trước khi tin</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Quảng cáo “pin dùng mãi không hết”: không tin ngay, cũng không chê ngay. Hỏi: ai nói? bằng chứng đâu? “mãi mãi” là bao lâu?</p>
+        <p><span class="lb">Bên dưới</span>Đánh giá một khẳng định theo 5 trục: <b>giả định · bằng chứng · phương án thay thế/tradeoff · điều kiện biên · nguồn</b>. Mục tiêu là quyết định đúng hơn, không phải thắng tranh luận.</p>
+        <p><span class="lb">Ví dụ</span>“Tách microservice để scale” → bottleneck nằm ở đâu? Đã profile chưa? Scale ngang monolith có đủ không? Chi phí vận hành tăng bao nhiêu?</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Phản biện ≠ phủ định. Nghi ngờ mọi thứ cũng lười như tin mọi thứ: cả hai đều bỏ qua bước kiểm tra.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Lấy quyết định kỹ thuật gần nhất, nêu được giả định ngầm của nó trong 1 câu.</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> Kiểm tra một khẳng định: giả định và bằng chứng là gì?
+        <small>từ khóa: hidden assumption · evidence · measurement · correlation vs causation</small></div>
+      <div class="note hand">
+        <h3>② Đang coi gì là đúng? Dựa vào đâu?</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-10 -36 H10 V-12 L32 28 Q36 36 28 36 H-28 Q-36 36 -32 28 L-10 -12 Z" fill="#fffdf5"/><path class="s3" d="M-22 10 H22 L32 28 Q36 36 28 36 H-28 Q-36 36 -32 28 Z" fill="#cdebd0"/><rect class="s" x="-13" y="-41" width="26" height="6" rx="2" fill="#cbd3dc"/><circle class="s2" cx="-6" cy="22" r="3.5"/><circle class="s2" cx="9" cy="17" r="2.5"/><circle class="s2" cx="2" cy="2" r="2.5"/></svg>
+          <figcaption>đo, đừng đoán</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>“Con mèo làm vỡ cốc.” Giả định: chỉ có mèo ở nhà. Bằng chứng: thấy tận mắt, hay chỉ đoán?</p>
+        <p><span class="lb">Bên dưới</span><b>Giả định</b> là điều đang coi là đúng mà không ai nói ra; phần lớn quyết định sai hỏng ở đây chứ không ở logic. <b>Bằng chứng</b> xếp theo độ tin: số đo/log &gt; tái hiện được &gt; kinh nghiệm &gt; “nghe nói”.</p>
+        <p><span class="lb">Ví dụ</span>“API chậm do DB” → đã xem trace/slow query log chưa? Hay chậm ở chỗ gọi service bên ngoài?</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Tương quan ≠ nhân quả: deploy xong lỗi tăng chưa chắc do bản deploy, có thể traffic tăng cùng lúc.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Với mỗi kết luận, trả lời được: “nếu mình sai thì sẽ thấy dấu hiệu gì?”</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> ⭐ Vì sao luôn hỏi “còn cách nào khác, đánh đổi gì?”
+        <small>từ khóa: trade-off · alternatives · cost · constraints</small></div>
+      <div class="note hand">
+        <h3>③ Không có giải pháp miễn phí</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="ink" d="M0 -32 V30 M-16 32 H16"/><path class="ink" d="M-32 -18 L32 -22"/><path class="s2" d="M-32 -18 L-42 8 M-32 -18 L-22 8 M32 -22 L22 4 M32 -22 L42 4"/><path class="s" d="M-44 8 Q-32 24 -20 8 Z" fill="#bfd9f2"/><path class="s" d="M20 4 Q32 20 44 4 Z" fill="#f9c0b4"/><circle class="s3" cx="0" cy="-34" r="4" fill="#f7da6a"/></svg>
+          <figcaption>được gì, mất gì</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Đi xe máy thì nhanh nhưng ướt khi mưa; đi bus thì khô nhưng chậm. Không có cách đi vừa nhanh, vừa khô, vừa rẻ.</p>
+        <p><span class="lb">Bên dưới</span>Mọi giải pháp mua thứ này bằng thứ khác: cache mua tốc độ bằng dữ liệu cũ; index mua đọc nhanh bằng ghi chậm; queue mua khả năng chịu tải bằng độ trễ và độ phức tạp.</p>
+        <p><span class="lb">Ví dụ</span>Cache số dư ví bằng Redis → nhanh, nhưng phải trả lời được: lệch với DB bao lâu thì chấp nhận được?</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Chỉ nêu ưu điểm. Interviewer Senior nghe “cách này không có nhược điểm” là trừ điểm ngay.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Trong 30 giây nêu được ≥ 1 phương án thay thế và cái giá của phương án mình chọn.</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> Khi nào một điều “đúng” lại sai, và ai đang nói điều đó?
+        <small>từ khóa: boundary condition · edge case · scale · source bias</small></div>
+      <div class="note hand">
+        <h3>④ Đúng ở đâu, sai khi nào, ai được lợi</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/></svg>
+          <figcaption>biên của sự thật</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>“Nước sôi ở 100°C”: đúng ở đồng bằng, lên núi cao thì sôi sớm hơn. Còn người bán nồi thì luôn khen nồi của mình.</p>
+        <p><span class="lb">Bên dưới</span>Kiến thức chỉ đúng trong một phạm vi: tải nhỏ hay lớn, 1 hay nhiều instance, mạng ổn hay lỗi, có concurrency hay không. Nguồn cũng có động cơ: blog của vendor, hype, người chỉ làm một kiểu hệ thống.</p>
+        <p><span class="lb">Ví dụ</span>Lock trong memory chạy đúng với 1 instance; scale lên 3 pod là thành race condition.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Học “best practice” mà bỏ điều kiện áp dụng → mang kiến trúc của Netflix vào hệ thống 1.000 user.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Với mỗi kiến thức, nói được 1 tình huống nó không còn đúng.</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> Phải có tư duy phản biện rồi mới đặt được câu hỏi đào sâu?
+        <small>từ khóa: mental model · knowledge gap · questioning · feedback loop</small></div>
+      <div class="note hand">
+        <h3>⑤ Không cần chờ: hỏi theo khuôn chính là cách luyện</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s3" r="36" fill="#cdebd0"/><path class="ink" d="M-25.4 -9.2 A27 27 0 0 1 25.4 -9.2"/><polygon class="s3" points="28.4,-0.8 18.8,-9.0 30.6,-13.3" fill="#4fa355"/><path class="ink" d="M25.4 9.2 A27 27 0 0 1 -25.4 9.2"/><polygon class="s3" points="-28.4,0.8 -18.8,9.0 -30.6,13.3" fill="#4fa355"/></svg>
+          <figcaption>nền ↔ câu hỏi</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Muốn hỏi “sao con cá này không có vây?” thì trước đó phải biết cá thường có vây. Hỏi được là vì thấy chỗ lệch.</p>
+        <p><span class="lb">Bên dưới</span>Không phải điều kiện trước, mà là một vòng lặp: <b>nền kiến thức (mental model) → thấy chỗ không khớp → đặt câu hỏi → học thêm → nền dày hơn</b>. Thứ thiếu thường là nền, không phải “tố chất”.</p>
+        <p><span class="lb">Ví dụ</span>Nông: “Index là gì?” → Sâu: “Bỏ index thì query hỏng ở đâu?” · “Index vô dụng khi nào?” · “Khi nào không nên đánh index?”</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Chờ “đủ giỏi” mới hỏi; hoặc hỏi khi chưa có nền nên câu hỏi lan man, không có điểm tựa.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Biến một câu “X là gì?” thành 3 câu sâu: vì sao có X · bỏ X thì sao · X sai khi nào.</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q6</b> ⭐ Học một kiến thức mới thì nhìn từ góc nào cho dễ nắm?
+        <small>từ khóa: problem-first · mechanism · trade-off · failure mode</small></div>
+      <div class="note hand">
+        <h3>⑥ Vấn đề trước, công cụ sau: 5 bước</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s" cx="-36" cy="-16" r="10" fill="#cdebd0"/><circle class="s" cx="0" cy="-16" r="10" fill="#cdebd0"/><circle class="s" cx="36" cy="-16" r="10" fill="#e87a6a"/><text class="t" x="-36" y="-11" font-size="15">1</text><text class="t" x="0" y="-11" font-size="15">2</text><text class="t" x="36" y="-11" font-size="15">3</text><path class="s2" d="M-25 -16 H-14 M11 -16 H22"/><polygon class="s3" points="-11.0,-16.0 -19.0,-11.8 -19.0,-20.2" fill="#1d2433"/><polygon class="s3" points="25.0,-16.0 17.0,-11.8 17.0,-20.2" fill="#1d2433"/><path class="ink" d="M36 -4 C36 36 -36 36 -36 14" stroke="#4fa355"/><polygon class="s3" points="-36.0,5.0 -29.7,16.0 -42.3,16.0" fill="#4fa355"/></svg>
+          <figcaption>đi theo thứ tự</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Trước khi học cách mở ô, hỏi “ô để làm gì?” (để không ướt). Hiểu vậy thì tự đoán ra: gió to thì ô vô dụng.</p>
+        <p><span class="lb">Bên dưới</span>① Không có nó thì đau ở đâu → ② cơ chế bên dưới → ③ cái giá phải trả → ④ khi nào nó hỏng → ⑤ nối với việc mình đã làm.</p>
+        <p><span class="lb">Ví dụ</span>Database index: full table scan chậm → B-tree, tìm theo log n → ghi chậm hơn, tốn disk → bọc cột trong function, <code>LIKE '%x'</code>, sai thứ tự composite → query nào ở FV từng chậm?</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Bắt đầu từ cú pháp “X dùng thế nào” → nhớ chi tiết mà không hiểu, quên nhanh. Đọc thêm nguồn thứ 3, thứ 4 không làm hiểu hơn.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Trả lời đủ 5 bước cho topic vừa học, mỗi bước 1 dòng.</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q7</b> Làm sao biết mình đã hiểu, chứ không chỉ “đọc quen mắt”?
+        <small>từ khóa: Feynman technique · active recall · illusion of competence</small></div>
+      <div class="note hand">
+        <h3>⑦ Nói lại được mới là hiểu</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-7" y="-46" width="14" height="9" rx="3" fill="#cbd3dc"/><path class="s2" d="M24 -28 l7 -7"/><circle class="s" cx="0" cy="3" r="34" fill="#fffdf5"/><path class="s3" d="M0 3 L0 -27 A30 30 0 0 1 30 3 Z" fill="#f9c0b4"/><path class="s2" d="M0 -29 v5 M29 3 h-5 M0 35 v-5 M-29 3 h5"/><path class="s" d="M0 3 L0 -22"/><circle class="s3" cx="0" cy="3" r="3.5" fill="#1d2433"/></svg>
+          <figcaption>nói trong 60 giây</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Xem người khác đạp xe 100 lần không bằng tự đạp 1 lần. Đọc thấy quen khác với tự nói ra được.</p>
+        <p><span class="lb">Bên dưới</span>Đọc lại tạo cảm giác “biết rồi” (illusion of competence). Tự nhớ lại (active recall) và giảng lại bằng lời đơn giản (Feynman) buộc não phải truy xuất, nên chỗ hổng lộ ra.</p>
+        <p><span class="lb">Ví dụ</span>Gấp tài liệu, nói 60 giây: “index là gì, giá phải trả, khi nào hỏng”. Ấp úng ở đâu thì quay lại đúng chỗ đó.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Thấy hiểu khi đọc nên bỏ bước nói ra; hoặc giải thích toàn thuật ngữ mà không có nổi một ví dụ.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Che cột phải trang này, đọc Q1–Q7, mỗi câu nói thành tiếng 30 giây.</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>tự hỏi: quyết định kỹ thuật nào ở FV mình làm theo “best practice” mà chưa nêu được giả định và cái giá? Đó là chất liệu tốt cho câu chuyện phỏng vấn.</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Tư duy phản biện là hỏi 5 câu trước khi tin: giả định gì, bằng chứng đâu, còn cách nào và đánh đổi gì, khi nào sai, ai đang nói. Không cần chờ có nó mới hỏi sâu: nền kiến thức cho thấy chỗ lệch, đặt câu hỏi theo khuôn làm nền dày thêm. Học cái mới thì đi từ vấn đề → cơ chế → cái giá → khi nào hỏng → nối với FV, rồi kiểm bằng cách nói lại trong 60 giây.</p>
+    </div>
+  </section>
+
+  <p class="foot">5 trục là bản rút gọn từ khung Paul-Elder và Socratic questioning; 5 bước học là quy ước của bộ ôn này, không phải chuẩn.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

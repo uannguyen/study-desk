@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OAuth2 và OIDC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1600px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1600 1345"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="OAuth2, OIDC và Client Credentials: so sánh, cách chọn flow và bốn bước của Authorization Code"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <rect class="s" x="40" y="30" width="1520" height="100" rx="16" fill="#bcd9f5" />
+        <text class="t" x="800" y="95" font-size="42">5.0 · OAuth2 và OIDC: ủy quyền và biết ai</text>
+        <rect class="s" x="550" y="143" width="500" height="52" rx="26" fill="#f9c9b6" />
+        <text class="t" x="800" y="179" font-size="30">hai câu hỏi chọn flow, bốn bước để nhớ</text>
+
+        <g><rect class="s" x="35" y="220" width="480" height="580" rx="18" fill="#fffdf5"/><rect class="s" x="75" y="236" width="400" height="54" rx="12" fill="#bcd9f5"/><text class="t" x="275" y="275" font-size="32">5.1 OAuth2</text><text class="t" x="275" y="326" font-size="24">Đưa nhân viên giữ xe chìa phụ:</text><text class="t" x="275" y="354" font-size="24">nổ máy được, không mở cốp.</text><g transform="translate(275 445) scale(1.5)"><g transform="translate(0 -4) rotate(-30)"><path class="s" d="M-4 0 H38 M26 0 v15 M37 0 v11" fill="none" style="stroke-width:7"/><path d="M-4 0 H38 M26 0 v15 M37 0 v11" fill="none" stroke="#f7da6a" stroke-width="3" stroke-linecap="round"/><circle class="s" cx="-20" cy="0" r="18" fill="#bfd9f2"/><circle class="s2" cx="-20" cy="0" r="6" fill="#fbf9f2"/></g></g><text class="t" x="105" y="430" font-size="22">app</text><text class="t" x="105" y="456" font-size="22">(client)</text><text class="t" x="445" y="430" font-size="22">chỉ nổ máy,</text><text class="t" x="445" y="456" font-size="22">không mở cốp</text><rect class="s3" x="60" y="540" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="120" y="573" font-size="22">Trả lời</text><rect class="s3" x="180" y="540" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="335" y="573" font-size="22">được làm gì? (1.2)</text><rect class="s3" x="60" y="600" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="120" y="633" font-size="22">Nhận</text><rect class="s3" x="180" y="600" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="335" y="633" font-size="22">access token + scope</text><rect class="s3" x="60" y="660" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="120" y="693" font-size="22">Flow</text><rect class="s3" x="180" y="660" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="335" y="693" font-size="22">Code + PKCE</text><rect x="60" y="742" width="430" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="275" y="769" font-size="24">ủy quyền, không đưa password</text></g><g><rect class="s" x="560" y="220" width="480" height="580" rx="18" fill="#fffdf5"/><rect class="s" x="600" y="236" width="400" height="54" rx="12" fill="#e1d8f7"/><text class="t" x="800" y="275" font-size="32">5.2 OIDC</text><text class="t" x="800" y="326" font-size="24">Thêm một tờ giấy xác nhận:</text><text class="t" x="800" y="354" font-size="24">“người này là Lan, đăng nhập 9h”.</text><g transform="translate(800 445) scale(1.6)"><rect class="s" x="-40" y="-26" width="80" height="54" rx="7" fill="#fffdf5"/><rect class="s3" x="-40" y="-26" width="80" height="12" rx="6" fill="#bfd9f2"/><circle class="s" cx="-20" cy="6" r="9" fill="#f9c0b4"/><path class="s3" d="M-32 24 q12 -16 24 0" fill="#f9c0b4"/><path class="s2" d="M0 0 H30 M0 10 H26 M0 20 H18"/></g><text class="t" x="630" y="430" font-size="22">đăng nhập</text><text class="t" x="630" y="456" font-size="22">bằng Google</text><text class="t" x="970" y="430" font-size="22">ID token</text><text class="t" x="970" y="456" font-size="22">cho app</text><rect class="s3" x="585" y="540" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="645" y="573" font-size="22">Trả lời</text><rect class="s3" x="705" y="540" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="860" y="573" font-size="22">ai đăng nhập? (1.1)</text><rect class="s3" x="585" y="600" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="645" y="633" font-size="22">Thêm</text><rect class="s3" x="705" y="600" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="860" y="633" font-size="22">scope openid</text><rect class="s3" x="585" y="660" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="645" y="693" font-size="22">Nhận</text><rect class="s3" x="705" y="660" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="860" y="693" font-size="22">ID token (là JWT)</text><rect x="585" y="742" width="430" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="800" y="769" font-size="24">OAuth2 và biết người dùng là ai</text></g><g><rect class="s" x="1085" y="220" width="480" height="580" rx="18" fill="#fffdf5"/><rect class="s" x="1125" y="236" width="400" height="54" rx="12" fill="#cdebd0"/><text class="t" x="1325" y="275" font-size="32">5.3 Client Credentials</text><text class="t" x="1325" y="326" font-size="24">Xe chở hàng có thẻ ra vào riêng,</text><text class="t" x="1325" y="354" font-size="24">không cần ai ký giấy mỗi lần.</text><rect class="s" x="1105" y="423" width="120" height="46" rx="12" fill="#ffffff"/><text class="t" x="1165.0" y="453.26" font-size="22">order-svc</text><path class="ink" d="M1230 446 L1270 446" marker-end="url(#ad)"/><g transform="translate(1335 445) scale(1.2)"><polygon class="s3" points="-44,8 -36.3,0.3 -14.3,0.3 -22,8" fill="#fffdf5"/><polygon class="s3" points="-22,8 -14.3,0.3 -14.3,22.3 -22,30" fill="#cbd3dc"/><rect class="s" x="-44" y="8" width="22" height="22" fill="#bfd9f2"/><polygon class="s3" points="-11,-26 -3.3,-33.7 18.7,-33.7 11,-26" fill="#fffdf5"/><polygon class="s3" points="11,-26 18.7,-33.7 18.7,-11.7 11,-4" fill="#cbd3dc"/><rect class="s" x="-11" y="-26" width="22" height="22" fill="#f7da6a"/><polygon class="s3" points="18,6 25.7,-1.7 47.7,-1.7 40,6" fill="#fffdf5"/><polygon class="s3" points="40,6 47.7,-1.7 47.7,20.3 40,28" fill="#cbd3dc"/><rect class="s" x="18" y="6" width="22" height="22" fill="#f9c0b4"/></g><text class="t" x="1495" y="440" font-size="22">payment</text><text class="t" x="1495" y="466" font-size="22">API</text><rect class="s3" x="1110" y="540" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="1170" y="573" font-size="22">Có user</text><rect class="s3" x="1230" y="540" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="1385" y="573" font-size="22">không, máy gọi máy</text><rect class="s3" x="1110" y="600" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="1170" y="633" font-size="22">Xác thực</text><rect class="s3" x="1230" y="600" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="1385" y="633" font-size="22">client_id + secret</text><rect class="s3" x="1110" y="660" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="1170" y="693" font-size="22">Refresh</text><rect class="s3" x="1230" y="660" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="1385" y="693" font-size="22">không có</text><rect x="1110" y="742" width="430" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="1325" y="769" font-size="24">service tự xin token</text></g>
+        <rect class="s" x="35" y="830" width="830" height="66" rx="12" fill="#c5def5"/><text class="tl" x="55" y="877" font-size="36">Chọn flow nào? Hai câu hỏi</text><rect class="s" x="35" y="915" width="380" height="64" rx="12" fill="#bcd9f5"/><text class="t" x="225.0" y="955.58" font-size="26">Có người dùng bấm đồng ý?</text><path class="ink" d="M415 947 L560 947" marker-end="url(#ad)"/><text class="t" x="488" y="935" font-size="22">Không</text><rect class="s" x="565" y="915" width="300" height="64" rx="12" fill="#cdebd0"/><text class="t" x="715.0" y="954.92" font-size="24">5.3 Client Credentials</text><path class="ink" d="M225 979 L225 1008" marker-end="url(#ad)"/><text class="t" x="262" y="1001" font-size="22">Có</text><rect class="s" x="35" y="1010" width="380" height="64" rx="12" fill="#bcd9f5"/><text class="t" x="225.0" y="1050.58" font-size="26">Cần biết ai đăng nhập?</text><path class="ink" d="M415 1042 L560 1042" marker-end="url(#ad)"/><text class="t" x="488" y="1030" font-size="22">Không</text><rect class="s" x="565" y="1010" width="300" height="64" rx="12" fill="#bcd9f5"/><text class="t" x="715.0" y="1049.92" font-size="24">5.1 Code + PKCE</text><path class="ink" d="M225 1074 L225 1103" marker-end="url(#ad)"/><text class="t" x="262" y="1096" font-size="22">Cần</text><rect class="s" x="35" y="1105" width="380" height="64" rx="12" fill="#e1d8f7"/><text class="t" x="225.0" y="1144.92" font-size="24">Code + PKCE + openid (5.2)</text>
+        <rect class="s" x="900" y="830" width="665" height="66" rx="12" fill="#c5def5"/><text class="tl" x="920" y="877" font-size="36">Authorization Code: 4 bước</text><rect class="s" x="900" y="915" width="665" height="52" rx="12" fill="#fffdf5"/><text class="t" x="1232" y="951" font-size="24">1. Trình duyệt tới /authorize, kèm state + challenge</text><rect class="s" x="900" y="981" width="665" height="52" rx="12" fill="#fffdf5"/><text class="t" x="1232" y="1017" font-size="24">2. User đăng nhập, bấm Đồng ý</text><rect class="s" x="900" y="1047" width="665" height="52" rx="12" fill="#fffdf5"/><text class="t" x="1232" y="1083" font-size="24">3. Redirect về app, kèm code + state</text><rect class="s" x="900" y="1113" width="665" height="52" rx="12" fill="#fffdf5"/><text class="t" x="1232" y="1149" font-size="24">4. Backend POST /token: code + verifier → token</text>
+
+        <g transform="translate(0 1210)">
+          <rect class="s" x="60" y="0" width="1480" height="76" rx="16" fill="#fbe98a" />
+          <text class="t" x="800" y="52" font-size="36">OAuth2 trả lời được làm gì, OIDC trả lời ai đăng nhập; có user thì Code + PKCE.</text>
+        </g>
+        <text class="t" x="800" y="1325" font-size="18">Nguồn: RFC 6749, RFC 7636 (PKCE), RFC 9700, OpenID Connect Core 1.0.</text>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

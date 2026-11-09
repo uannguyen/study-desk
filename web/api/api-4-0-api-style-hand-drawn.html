@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API style: chia lời gọi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1600px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1600 1931"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="API style: REST, RPC/gRPC, GraphQL, event-driven (webhook, message queue) là bốn cách chia nghiệp vụ thành lời gọi"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <!-- TIÊU ĐỀ -->
+        <rect class="s" x="40" y="30" width="1520" height="100" rx="16" fill="#bcd9f5"/>
+        <text class="t" x="800" y="97" font-size="46">API style: chia nghiệp vụ thành những lời gọi nào</text>
+        <rect class="s" x="470" y="143" width="660" height="52" rx="26" fill="#f9c9b6"/>
+        <text class="t" x="800" y="179" font-size="30">quy ước thiết kế, không phải công nghệ</text>
+
+        <!-- ① 4 CÁCH -->
+        <g transform="translate(0 225)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#c5def5"/>
+          <circle class="s" cx="75" cy="33" r="22" fill="#f9c9b6"/><text class="t" x="75" y="43" font-size="28">1</text>
+          <text class="tl" x="112" y="46" font-size="34">Cùng một việc “xem đơn 42 kèm tên khách”, 4 cách thiết kế</text>
+
+          <!-- REST -->
+          <g transform="translate(35 90)">
+            <rect class="s" x="0" y="0" width="354" height="470" rx="18" fill="#eef5fc"/>
+            <rect class="s" x="20" y="14" width="314" height="50" rx="12" fill="#fbd3b4"/>
+            <text class="t" x="177" y="49" font-size="28">REST</text>
+            <g transform="translate(177 135)">
+              <rect class="s" x="-40" y="-46" width="80" height="92" rx="5" fill="#a8723f"/>
+              <rect class="s3" x="-32" y="-38" width="64" height="24" rx="3" fill="#e9c08f"/><text class="t" x="0" y="-21" font-size="13">orders</text>
+              <rect class="s3" x="-32" y="-10" width="64" height="24" rx="3" fill="#e9c08f"/><text class="t" x="0" y="7" font-size="13">customers</text>
+              <rect class="s3" x="-32" y="18" width="64" height="24" rx="3" fill="#e9c08f"/><text class="t" x="0" y="35" font-size="13">products</text>
+            </g>
+            <text class="t" x="177" y="210" font-size="20" style="fill:#5a6475;stroke:#5a6475">tủ hồ sơ: mỗi ngăn một danh từ</text>
+            <rect class="s3" x="20" y="225" width="314" height="92" rx="8" fill="#efe9de"/>
+            <g font-size="19"><text class="tl" x="34" y="254">GET /orders/42</text><text class="tl" x="34" y="280">GET /customers/7</text><text class="tl" x="34" y="306" style="fill:#5a6475;stroke:none">(2 lần gọi mới đủ)</text></g>
+            <g font-size="21"><text class="tl" x="24" y="352">• danh từ + verb + status code</text><text class="tl" x="24" y="385">• dễ cache, ai cũng gọi được</text></g>
+            <rect x="20" y="412" width="314" height="40" rx="10" fill="#cfe0f5"/>
+            <text class="t" x="177" y="439" font-size="22">đơn vị = tài nguyên</text>
+          </g>
+          <!-- gRPC -->
+          <g transform="translate(427 90)">
+            <rect class="s" x="0" y="0" width="354" height="470" rx="18" fill="#eef8ee"/>
+            <rect class="s" x="20" y="14" width="314" height="50" rx="12" fill="#fbd3b4"/>
+            <text class="t" x="177" y="49" font-size="28">RPC (gRPC)</text>
+            <g transform="translate(177 135) scale(1.15)">
+              <rect class="s" x="-22" y="-38" width="44" height="76" rx="9" fill="#fffdf5"/><rect class="s3" x="-15" y="-27" width="30" height="46" rx="3" fill="#bfd9f2"/><path class="s2" d="M-7 -32 h14"/><circle class="s3" cx="0" cy="28" r="4" fill="#1d2433"/><path class="s2" d="M-8 -14 h16 M-8 -4 h10 M-8 6 h13"/>
+            </g>
+            <text class="t" x="177" y="210" font-size="20" style="fill:#5a6475;stroke:#5a6475">gọi điện: nhờ làm một việc</text>
+            <rect class="s3" x="20" y="225" width="314" height="92" rx="8" fill="#efe9de"/>
+            <g font-size="19"><text class="tl" x="34" y="254">OrderService.GetOrder({id: 42})</text><text class="tl" x="34" y="280">→ Protobuf binary</text><text class="tl" x="34" y="306" style="fill:#5a6475;stroke:none">(chạy trên HTTP/2)</text></g>
+            <g font-size="21"><text class="tl" x="24" y="352">• hợp đồng .proto, sinh code</text><text class="tl" x="24" y="385">• nhanh, có stream; browser khó</text></g>
+            <rect x="20" y="412" width="314" height="40" rx="10" fill="#cfe0f5"/>
+            <text class="t" x="177" y="439" font-size="22">đơn vị = hàm (động từ)</text>
+          </g>
+          <!-- GraphQL -->
+          <g transform="translate(819 90)">
+            <rect class="s" x="0" y="0" width="354" height="470" rx="18" fill="#fdeef4"/>
+            <rect class="s" x="20" y="14" width="314" height="50" rx="12" fill="#fbd3b4"/>
+            <text class="t" x="177" y="49" font-size="28">GraphQL</text>
+            <g transform="translate(177 138) scale(1.1)">
+              <rect class="s" x="-28" y="-34" width="56" height="70" rx="5" fill="#fffdf5"/><rect class="s" x="-10" y="-41" width="20" height="10" rx="3" fill="#cbd3dc"/><rect class="s3" x="-20" y="-20" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 -14 H18"/><path class="ink" d="M-18 -14 l4 5 l8 -11" stroke="#4fa355" style="stroke-width:3"/><rect class="s3" x="-20" y="-2" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 4 H18"/><rect class="s3" x="-20" y="16" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 22 H18"/><path class="ink" d="M-18 22 l4 5 l8 -11" stroke="#4fa355" style="stroke-width:3"/>
+            </g>
+            <text class="t" x="177" y="210" font-size="20" style="fill:#5a6475;stroke:#5a6475">phiếu gọi món: tick đúng món cần</text>
+            <rect class="s3" x="20" y="225" width="314" height="92" rx="8" fill="#efe9de"/>
+            <g font-size="19"><text class="tl" x="34" y="254">POST /graphql</text><text class="tl" x="34" y="280">{ order(id: 42) { total</text><text class="tl" x="34" y="306">    customer { name } } }</text></g>
+            <g font-size="21"><text class="tl" x="24" y="352">• 1 endpoint, client chọn field</text><text class="tl" x="24" y="385">• dễ dính N+1, khó cache</text></g>
+            <rect x="20" y="412" width="314" height="40" rx="10" fill="#cfe0f5"/>
+            <text class="t" x="177" y="439" font-size="22">đơn vị = truy vấn</text>
+          </g>
+          <!-- Event-driven: webhook + queue -->
+          <g transform="translate(1211 90)">
+            <rect class="s" x="0" y="0" width="354" height="470" rx="18" fill="#fff6dc"/>
+            <rect class="s" x="20" y="14" width="314" height="50" rx="12" fill="#fbd3b4"/>
+            <text class="t" x="177" y="49" font-size="28">Event-driven</text>
+            <g transform="translate(177 140) scale(1.15)">
+              <rect class="s" x="-6" y="8" width="9" height="30" fill="#cbd3dc"/><path class="s" d="M-32 10 V-8 Q-32 -28 -8 -28 Q18 -28 18 -8 V10 Z" fill="#bfd9f2"/><path class="s2" d="M-32 10 H18 M18 -6 H12"/><path class="s" d="M24 -34 V-2" fill="none"/><polygon class="s3" points="24,-34 40,-27 24,-20" fill="#e87a6a"/><path class="ink" d="M-22 -2 l8 9 l16 -18" stroke="#4fa355" style="stroke-width:4"/>
+            </g>
+            <text class="t" x="177" y="210" font-size="20" style="fill:#5a6475;stroke:#5a6475">hộp thư: có việc thì thư tự tới</text>
+            <rect class="s3" x="20" y="225" width="314" height="92" rx="8" fill="#efe9de"/>
+            <g font-size="19"><text class="tl" x="34" y="254">webhook: POST /hook</text><text class="tl" x="34" y="280">queue: publish → broker</text><text class="tl" x="34" y="306" style="fill:#5a6475;stroke:none">(nhận trùng → cần idempotency)</text></g>
+            <g font-size="21"><text class="tl" x="24" y="352">• webhook: HTTP, không broker</text><text class="tl" x="24" y="385">• queue: Kafka, RabbitMQ, ActiveMQ</text></g>
+            <rect x="20" y="412" width="314" height="40" rx="10" fill="#cfe0f5"/>
+            <text class="t" x="177" y="439" font-size="22">đơn vị = sự kiện đã xảy ra</text>
+          </g>
+          <text class="t" x="800" y="598" font-size="22" style="fill:#5a6475;stroke:none">Event-driven khác trục với 3 style kia: webhook vẫn đi bằng HTTP POST, nhưng là báo sự kiện chứ không thao tác tài nguyên.</text>
+        </g>
+
+        <!-- ② BẢNG SO SÁNH -->
+        <g transform="translate(0 855)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#c5def5"/>
+          <circle class="s" cx="75" cy="33" r="22" fill="#f9c9b6"/><text class="t" x="75" y="43" font-size="28">2</text>
+          <text class="tl" x="112" y="46" font-size="34">So nhanh 4 kiểu theo 5 tiêu chí</text>
+          <rect class="s3" x="325" y="90" width="310" height="56" fill="#e6dcf7"/>
+          <text class="t" x="480" y="126" font-size="26">REST</text>
+          <rect class="s3" x="635" y="90" width="310" height="56" fill="#e6dcf7"/>
+          <text class="t" x="790" y="126" font-size="26">gRPC</text>
+          <rect class="s3" x="945" y="90" width="310" height="56" fill="#e6dcf7"/>
+          <text class="t" x="1100" y="126" font-size="26">GraphQL</text>
+          <rect class="s3" x="1255" y="90" width="310" height="56" fill="#e6dcf7"/>
+          <text class="t" x="1410" y="126" font-size="26">Event-driven</text>
+          <rect class="s3" x="35" y="146" width="290" height="56" fill="#c5def5"/>
+          <text class="t" x="180" y="182" font-size="23">Định dạng</text>
+          <rect class="s3" x="325" y="146" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="480" y="182" font-size="22">JSON (text)</text>
+          <rect class="s3" x="635" y="146" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="790" y="182" font-size="22">Protobuf (binary)</text>
+          <rect class="s3" x="945" y="146" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="1100" y="182" font-size="22">JSON (text)</text>
+          <rect class="s3" x="1255" y="146" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="1410" y="182" font-size="22">JSON (text)</text>
+          <rect class="s3" x="35" y="202" width="290" height="56" fill="#c5def5"/>
+          <text class="t" x="180" y="238" font-size="23">Hợp đồng</text>
+          <rect class="s3" x="325" y="202" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="480" y="238" font-size="22">OpenAPI, tuỳ chọn</text>
+          <rect class="s3" x="635" y="202" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="790" y="238" font-size="22">.proto, bắt buộc</text>
+          <rect class="s3" x="945" y="202" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="1100" y="238" font-size="22">schema, bắt buộc</text>
+          <rect class="s3" x="1255" y="202" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="1410" y="238" font-size="22">thoả thuận, AsyncAPI</text>
+          <rect class="s3" x="35" y="258" width="290" height="56" fill="#c5def5"/>
+          <text class="t" x="180" y="294" font-size="23">Ai chủ động gọi</text>
+          <rect class="s3" x="325" y="258" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="480" y="294" font-size="22">client</text>
+          <rect class="s3" x="635" y="258" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="790" y="294" font-size="22">client</text>
+          <rect class="s3" x="945" y="258" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="1100" y="294" font-size="22">client</text>
+          <rect class="s3" x="1255" y="258" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="1410" y="294" font-size="22">bên có sự kiện</text>
+          <rect class="s3" x="35" y="314" width="290" height="56" fill="#c5def5"/>
+          <text class="t" x="180" y="350" font-size="23">Streaming</text>
+          <rect class="s3" x="325" y="314" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="480" y="350" font-size="22">không (dùng WS / SSE)</text>
+          <rect class="s3" x="635" y="314" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="790" y="350" font-size="22">có: 1 chiều, 2 chiều</text>
+          <rect class="s3" x="945" y="314" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="1100" y="350" font-size="22">subscription (qua WS)</text>
+          <rect class="s3" x="1255" y="314" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="1410" y="350" font-size="22">webhook không, Kafka có</text>
+          <rect class="s3" x="35" y="370" width="290" height="56" fill="#c5def5"/>
+          <text class="t" x="180" y="406" font-size="23">Gọi từ browser</text>
+          <rect class="s3" x="325" y="370" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="480" y="406" font-size="22" style="fill:#2fa24a;stroke:#2fa24a">✓</text>
+          <rect class="s3" x="635" y="370" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="790" y="406" font-size="22">cần gRPC-Web + proxy</text>
+          <rect class="s3" x="945" y="370" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="1100" y="406" font-size="22" style="fill:#2fa24a;stroke:#2fa24a">✓</text>
+          <rect class="s3" x="1255" y="370" width="310" height="56" fill="#fffdf5"/>
+          <text class="t" x="1410" y="406" font-size="22">không áp dụng</text>
+        </g>
+
+        <!-- ③ CHỌN KHI NÀO -->
+        <g transform="translate(0 1311)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#c5def5"/>
+          <circle class="s" cx="75" cy="33" r="22" fill="#f9c9b6"/><text class="t" x="75" y="43" font-size="28">3</text>
+          <text class="tl" x="112" y="46" font-size="34">Chọn khi nào: nhìn ai gọi và họ cần gì</text>
+          <rect class="s" x="35" y="90" width="1530" height="370" rx="18" fill="#f1ecfa"/>
+          <g font-size="25">
+            <rect class="s3" x="55" y="106" width="1040" height="56" rx="12" fill="#fffdf5"/><text class="tl" x="75" y="142">Đối tác bên ngoài, ai cũng phải gọi được, cần ổn định lâu dài</text>
+            <path class="blue" d="M1105 134 H1180" marker-end="url(#ah)"/>
+            <rect class="s" x="1195" y="106" width="350" height="56" rx="28" fill="#e6dcf7"/><text class="t" x="1370" y="143" font-size="28">REST</text>
+
+            <rect class="s3" x="55" y="176" width="1040" height="56" rx="12" fill="#fffdf5"/><text class="tl" x="75" y="212">Service nội bộ gọi nhau dày đặc, cần nhanh, hợp đồng chặt, có streaming</text>
+            <path class="blue" d="M1105 204 H1180" marker-end="url(#ah)"/>
+            <rect class="s" x="1195" y="176" width="350" height="56" rx="28" fill="#e6dcf7"/><text class="t" x="1370" y="213" font-size="28">gRPC</text>
+
+            <rect class="s3" x="55" y="246" width="1040" height="56" rx="12" fill="#fffdf5"/><text class="tl" x="75" y="282">Nhiều loại client (web, app) cần những phần dữ liệu khác nhau</text>
+            <path class="blue" d="M1105 274 H1180" marker-end="url(#ah)"/>
+            <rect class="s" x="1195" y="246" width="350" height="56" rx="28" fill="#e6dcf7"/><text class="t" x="1370" y="283" font-size="28">GraphQL</text>
+
+            <rect class="s3" x="55" y="316" width="1040" height="56" rx="12" fill="#fffdf5"/><text class="tl" x="75" y="352">Bất đồng bộ: báo kết quả cho đối tác (webhook), giao việc nội bộ (queue)</text>
+            <path class="blue" d="M1105 344 H1180" marker-end="url(#ah)"/>
+            <rect class="s" x="1195" y="316" width="350" height="56" rx="28" fill="#e6dcf7"/><text class="t" x="1370" y="353" font-size="28">Event-driven</text>
+          </g>
+          <rect x="55" y="398" width="1490" height="44" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="800" y="428" font-size="24">Phỏng vấn: chưa dùng gRPC / GraphQL thì nói thẳng là chưa, rồi so với thứ đã dùng cho cùng mục đích</text>
+        </g>
+
+        <!-- CÂU CHỐT -->
+        <g transform="translate(0 1805)">
+          <rect class="s" x="60" y="0" width="1480" height="76" rx="16" fill="#fbe98a"/>
+          <text class="t" x="800" y="52" font-size="40">Style là quy ước thiết kế: chọn theo ai gọi và họ cần gì</text>
+          <text class="t" x="800" y="110" font-size="18" style="fill:#5a6475;stroke:none">REST là style (Fielding, 2000), không phải protocol. Kafka/RabbitMQ là broker (hạ tầng) cho event-driven, không phải style. Biết tên là đủ: SOAP, JSON-RPC, tRPC.</text>
+        </g>
+
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Session và JWT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1600px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1600 1345"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Session, JWT và refresh token: so sánh, cách chọn và bốn thứ cần kiểm khi verify JWT"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <rect class="s" x="40" y="30" width="1520" height="100" rx="16" fill="#bcd9f5" />
+        <text class="t" x="800" y="95" font-size="42">4.0 · Session và JWT: server nhớ bạn thế nào</text>
+        <rect class="s" x="550" y="143" width="500" height="52" rx="26" fill="#f9c9b6" />
+        <text class="t" x="800" y="179" font-size="30">một câu hỏi để chọn, bốn thứ để kiểm</text>
+
+        <g><rect class="s" x="35" y="220" width="480" height="580" rx="18" fill="#fffdf5"/><rect class="s" x="75" y="236" width="400" height="54" rx="12" fill="#bcd9f5"/><text class="t" x="275" y="275" font-size="32">4.1 Session</text><text class="t" x="275" y="326" font-size="24">Gửi xe: vé chỉ ghi số 57,</text><text class="t" x="275" y="354" font-size="24">biển số nằm trong sổ bác bảo vệ.</text><rect class="s" x="55" y="423" width="120" height="46" rx="12" fill="#ffffff"/><text class="t" x="115.0" y="453.26" font-size="22">sid=9f2c</text><path class="ink" d="M180 446 L220 446" marker-end="url(#ad)"/><g transform="translate(285 445) scale(1.4)"><path class="s" d="M-30 -22 v44 a30 10 0 0 0 60 0 v-44" fill="#bfd9f2"/><path class="s2" d="M-30 -2 a30 10 0 0 0 60 0 M-30 14 a30 10 0 0 0 60 0"/><ellipse class="s" cx="0" cy="-22" rx="30" ry="10" fill="#fffdf5"/></g><text class="t" x="435" y="440" font-size="22">sổ giữ ở</text><text class="t" x="435" y="466" font-size="22">server</text><rect class="s3" x="60" y="540" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="120" y="573" font-size="22">Ai nhớ</text><rect class="s3" x="180" y="540" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="335" y="573" font-size="22">server (Redis)</text><rect class="s3" x="60" y="600" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="120" y="633" font-size="22">Client</text><rect class="s3" x="180" y="600" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="335" y="633" font-size="22">giữ sid trong cookie</text><rect class="s3" x="60" y="660" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="120" y="693" font-size="22">Thu hồi</text><rect class="s3" x="180" y="660" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="335" y="693" font-size="22">ngay: xoá sổ</text><rect x="60" y="742" width="430" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="275" y="769" font-size="24">server nhớ, thu hồi tức thì</text></g><g><rect class="s" x="560" y="220" width="480" height="580" rx="18" fill="#fffdf5"/><rect class="s" x="600" y="236" width="400" height="54" rx="12" fill="#e1d8f7"/><text class="t" x="800" y="275" font-size="32">4.2 JWT</text><text class="t" x="800" y="326" font-size="24">Vé ca nhạc in sẵn thông tin,</text><text class="t" x="800" y="354" font-size="24">có tem chống giả, soát tại cổng.</text><g transform="translate(800 440) scale(1.5)"><path class="s" d="M-24 -36 H12 L24 -24 V34 H-24 Z" fill="#fffdf5"/><path class="s3" d="M12 -36 V-24 H24 Z" fill="#cbd3dc"/><path class="s2" d="M-15 -20 H3 M-15 -10 H12 M-15 0 H12"/><path class="ink" d="M-16 20 q4 -12 8 0 q4 8 8 -4 q4 -6 10 0" stroke="#e0652d" style="stroke-width:2.5"/><circle class="s" cx="14" cy="26" r="9" fill="#e87a6a"/><circle class="s3" cx="14" cy="26" r="3" fill="#f7da6a"/></g><text class="t" x="645" y="430" font-size="22">client</text><text class="t" x="645" y="456" font-size="22">giữ thẻ</text><text class="t" x="955" y="430" font-size="22">server chỉ</text><text class="t" x="955" y="456" font-size="22">kiểm tem</text><rect class="s3" x="585" y="540" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="645" y="573" font-size="22">Ai nhớ</text><rect class="s3" x="705" y="540" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="860" y="573" font-size="22">không ai, chỉ kiểm chữ ký</text><rect class="s3" x="585" y="600" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="645" y="633" font-size="22">Client</text><rect class="s3" x="705" y="600" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="860" y="633" font-size="22">giữ token có ký</text><rect class="s3" x="585" y="660" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="645" y="693" font-size="22">Thu hồi</text><rect class="s3" x="705" y="660" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="860" y="693" font-size="22">đợi hết exp</text><rect x="585" y="742" width="430" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="800" y="769" font-size="24">server không cần sổ, thu hồi chậm</text></g><g><rect class="s" x="1085" y="220" width="480" height="580" rx="18" fill="#fffdf5"/><rect class="s" x="1125" y="236" width="400" height="54" rx="12" fill="#cdebd0"/><text class="t" x="1325" y="275" font-size="32">4.3 Refresh token</text><text class="t" x="1325" y="326" font-size="24">Vé ngày hết hạn thì ra quầy,</text><text class="t" x="1325" y="354" font-size="24">đổi bằng thẻ thành viên.</text><rect class="s" x="1105" y="423" width="100" height="46" rx="12" fill="#ffffff"/><text class="t" x="1155.0" y="453.26" font-size="22">R1 cũ</text><path class="ink" d="M1210 446 L1255 446" marker-end="url(#ad)"/><g transform="translate(1325 445) scale(1.4)"><circle class="s3" r="36" fill="#cdebd0"/><path class="ink" d="M-25.4 -9.2 A27 27 0 0 1 25.4 -9.2"/><polygon class="s3" points="28.4,-0.8 18.8,-9.0 30.6,-13.3" fill="#4fa355"/><path class="ink" d="M25.4 9.2 A27 27 0 0 1 -25.4 9.2"/><polygon class="s3" points="-28.4,0.8 -18.8,9.0 -30.6,13.3" fill="#4fa355"/></g><path class="ink" d="M1395 446 L1435 446" marker-end="url(#ad)"/><rect class="s" x="1440" y="423" width="100" height="46" rx="12" fill="#ffffff"/><text class="t" x="1490.0" y="453.26" font-size="22">R2 mới</text><rect class="s3" x="1110" y="540" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="1170" y="573" font-size="22">Access</text><rect class="s3" x="1230" y="540" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="1385" y="573" font-size="22">sống 5–15 phút</text><rect class="s3" x="1110" y="600" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="1170" y="633" font-size="22">Refresh</text><rect class="s3" x="1230" y="600" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="1385" y="633" font-size="22">lưu ở server, dùng 1 lần</text><rect class="s3" x="1110" y="660" width="120" height="50" rx="10" fill="#bcd9f5"/><text class="t" x="1170" y="693" font-size="22">Dùng lại</text><rect class="s3" x="1230" y="660" width="310" height="50" rx="10" fill="#ffffff"/><text class="t" x="1385" y="693" font-size="22">huỷ cả chuỗi</text><rect x="1110" y="742" width="430" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="1325" y="769" font-size="24">JWT ngắn hạn, vẫn thu hồi được</text></g>
+        <rect class="s" x="35" y="830" width="830" height="66" rx="12" fill="#c5def5"/><text class="tl" x="55" y="877" font-size="36">Chọn cái nào? Một câu hỏi</text><rect class="s" x="35" y="915" width="380" height="64" rx="12" fill="#bcd9f5"/><text class="t" x="225.0" y="955.58" font-size="26">Cần thu hồi ngay không?</text><path class="ink" d="M415 947 L560 947" marker-end="url(#ad)"/><text class="t" x="488" y="935" font-size="22">Cần</text><rect class="s" x="565" y="915" width="300" height="64" rx="12" fill="#bcd9f5"/><text class="t" x="715.0" y="955.58" font-size="26">4.1 Session</text><text class="t" x="715" y="1004" font-size="20">một web app + một backend</text><path class="ink" d="M225 979 L225 1008" marker-end="url(#ad)"/><text class="t" x="285" y="1001" font-size="22">Không cần</text><rect class="s" x="35" y="1010" width="380" height="64" rx="12" fill="#e1d8f7"/><text class="t" x="225.0" y="1050.58" font-size="26">4.2 JWT</text><text class="t" x="640" y="1050" font-size="22">nhiều service, mobile, SSO</text><rect class="s" x="35" y="1105" width="830" height="64" rx="12" fill="#cdebd0"/><text class="t" x="450.0" y="1145.58" font-size="26">Chọn JWT thì access ngắn + refresh xoay vòng (4.3)</text>
+        <rect class="s" x="900" y="830" width="665" height="66" rx="12" fill="#c5def5"/><text class="tl" x="920" y="877" font-size="36">Verify JWT: đủ 4 thứ, sai là 401</text><rect class="s" x="900" y="915" width="665" height="52" rx="12" fill="#fffdf5"/><text class="t" x="1232" y="951" font-size="24">1. Chữ ký, với thuật toán đã khoá (RS256)</text><rect class="s" x="900" y="981" width="665" height="52" rx="12" fill="#fffdf5"/><text class="t" x="1232" y="1017" font-size="24">2. exp: token còn hạn</text><rect class="s" x="900" y="1047" width="665" height="52" rx="12" fill="#fffdf5"/><text class="t" x="1232" y="1083" font-size="24">3. iss: đúng nơi phát hành</text><rect class="s" x="900" y="1113" width="665" height="52" rx="12" fill="#fffdf5"/><text class="t" x="1232" y="1149" font-size="24">4. aud: đúng API này</text>
+
+        <g transform="translate(0 1210)">
+          <rect class="s" x="60" y="0" width="1480" height="76" rx="16" fill="#fbe98a" />
+          <text class="t" x="800" y="52" font-size="36">Cần thu hồi ngay thì Session, không thì JWT ngắn hạn; luôn verify đủ 4 thứ.</text>
+        </g>
+        <text class="t" x="800" y="1325" font-size="18">Nguồn: RFC 7519 (JWT), RFC 8725 (JWT BCP), OWASP Session Management Cheat Sheet.</text>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

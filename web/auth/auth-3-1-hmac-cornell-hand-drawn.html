@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HMAC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .note pre { font: 16px/23px ui-monospace, 'SFMono-Regular', Menlo, monospace; background: #efe9de; border-radius: 6px; padding: 6px 10px; margin: 4px 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* khung khối gọn: Nôm na → Chốt → Ví dụ → Áp dụng → Bẫy → Tự kiểm */
+  .note h3 small { font-size: 21px; color: #5a6475; }
+  .chot .lb { background: #fbe98a; } .vd .lb { background: #f9c9b6; } .ap .lb { background: #c5def5; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 6px; }
+  .flow span { border: 2px solid #1d2433; border-radius: 10px; padding: 0 9px; background: #fff; font-size: 19px; line-height: 28px; }
+  .flow span.ok { background: #cfe8cf; } .flow span.no { background: #f6b3a8; }
+  .flow i { font-style: normal; color: #2f80d8; font-size: 22px; }
+  table.mini { border-collapse: collapse; font-size: 19px; line-height: 26px; margin: 4px 0 8px; }
+  table.mini th, table.mini td { border: 2px solid #1d2433; padding: 2px 10px; text-align: left; vertical-align: top; }
+  table.mini th { background: var(--c); font-weight: normal; }
+  .ap ul, .vd ol { margin: 0; padding-left: 24px; }
+  .vd { clear: right; }  /* ví dụ luôn nằm dưới doodle để đủ bề ngang */
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">3.1 · HMAC: ký bằng khoá chung</h1>
+  <p class="sub">3.1 HMAC = Hash + khoá chung → 3.1.1 Chống replay: timestamp + nonce</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>HMAC: hash có trộn khoá</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> ⭐ HMAC là gì? Thêm được gì so với hash thường?
+        <small>từ khóa: HMAC-SHA256 · shared secret · integrity · authenticity</small></div>
+      <div class="note hand">
+        <h3>3.1 HMAC = Hash (2.1) + khoá chung</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><g transform="translate(0 -14) rotate(-20)"><path class="s" d="M-4 0 H38 M26 0 v15 M37 0 v11" fill="none" style="stroke-width:7"/><path d="M-4 0 H38 M26 0 v15 M37 0 v11" fill="none" stroke="#f7da6a" stroke-width="3" stroke-linecap="round"/><circle class="s" cx="-20" cy="0" r="18" fill="#f7da6a"/><circle class="s2" cx="-20" cy="0" r="6" fill="#fbf9f2"/></g><g transform="translate(0 22) rotate(-20)"><path class="s" d="M-4 0 H38 M26 0 v15 M37 0 v11" fill="none" style="stroke-width:7"/><path d="M-4 0 H38 M26 0 v15 M37 0 v11" fill="none" stroke="#f7da6a" stroke-width="3" stroke-linecap="round"/><circle class="s" cx="-20" cy="0" r="18" fill="#f7da6a"/><circle class="s2" cx="-20" cy="0" r="6" fill="#fbf9f2"/></g></svg>
+          <figcaption>hai bên giữ cùng một chìa</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Hai bạn thân có một mật mã riêng. Mỗi tờ giấy gửi nhau kèm một “con dấu” chỉ làm ra được khi biết mật mã; người lạ sửa nội dung thì không làm lại được dấu.</p>
+        <p class="chot"><span class="lb">Chốt</span><code>HMAC(key, message)</code> = hash có trộn khoá bí mật. Khớp nghĩa là nội dung <b>không bị sửa</b> VÀ <b>do người có khoá gửi</b>. Hash thường chỉ có ý thứ nhất.</p>
+        <div class="vd"><span class="lb">Ví dụ</span>Shop và cổng thanh toán giữ chung một secret:<div class="flow"><span>Cổng gửi body + HMAC(secret, body)</span><i>→</i><span>Shop tính lại HMAC</span><i>→</i><span class="ok">✓ khớp: nhận</span></div><div class="flow"><span>Kẻ gian sửa amount giữa đường</span><i>→</i><span>Shop tính lại</span><i>→</i><span class="no">✗ lệch: 401</span></div></div>
+        <div class="ap"><span class="lb">Áp dụng</span><pre>const sig = createHmac(&#x27;sha256&#x27;, secret)
+  .update(rawBody).digest();
+const got = Buffer.from(req.get(&#x27;X-Signature&#x27;), &#x27;hex&#x27;);
+const ok  = got.length === sig.length
+  &amp;&amp; timingSafeEqual(got, sig);  // so chống timing attack</pre></div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Tự chế <code>sha256(secret + body)</code> dính length extension, phải dùng HMAC chuẩn. Tính trên raw body, không phải JSON đã parse rồi stringify lại.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Kẻ gian chặn được một request hợp lệ rồi gửi lại y nguyên. HMAC chặn được không? (không → khối 3.1.1 bên dưới)</p>
+      </div>
+    </div>
+    <div class="row c4">
+      <div class="cue"><b>Q2</b> Đã ký request rồi, làm sao chống replay attack?
+        <small>từ khóa: canonical request · timestamp window · nonce · clock drift</small></div>
+      <div class="note hand">
+        <h3>3.1.1 Chống replay: chữ ký không tự chống gửi lại</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-7" y="-46" width="14" height="9" rx="3" fill="#cbd3dc"/><path class="s2" d="M24 -28 l7 -7"/><circle class="s" cx="0" cy="3" r="34" fill="#fffdf5"/><path class="s3" d="M0 3 L0 -27 A30 30 0 0 1 30 3 Z" fill="#f9c0b4"/><path class="s2" d="M0 -29 v5 M29 3 h-5 M0 35 v-5 M-29 3 h5"/><path class="s" d="M0 3 L0 -22"/><circle class="s3" cx="0" cy="3" r="3.5" fill="#1d2433"/></svg>
+          <figcaption>quá giờ là từ chối</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Vé xem phim có giờ chiếu và số vé. Vé của suất hôm qua, hoặc vé đã xé rồi, thì không vào được nữa.</p>
+        <p class="chot"><span class="lb">Chốt</span>Ký luôn <b>timestamp + nonce</b> trong chuỗi ký. Server từ chối request cũ quá N phút, và nonce đã thấy trong N phút đó.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><div class="flow"><span>Ký lúc 10:00, nonce=abc</span><i>→</i><span>tới lúc 10:01</span><i>→</i><span class="ok">✓ nhận, lưu abc</span></div><div class="flow"><span>Gửi lại lúc 10:01:30, nonce=abc</span><i>→</i><span class="no">✗ nonce đã thấy</span></div><div class="flow"><span>Gửi lại lúc 10:05</span><i>→</i><span class="no">✗ quá cửa sổ 2 phút</span></div></div>
+        <div class="ap"><span class="lb">Áp dụng</span><ul><li>Chuỗi ký (canonical): method + path + timestamp + nonce + hash(body), thứ tự cố định hai bên.</li><li>Redis <code>SET nonce:abc 1 NX EX 120</code>: TTL bằng cửa sổ thời gian.</li><li>Trả <code>server_time</code> để client bù lệch đồng hồ, cho phép sai số vài giây.</li></ul></div>
+        <p class="test"><span class="lb">Tự kiểm</span>Đã có cửa sổ 2 phút, vì sao vẫn cần nonce? (trong 2 phút đó vẫn gửi lại được)</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>Đã làm HMAC-SHA256 request signing: <code>sign_key</code> phát khi login, canonical = <code>initiator + cmdtype + reqtid + reqtime</code>; chống replay bằng cửa sổ 2 phút, dedupe trên Redis, trả <code>server_time</code> bù clock drift.</p>
+    <div class="summary hand"><h3>Summary</h3><p>HMAC = hash + khoá chung: nhanh, chứng minh nội dung không bị sửa và do người có khoá gửi, nhưng cả hai bên đều ký được. Không chữ ký nào tự chống replay: ký kèm timestamp và nonce, giới hạn cửa sổ thời gian, dedupe nonce. So chữ ký bằng timingSafeEqual.</p></div>
+  </section>
+
+  <p class="foot">Nguồn: RFC 2104 (HMAC), tài liệu webhook của GitHub và Stripe. Dòng FV theo On-tap/02-auth-va-ma-hoa.md. Trước: 3.0 Tổng quan · Tiếp theo: 3.2 Chữ ký số.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

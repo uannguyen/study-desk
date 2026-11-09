@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auth là gì: AuthN và AuthZ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .note pre { font: 16px/23px ui-monospace, 'SFMono-Regular', Menlo, monospace; background: #efe9de; border-radius: 6px; padding: 6px 10px; margin: 4px 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* khung khối gọn: Nôm na → Chốt → Ví dụ → Áp dụng → Bẫy → Tự kiểm */
+  .note h3 small { font-size: 21px; color: #5a6475; }
+  .chot .lb { background: #fbe98a; } .vd .lb { background: #f9c9b6; } .ap .lb { background: #c5def5; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 6px; }
+  .flow span { border: 2px solid #1d2433; border-radius: 10px; padding: 0 9px; background: #fff; font-size: 19px; line-height: 28px; }
+  .flow span.ok { background: #cfe8cf; } .flow span.no { background: #f6b3a8; }
+  .flow i { font-style: normal; color: #2f80d8; font-size: 22px; }
+  table.mini { border-collapse: collapse; font-size: 19px; line-height: 26px; margin: 4px 0 8px; }
+  table.mini th, table.mini td { border: 2px solid #1d2433; padding: 2px 10px; text-align: left; vertical-align: top; }
+  table.mini th { background: var(--c); font-weight: normal; }
+  .ap ul, .vd ol { margin: 0; padding-left: 24px; }
+  .vd { clear: right; }  /* ví dụ luôn nằm dưới doodle để đủ bề ngang */
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">1 · Auth là gì: hai câu hỏi cần trả lời</h1>
+  <p class="sub">1.1 “Bạn là ai?” (401) → 1.2 “Bạn được làm gì?” (403)</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>Hai câu hỏi, hai bước</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> ⭐ Authentication là gì? Sai thì server trả mã gì?
+        <small>từ khóa: AuthN · credential · identity · 401 Unauthorized</small></div>
+      <div class="note hand">
+        <h3>1.1 Authentication: “Bạn là ai?”</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><g transform="translate(0 -4) rotate(-30)"><path class="s" d="M-4 0 H38 M26 0 v15 M37 0 v11" fill="none" style="stroke-width:7"/><path d="M-4 0 H38 M26 0 v15 M37 0 v11" fill="none" stroke="#f7da6a" stroke-width="3" stroke-linecap="round"/><circle class="s" cx="-20" cy="0" r="18" fill="#f7da6a"/><circle class="s2" cx="-20" cy="0" r="6" fill="#fbf9f2"/></g></svg>
+          <figcaption>bằng chứng danh tính</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Lễ tân khách sạn xem CCCD, khớp tên người đặt phòng thì mới tin bạn đúng là bạn.</p>
+        <p class="chot"><span class="lb">Chốt</span>Server kiểm một bằng chứng (password, OTP, token) để biết request này của ai. Thiếu hoặc sai bằng chứng → <b>401</b>.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><div class="flow"><span>Gọi API không có token</span><i>→</i><span class="no">✗ 401</span></div><div class="flow"><span>Token hết hạn / sai chữ ký</span><i>→</i><span class="no">✗ 401</span></div><div class="flow"><span>Token hợp lệ</span><i>→</i><span class="ok">✓ req.user = { id: 42 }</span></div></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Middleware đứng đầu mọi route cần đăng nhập: verify bằng chứng, ra user thì gắn <code>req.user</code>, không ra thì dừng ở 401.</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Mã 401 tên là “Unauthorized” nhưng nghĩa thật là “chưa xác thực”.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Sai password trả mã gì? Token giả chữ ký trả mã gì? (cả hai đều 401)</p>
+      </div>
+    </div>
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> ⭐ Authorization kiểm cái gì? Khi nào trả 403?
+        <small>từ khóa: AuthZ · permission · resource · 403 Forbidden · IDOR</small></div>
+      <div class="note hand">
+        <h3>1.2 Authorization: “Bạn được làm gì?”</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-36 36 V-2 A36 36 0 0 1 36 -2 V36 Z" fill="#cbd3dc"/><path class="s" d="M-22 36 V-2 A22 22 0 0 1 22 -2 V36 Z" fill="#fffdf5"/><path class="s2" d="M-11 -22 V36 M0 -24 V36 M11 -22 V36 M-22 6 H22"/></svg>
+          <figcaption>cổng chỉ mở cho đúng người</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Lễ tân đã biết bạn là ai, đưa thẻ phòng 305: mở được phòng 305 và hồ bơi, không mở được phòng 306.</p>
+        <p class="chot"><span class="lb">Chốt</span>Chạy sau 1.1. Xét ba thứ: <b>ai</b> + <b>làm gì</b> + <b>trên cái gì</b>. Biết bạn là ai nhưng không đủ quyền → <b>403</b>.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><div class="flow"><span>user 42 · GET /orders/123 (đơn của 42)</span><i>→</i><span class="ok">✓ 200</span></div><div class="flow"><span>user 42 · GET /orders/124 (đơn của user 7)</span><i>→</i><span class="no">✗ 403</span></div></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Kiểm ở server, cho từng request, theo từng tài nguyên: <code>if (order.userId !== req.user.id) return 403</code>. Ẩn nút trên UI không phải phân quyền.</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Chỉ kiểm “đã đăng nhập” mà quên “đơn này của ai” thì đổi id trên URL là xem được đơn người khác (IDOR).</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Nhân viên đã đăng nhập gọi API xoá user của admin: 401 hay 403? (403)</p>
+      </div>
+    </div>
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> RBAC và ABAC khác nhau thế nào? Khi nào dùng cái nào?
+        <small>từ khóa: role · permission · attribute · policy</small></div>
+      <div class="note hand">
+        <h3>1.2.1 RBAC, ABAC: hai cách chia quyền</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><g transform="translate(-26 8) scale(0.8)"><path class="s" d="M-15 30 q0 -26 15 -26 q15 0 15 26 z" fill="#f9c0b4"/><circle class="s" cx="0" cy="-12" r="10" fill="#fffdf5"/></g><g transform="translate(26 8) scale(0.8)"><path class="s" d="M-15 30 q0 -26 15 -26 q15 0 15 26 z" fill="#cdebd0"/><circle class="s" cx="0" cy="-12" r="10" fill="#fffdf5"/></g><g transform="translate(0 2) scale(1.0)"><path class="s" d="M-15 30 q0 -26 15 -26 q15 0 15 26 z" fill="#f7da6a"/><circle class="s" cx="0" cy="-12" r="10" fill="#fffdf5"/></g></svg>
+          <figcaption>gom người theo vai trò</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>RBAC: thẻ “giáo viên” vào được phòng giáo viên. ABAC: “học sinh lớp 5A, trong giờ học” mới được vào phòng máy.</p>
+        <p class="chot"><span class="lb">Chốt</span><b>RBAC</b>: user → role → permission. <b>ABAC</b>: luật trên thuộc tính của user, tài nguyên, thời gian.</p>
+        <div class="vd"><span class="lb">Ví dụ</span>Cùng câu hỏi “được duyệt hoàn tiền đơn này không?”<table class="mini"><tr><th>Cách</th><th>Server hỏi gì</th></tr><tr><td>RBAC</td><td>role của bạn có quyền <code>order:refund</code> không?</td></tr><tr><td>ABAC</td><td>cùng chi nhánh với đơn, số tiền &lt; 5 triệu, trong giờ làm?</td></tr></table></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Bắt đầu bằng RBAC (bảng role ↔ permission). Thêm luật ABAC khi xuất hiện điều kiện “của chính mình”, “cùng chi nhánh”. Dấu hiệu cần ABAC: role nổ ra kiểu <code>admin_hcm</code>, <code>admin_hn</code>…</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Không phải chọn một bỏ một: “chỉ sửa bài của chính mình” đã là một luật ABAC.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>“Quản lý chỉ duyệt đơn chi nhánh mình, dưới 5 triệu”: RBAC thuần làm gọn được không? (không)</p>
+      </div>
+    </div>
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> Vì sao luôn authenticate trước rồi mới authorize?
+        <small>từ khóa: middleware order · guard · pipeline · 401 vs 403</small></div>
+      <div class="note hand">
+        <h3>1.3 Hai bước theo thứ tự, không phải hai loại auth</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-42" y="-16" width="30" height="34" rx="5" fill="#bfd9f2"/><text class="t" x="-27" y="9" font-size="24">1</text><rect class="s" x="12" y="-16" width="30" height="34" rx="5" fill="#cdebd0"/><text class="t" x="27" y="9" font-size="24">2</text><path class="ink" d="M-8 1 H4" stroke="#2f80d8"/><polygon class="s3" points="10,1 2,-5 2,7" fill="#2f80d8"/><path class="s2" d="M-40 30 H40"/></svg>
+          <figcaption>bước 1 xong mới tới bước 2</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Bảo vệ phải biết mặt bạn trước, rồi mới tra danh sách xem bạn được vào phòng nào.</p>
+        <p class="chot"><span class="lb">Chốt</span>1.2 cần đầu vào là danh tính do 1.1 tạo ra. JWT, Session, OAuth2 là <b>công cụ</b> cho một trong hai bước, không phải “loại auth”.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><pre>app.delete(&#x27;/users/:id&#x27;,
+  authenticate,              // không ra user → 401
+  authorize(&#x27;user:delete&#x27;),  // thiếu quyền   → 403
+  deleteUser);</pre></div>
+        <div class="ap"><span class="lb">Áp dụng</span>NestJS: <code>AuthGuard</code> chạy trước <code>RolesGuard</code>. Bị hỏi “hệ thống dùng auth gì?” thì trả lời đủ hai vế: xác thực bằng gì, phân quyền bằng gì.</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>“Hệ thống dùng JWT auth” mới trả lời bước 1; bước 2 vẫn phải tự code.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Đặt <code>authorize</code> trước <code>authenticate</code> thì sao? (<code>req.user</code> undefined: crash, hoặc tệ hơn là cho qua)</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>Admin API có ma trận quyền <code>req.user.authorise[module][page][action]</code> = RBAC (bước 2); khoá OTP sau 5 lần sai bảo vệ bước 1. Tự hỏi: chỗ nào đã kiểm “tài nguyên này của ai”?</p>
+    <div class="summary hand"><h3>Summary</h3><p>Authentication kiểm bằng chứng để biết bạn là ai, sai trả 401. Authorization xét ai + làm gì + trên cái gì, thiếu quyền trả 403. RBAC chia quyền theo vai trò, ABAC theo thuộc tính; thực tế hay kết hợp. Luôn chạy 1.1 rồi mới 1.2.</p></div>
+  </section>
+
+  <p class="foot">Nguồn: RFC 9110 (401, 403), OWASP Top 10:2025 A01. Dòng FV theo On-tap/02-auth-va-ma-hoa.md.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

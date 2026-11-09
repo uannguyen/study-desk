@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tư duy phản biện</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1600px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1600 2114"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Tư duy phản biện: 5 câu hỏi trước khi tin, vòng lặp hỏi sâu, 5 bước học cái mới"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      <marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 L9 5 L1 9" fill="none" stroke="#2fa24a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+<rect class="s" x="40" y="30" width="1520" height="100" rx="16" fill="#bcd9f5"/><text class="t" x="800" y="97" font-size="48">TƯ DUY PHẢN BIỆN: HỎI TRƯỚC KHI TIN</text>
+<rect class="s" x="360" y="145" width="880" height="54" rx="27" fill="#f9c9b6"/><text class="t" x="800" y="182" font-size="28">học nhanh hơn · quyết định chắc hơn · trả lời phỏng vấn sâu hơn</text>
+<g transform="translate(0 230)"><rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#c5def5"/><text class="tl" x="55" y="46" font-size="34">① 5 câu hỏi trước khi tin một điều gì đó</text><rect class="s" x="35" y="90" width="274" height="330" rx="18" fill="#fffdf5"/><rect class="s" x="49" y="104" width="246" height="48" rx="12" fill="#fbd3b4"/><text class="t" x="172" y="137" font-size="28">Giả định</text><g transform="translate(172 235) scale(1.3)"><rect class="s3" x="-44" y="-6" width="88" height="46" rx="6" fill="#d7e9f8"/><polygon class="s" points="-16,-6 18,-6 36,14 24,36 -20,38 -38,14" fill="#8fb9e6"/><polygon class="s" points="-16,-6 -5,-34 6,-24 18,-6" fill="#fffdf5"/><path class="ink" d="M-44 -6 q8 -6 16 0 t16 0 t16 0 t16 0 t16 0 t8 0" style="stroke-width:2.5"/></g><text class="t" x="172" y="330" font-size="22">Đang coi gì là đúng?</text><rect x="47" y="368" width="250" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="172" y="394" font-size="20">phần chìm của tảng băng</text><rect class="s" x="349" y="90" width="274" height="330" rx="18" fill="#fffdf5"/><rect class="s" x="363" y="104" width="246" height="48" rx="12" fill="#fbd3b4"/><text class="t" x="486" y="137" font-size="28">Bằng chứng</text><g transform="translate(486 235) scale(1.3)"><path class="s" d="M-10 -36 H10 V-12 L32 28 Q36 36 28 36 H-28 Q-36 36 -32 28 L-10 -12 Z" fill="#fffdf5"/><path class="s3" d="M-22 10 H22 L32 28 Q36 36 28 36 H-28 Q-36 36 -32 28 Z" fill="#cdebd0"/><rect class="s" x="-13" y="-41" width="26" height="6" rx="2" fill="#cbd3dc"/><circle class="s2" cx="-6" cy="22" r="3.5"/><circle class="s2" cx="9" cy="17" r="2.5"/><circle class="s2" cx="2" cy="2" r="2.5"/></g><text class="t" x="486" y="330" font-size="22">Đã đo chưa, hay đoán?</text><rect x="361" y="368" width="250" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="486" y="394" font-size="20">log &amp; số đo &gt; “nghe nói”</text><rect class="s" x="663" y="90" width="274" height="330" rx="18" fill="#fffdf5"/><rect class="s" x="677" y="104" width="246" height="48" rx="12" fill="#fbd3b4"/><text class="t" x="800" y="137" font-size="26">Thay thế &amp; tradeoff</text><g transform="translate(800 235) scale(1.3)"><path class="ink" d="M0 -32 V30 M-16 32 H16"/><path class="ink" d="M-32 -18 L32 -22"/><path class="s2" d="M-32 -18 L-42 8 M-32 -18 L-22 8 M32 -22 L22 4 M32 -22 L42 4"/><path class="s" d="M-44 8 Q-32 24 -20 8 Z" fill="#bfd9f2"/><path class="s" d="M20 4 Q32 20 44 4 Z" fill="#f9c0b4"/><circle class="s3" cx="0" cy="-34" r="4" fill="#f7da6a"/></g><text class="t" x="800" y="330" font-size="22">Còn cách nào? Mất gì?</text><rect x="675" y="368" width="250" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="800" y="394" font-size="20">mọi lựa chọn đều có giá</text><rect class="s" x="977" y="90" width="274" height="330" rx="18" fill="#fffdf5"/><rect class="s" x="991" y="104" width="246" height="48" rx="12" fill="#fbd3b4"/><text class="t" x="1114" y="137" font-size="28">Điều kiện biên</text><g transform="translate(1114 235) scale(1.3)"><polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/></g><text class="t" x="1114" y="330" font-size="22">Khi nào nó sai?</text><rect x="989" y="368" width="250" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="1114" y="394" font-size="20">đúng ở 1 pod, sai ở 3 pod</text><rect class="s" x="1291" y="90" width="274" height="330" rx="18" fill="#fffdf5"/><rect class="s" x="1305" y="104" width="246" height="48" rx="12" fill="#fbd3b4"/><text class="t" x="1428" y="137" font-size="26">Nguồn &amp; động cơ</text><g transform="translate(1428 235) scale(1.3)"><rect class="s" x="-24" y="6" width="12" height="20" rx="3" fill="#f2b84b"/><path class="s" d="M-32 -8 H-12 L22 -28 V28 L-12 8 H-32 Z" fill="#f7da6a"/><path class="ink" d="M30 -12 q9 12 0 24 M36 -22 q16 22 0 44" style="stroke-width:2.5" stroke="#e0652d"/></g><text class="t" x="1428" y="330" font-size="22">Ai nói? Được lợi gì?</text><rect x="1303" y="368" width="250" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="1428" y="394" font-size="20">blog của vendor luôn khen</text></g>
+<g transform="translate(0 690)"><rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#cdebd0"/><text class="tl" x="55" y="46" font-size="34">② Hỏi sâu không cần chờ “có tư duy phản biện”: nó là một vòng lặp</text><rect class="s" x="35" y="90" width="480" height="290" rx="18" fill="#fffdf5"/><rect class="s" x="100" y="104" width="350" height="50" rx="12" fill="#fbd3b4"/><text class="t" x="275" y="139" font-size="30">① Nền kiến thức</text><g transform="translate(275 240) scale(1.35)"><path class="s" d="M-30 -22 v44 a30 10 0 0 0 60 0 v-44" fill="#bfd9f2"/><path class="s2" d="M-30 -2 a30 10 0 0 0 60 0 M-30 14 a30 10 0 0 0 60 0"/><ellipse class="s" cx="0" cy="-22" rx="30" ry="10" fill="#fffdf5"/></g><rect x="55" y="330" width="440" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="275" y="356" font-size="22">mental model: biết “bình thường” là gì</text><rect class="s" x="560" y="90" width="480" height="290" rx="18" fill="#fffdf5"/><rect class="s" x="625" y="104" width="350" height="50" rx="12" fill="#fbd3b4"/><text class="t" x="800" y="139" font-size="30">② Thấy chỗ lệch</text><g transform="translate(800 240) scale(1.35)"><path class="s" d="M10 12 L34 36" fill="none" style="stroke-width:11"/><path d="M10 12 L34 36" fill="none" stroke="#f2b84b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle class="s" cx="-8" cy="-8" r="26" fill="#eaf4fd"/><path class="s2" d="M-24 4 l9 -11 l9 7 l12 -18" stroke="#e0652d"/><circle class="s3" cx="9" cy="-18" r="3" fill="#e0652d"/></g><rect x="580" y="330" width="440" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="800" y="356" font-size="22">thực tế không khớp với model trong đầu</text><rect class="s" x="1085" y="90" width="480" height="290" rx="18" fill="#fffdf5"/><rect class="s" x="1150" y="104" width="350" height="50" rx="12" fill="#fbd3b4"/><text class="t" x="1325" y="139" font-size="30">③ Đặt câu hỏi theo khuôn</text><g transform="translate(1325 240) scale(1.35)"><path class="s" d="M-36 -32 H36 Q42 -32 42 -26 V8 Q42 14 36 14 H-4 L-20 32 L-16 14 H-36 Q-42 14 -42 8 V-26 Q-42 -32 -36 -32 Z" fill="#fbe98a"/><text class="t" x="0" y="2" font-size="40">?</text></g><rect x="1105" y="330" width="440" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="1325" y="356" font-size="22">vì sao có? · bỏ đi thì sao? · sai khi nào?</text><path class="ink" d="M521 235 L554 235" marker-end="url(#ad)"/><path class="ink" d="M1046 235 L1079 235" marker-end="url(#ad)"/><path d="M1325 384 C1325 445, 275 445, 275 386" stroke="#2fa24a" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="9 8" marker-end="url(#ag)"/><text class="t" x="800" y="476" font-size="24" style="fill:#2fa24a;stroke:#2fa24a">mỗi câu trả lời làm nền dày thêm → lần sau hỏi được sâu hơn</text><rect class="s" x="35" y="490" width="700" height="160" rx="16" fill="#fde3d3"/><text class="tl" x="60" y="530" font-size="28">✗ Hỏi nông: dừng ở bề mặt</text><text class="tl" x="80" y="568" font-size="24">• X là gì?</text><text class="tl" x="80" y="598" font-size="24">• Dùng X thế nào?</text><text class="tl" x="80" y="628" font-size="24">• X có tốt không?</text><path class="blue" d="M752 570 L848 570" marker-end="url(#ah)"/><rect class="s" x="865" y="490" width="700" height="160" rx="16" fill="#d9f0db"/><text class="tl" x="890" y="530" font-size="28">✓ Hỏi sâu: chạm cơ chế và giới hạn</text><text class="tl" x="910" y="568" font-size="24">• X sinh ra để giải quyết vấn đề gì?</text><text class="tl" x="910" y="598" font-size="24">• Bỏ X đi thì hệ thống hỏng ở đâu?</text><text class="tl" x="910" y="628" font-size="24">• X sai khi nào? Khi nào chọn Y thay X?</text></g>
+<g transform="translate(0 1360)"><rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#e3d9f5"/><text class="tl" x="55" y="46" font-size="34">③ Học cái mới: vấn đề trước, công cụ sau (ví dụ: database index)</text><rect class="s" x="35" y="90" width="274" height="330" rx="18" fill="#fffdf5"/><rect class="s" x="49" y="104" width="246" height="48" rx="12" fill="#fbd3b4"/><text class="t" x="172" y="137" font-size="28">① Vấn đề</text><g transform="translate(172 235) scale(1.3)"><path class="s" d="M-20 -31 H20 C20 -10 4 -4 4 0 C4 4 20 10 20 31 H-20 C-20 10 -4 4 -4 0 C-4 -4 -20 -10 -20 -31 Z" fill="#bfd9f2"/><path class="s3" d="M-13 -26 H13 C11 -16 5 -9 0 -5 C-5 -9 -11 -16 -13 -26 Z" fill="#f2b84b"/><path class="s3" d="M-16 29 H16 C14 22 6 16 0 14 C-6 16 -14 22 -16 29 Z" fill="#f2b84b"/><path class="s2" d="M0 -3 V14"/><rect class="s" x="-27" y="-39" width="54" height="8" rx="3" fill="#f7da6a"/><rect class="s" x="-27" y="31" width="54" height="8" rx="3" fill="#f7da6a"/></g><text class="t" x="172" y="330" font-size="22">Không có nó thì đau ở đâu?</text><rect x="47" y="368" width="250" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="172" y="394" font-size="20">full scan bảng triệu dòng</text><rect class="s" x="349" y="90" width="274" height="330" rx="18" fill="#fffdf5"/><rect class="s" x="363" y="104" width="246" height="48" rx="12" fill="#fbd3b4"/><text class="t" x="486" y="137" font-size="28">② Cơ chế</text><g transform="translate(486 235) scale(1.3)"><path class="s2" d="M0 -26 L-22 0 M0 -26 L22 0 M-22 0 L-34 26 M-22 0 L-10 26 M22 0 L10 26 M22 0 L34 26"/><circle class="s" cx="0" cy="-26" r="9" fill="#a58fd6"/><circle class="s" cx="-22" cy="0" r="8" fill="#c5def5"/><circle class="s" cx="22" cy="0" r="8" fill="#c5def5"/><rect class="s3" x="-40" y="24" width="12" height="10" rx="2" fill="#cdebd0"/><rect class="s3" x="-16" y="24" width="12" height="10" rx="2" fill="#cdebd0"/><rect class="s3" x="4" y="24" width="12" height="10" rx="2" fill="#cdebd0"/><rect class="s3" x="28" y="24" width="12" height="10" rx="2" fill="#cdebd0"/></g><text class="t" x="486" y="330" font-size="22">Bên dưới chạy thế nào?</text><rect x="361" y="368" width="250" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="486" y="394" font-size="20">B-tree, tìm theo log n</text><rect class="s" x="663" y="90" width="274" height="330" rx="18" fill="#fffdf5"/><rect class="s" x="677" y="104" width="246" height="48" rx="12" fill="#fbd3b4"/><text class="t" x="800" y="137" font-size="28">③ Cái giá</text><g transform="translate(800 235) scale(1.3)"><path class="s" d="M-28 26 v9 a28 9 0 0 0 56 0 v-9" fill="#f2b84b"/><ellipse class="s" cx="0" cy="26" rx="28" ry="9" fill="#f7da6a"/><path class="s" d="M-28 15 v9 a28 9 0 0 0 56 0 v-9" fill="#f2b84b"/><ellipse class="s" cx="0" cy="15" rx="28" ry="9" fill="#f7da6a"/><path class="s" d="M-28 4 v9 a28 9 0 0 0 56 0 v-9" fill="#f2b84b"/><ellipse class="s" cx="0" cy="4" rx="28" ry="9" fill="#f7da6a"/><path class="s" d="M-28 -7 v9 a28 9 0 0 0 56 0 v-9" fill="#f2b84b"/><ellipse class="s" cx="0" cy="-7" rx="28" ry="9" fill="#f7da6a"/><text class="t" x="0" y="-18" font-size="26">$</text></g><text class="t" x="800" y="330" font-size="22">Phải trả giá gì?</text><rect x="675" y="368" width="250" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="800" y="394" font-size="20">ghi chậm hơn, tốn disk</text><rect class="s" x="977" y="90" width="274" height="330" rx="18" fill="#fffdf5"/><rect class="s" x="991" y="104" width="246" height="48" rx="12" fill="#fbd3b4"/><text class="t" x="1114" y="137" font-size="28">④ Khi nào hỏng</text><g transform="translate(1114 235) scale(1.3)"><path class="s2" d="M-44 34 H44"/><g transform="translate(-26 34) rotate(0) translate(-14 -48)"><rect class="s" x="0" y="0" width="14" height="48" rx="3" fill="#fffdf5"/><circle cx="7" cy="14" r="2.2" fill="#1d2433"/><circle cx="7" cy="33" r="2.2" fill="#1d2433"/></g><g transform="translate(-6 34) rotate(10) translate(-14 -48)"><rect class="s" x="0" y="0" width="14" height="48" rx="3" fill="#fbe3a8"/><circle cx="7" cy="14" r="2.2" fill="#1d2433"/><circle cx="7" cy="33" r="2.2" fill="#1d2433"/></g><g transform="translate(16 34) rotate(32) translate(-14 -48)"><rect class="s" x="0" y="0" width="14" height="48" rx="3" fill="#f9c0b4"/><circle cx="7" cy="14" r="2.2" fill="#1d2433"/><circle cx="7" cy="33" r="2.2" fill="#1d2433"/></g><g transform="translate(38 34) rotate(68) translate(-14 -48)"><rect class="s" x="0" y="0" width="14" height="48" rx="3" fill="#e87a6a"/><circle cx="7" cy="14" r="2.2" fill="#1d2433"/><circle cx="7" cy="33" r="2.2" fill="#1d2433"/></g></g><text class="t" x="1114" y="330" font-size="22">Khi nào nó vô dụng?</text><rect x="989" y="368" width="250" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="1114" y="394" font-size="20">LIKE '%x', bọc function</text><rect class="s" x="1291" y="90" width="274" height="330" rx="18" fill="#fffdf5"/><rect class="s" x="1305" y="104" width="246" height="48" rx="12" fill="#fbd3b4"/><text class="t" x="1428" y="137" font-size="28">⑤ Nối với FV</text><g transform="translate(1428 235) scale(1.3)"><rect class="s" x="-44" y="-12" width="24" height="24" rx="3" fill="#bfd9f2"/><rect class="s" x="20" y="-12" width="24" height="24" rx="3" fill="#f9c0b4"/><path class="s" d="M-24 0 H-4" fill="none" style="stroke-width:7"/><path d="M-24 0 H-4" fill="none" stroke="#cbd3dc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><rect class="s" x="-14" y="-9" width="30" height="18" rx="9" fill="none" style="stroke-width:7"/><rect x="-14" y="-9" width="30" height="18" rx="9" fill="none" stroke="#f7da6a" stroke-width="3"/><path class="s" d="M12 0 H24" fill="none" style="stroke-width:7"/><path d="M12 0 H24" fill="none" stroke="#cbd3dc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g><text class="t" x="1428" y="330" font-size="22">Mình đã gặp ở đâu?</text><rect x="1303" y="368" width="250" height="38" rx="10" fill="#cfe0f5"/><text class="t" x="1428" y="394" font-size="20">query nào ở FV từng chậm?</text><path class="ink" d="M314 235 L344 235" marker-end="url(#ad)"/><path class="ink" d="M628 235 L658 235" marker-end="url(#ad)"/><path class="ink" d="M942 235 L972 235" marker-end="url(#ad)"/><path class="ink" d="M1256 235 L1286 235" marker-end="url(#ad)"/><rect class="s" x="35" y="450" width="1530" height="130" rx="16" fill="#fff3c4"/><g transform="translate(120 515) scale(1.25)"><rect class="s" x="-7" y="-46" width="14" height="9" rx="3" fill="#cbd3dc"/><path class="s2" d="M24 -28 l7 -7"/><circle class="s" cx="0" cy="3" r="34" fill="#fffdf5"/><path class="s3" d="M0 3 L0 -27 A30 30 0 0 1 30 3 Z" fill="#f9c0b4"/><path class="s2" d="M0 -29 v5 M29 3 h-5 M0 35 v-5 M-29 3 h5"/><path class="s" d="M0 3 L0 -22"/><circle class="s3" cx="0" cy="3" r="3.5" fill="#1d2433"/></g><text class="tl" x="200" y="505" font-size="32">Kiểm chứng: gấp tài liệu, nói lại trong 60 giây</text><text class="tl" x="200" y="548" font-size="24">Ấp úng ở đâu là chưa hiểu ở đó. Đọc thấy quen ≠ nói ra được (illusion of competence).</text></g>
+<g transform="translate(0 1990)"><rect class="s" x="60" y="0" width="1480" height="84" rx="16" fill="#fbe98a"/><text class="t" x="800" y="56" font-size="42">Luôn hỏi: cái này giải quyết vấn đề gì, và nó đánh đổi cái gì?</text></g>
+</g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

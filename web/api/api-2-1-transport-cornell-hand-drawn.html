@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TCP, UDP, QUIC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .note pre { font: 16px/23px ui-monospace, 'SFMono-Regular', Menlo, monospace; background: #efe9de; border-radius: 6px; padding: 6px 10px; margin: 4px 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* khung khối gọn: Nôm na → Chốt → Ví dụ → Áp dụng → Bẫy → Tự kiểm */
+  .note h3 small { font-size: 21px; color: #5a6475; }
+  .chot .lb { background: #fbe98a; } .vd .lb { background: #f9c9b6; } .ap .lb { background: #c5def5; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 6px; }
+  .flow span { border: 2px solid #1d2433; border-radius: 10px; padding: 0 9px; background: #fff; font-size: 19px; line-height: 28px; }
+  .flow span.ok { background: #cfe8cf; } .flow span.no { background: #f6b3a8; }
+  .flow i { font-style: normal; color: #2f80d8; font-size: 22px; }
+  table.mini { border-collapse: collapse; font-size: 19px; line-height: 26px; margin: 4px 0 8px; }
+  table.mini th, table.mini td { border: 2px solid #1d2433; padding: 2px 10px; text-align: left; vertical-align: top; }
+  table.mini th { background: var(--c); font-weight: normal; }
+  .ap ul, .vd ol { margin: 0; padding-left: 24px; }
+  .vd { clear: right; }  /* ví dụ luôn nằm dưới doodle để đủ bề ngang */
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">2.1 · Transport: TCP, UDP, QUIC</h1>
+  <p class="sub">Chở byte tới đúng process: chắc chắn (TCP) hay nhanh (UDP), QUIC lấy cả hai</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>TCP, UDP và kết nối</h2>
+
+    <div class="row c2">
+      <div class="cue"><b>Q1</b> ⭐ TCP khác UDP thế nào? Khi nào chọn UDP?
+        <small>từ khóa: connection-oriented · reliable · ordered · datagram · latency</small></div>
+      <div class="note hand">
+        <h3>TCP chắc chắn, UDP nhanh</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="ink" d="M0 -32 V30 M-16 32 H16"/><path class="ink" d="M-32 -18 L32 -22"/><path class="s2" d="M-32 -18 L-42 8 M-32 -18 L-22 8 M32 -22 L22 4 M32 -22 L42 4"/><path class="s" d="M-44 8 Q-32 24 -20 8 Z" fill="#bfd9f2"/><path class="s" d="M20 4 Q32 20 44 4 Z" fill="#f9c0b4"/><circle class="s3" cx="0" cy="-34" r="4" fill="#f7da6a"/></svg>
+          <figcaption>đổi độ chắc lấy tốc độ</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>TCP như gửi thư bảo đảm: phải có người ký nhận, thất lạc thì bưu điện gửi lại. UDP như thả tờ rơi: ném ra là xong, rơi tờ nào thì thôi.</p>
+        <p class="chot"><span class="lb">Chốt</span><b>TCP</b> bắt tay trước, đảm bảo byte tới đủ và đúng thứ tự, đổi lại có độ trễ. <b>UDP</b> gửi từng gói độc lập, không đảm bảo gì, đổi lại nhanh và đơn giản.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><table class="mini"><tr><th></th><th>TCP</th><th>UDP</th></tr><tr><td>Bắt tay trước</td><td>3 bước</td><td>không</td></tr><tr><td>Mất gói</td><td>tự gửi lại</td><td>mất luôn</td></tr><tr><td>Thứ tự</td><td>giữ đúng</td><td>không giữ</td></tr><tr><td>Đơn vị</td><td>một dòng byte</td><td>từng datagram</td></tr><tr><td>Gặp ở</td><td>HTTP/1.1, HTTP/2, Postgres, Redis, broker</td><td>DNS, video call, game, QUIC</td></tr></table></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Backend Node gần như luôn dùng TCP (qua <code>http</code>, <code>pg</code>, <code>ioredis</code>…). Chỉ chọn UDP khi <b>dữ liệu cũ hết giá trị</b>: khung hình video, vị trí trong game. Gửi lại gói cũ còn tệ hơn bỏ qua nó.</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>“UDP nhanh hơn nên dùng cho API.” Sai: API cần đủ dữ liệu và đúng thứ tự. Tự làm lại phần tin cậy trên UDP là viết lại TCP (QUIC chính là làm việc đó, có lý do riêng ở Q4).</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Vì sao DNS dùng UDP? (truy vấn nhỏ, một gói đi một gói về; mất thì hỏi lại, rẻ hơn bắt tay TCP)</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q2</b> TCP đảm bảo tin cậy bằng cách nào?
+        <small>từ khóa: 3-way handshake · sequence number · ACK · retransmission · flow control</small></div>
+      <div class="note hand">
+        <h3>Bắt tay, đánh số, ký nhận</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-9" y="-42" width="18" height="16" rx="8" fill="#e87a6a"/><rect class="s" x="-5" y="-28" width="10" height="16" fill="#f7da6a"/><rect class="s" x="-24" y="-14" width="48" height="10" rx="3" fill="#e87a6a"/><rect x="-26" y="6" width="52" height="26" rx="5" fill="none" stroke="#e0652d" stroke-width="2.5" style="stroke-dasharray:6 4"/><text class="t" x="0" y="26" font-size="17" style="fill:#e0652d;stroke:#e0652d">ACK</text></svg>
+          <figcaption>nhận tới đâu, báo tới đó</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Hai người đọc truyện qua điện thoại: “Nghe không?” “Nghe, còn bạn?” “Nghe.” Rồi đọc từng trang, người nghe báo “nhận tới trang 5”; thiếu trang nào thì đọc lại trang đó.</p>
+        <p class="chot"><span class="lb">Chốt</span>Bắt tay 3 bước để chốt số thứ tự ban đầu. Mỗi byte có số thứ tự, bên nhận gửi <b>ACK</b>; quá hạn chưa thấy ACK thì gửi lại. Cửa sổ gửi co giãn để không làm ngợp bên nhận và mạng.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><div class="flow"><span>SYN</span><i>→</i><span>SYN-ACK</span><i>→</i><span>ACK</span><i>→</i><span>data 1–1000</span><i>→</i><span class="ok">ACK 1001</span><i>→</i><span class="no">mất 1001–2000</span><i>→</i><span>gửi lại</span></div></div>
+        <div class="ap"><span class="lb">Áp dụng</span><ul><li>Bắt tay tốn 1 vòng đi-về (RTT), thêm TLS 1.3 là 1 RTT nữa → <b>đừng mở kết nối mới cho mỗi request</b>.</li><li>Node: <code>new http.Agent({ keepAlive: true })</code> cho lời gọi ra đối tác; <code>pg</code>, <code>ioredis</code> dùng pool hoặc kết nối giữ lâu.</li></ul></div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>“TCP đảm bảo message tới nơi.” TCP chỉ đảm bảo byte tới tầng TCP máy bên kia, không đảm bảo app đã xử lý. Muốn chắc phải có xác nhận ở tầng ứng dụng: HTTP 200, ack của broker.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Server ghi DB xong thì crash trước khi trả response. Client thấy gì, TCP có cứu không? (thấy lỗi hoặc timeout; TCP không cứu được → cần retry + idempotency)</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> Port là gì? Một kết nối TCP được nhận diện bằng gì?
+        <small>từ khóa: port · 4-tuple · ephemeral port · TIME_WAIT · keep-alive</small></div>
+      <div class="note hand">
+        <h3>Port là số phòng, kết nối là cặp phòng</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-36 36 V-2 A36 36 0 0 1 36 -2 V36 Z" fill="#cbd3dc"/><path class="s" d="M-22 36 V-2 A22 22 0 0 1 22 -2 V36 Z" fill="#fffdf5"/><path class="s2" d="M-11 -22 V36 M0 -24 V36 M11 -22 V36 M-22 6 H22"/></svg>
+          <figcaption>đúng cửa mới vào đúng process</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>IP là địa chỉ toà nhà, port là số phòng. Một cuộc gọi được nhận ra bằng cả phòng gọi đi lẫn phòng nghe máy.</p>
+        <p class="chot"><span class="lb">Chốt</span>Kết nối = <b>4-tuple</b> (IP nguồn, port nguồn, IP đích, port đích). Port đích cố định (443, 5432); port nguồn do OS cấp tạm (<b>ephemeral port</b>).</p>
+        <div class="vd"><span class="lb">Ví dụ</span><pre>10.0.0.5:51234 → 10.0.0.9:5432   (kết nối pg thứ 1)
+10.0.0.5:51235 → 10.0.0.9:5432   (cùng đích, khác port nguồn → kết nối thứ 2)</pre></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Mở rồi đóng kết nối liên tục với một đích → nhiều socket nằm ở <code>TIME_WAIT</code>, tải cao có thể cạn ephemeral port. Cách chữa vẫn là keep-alive và pool.</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Nghĩ đóng kết nối là xong ngay. Bên đóng trước còn giữ socket ở TIME_WAIT một lúc (Linux khoảng 60 giây) để gom gói đến muộn.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Service gọi đối tác 2.000 req/s, mỗi request mở kết nối mới rồi đóng. Có thể gặp lỗi gì? (cạn port nguồn, <code>EADDRNOTAVAIL</code>; sửa bằng keep-alive)</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>Mọi HTTPS ra đối tác và vào từ mobile chạy trên TCP + TLS; ActiveMQ (STOMP) chạy thẳng trên TCP. Tự hỏi: lời gọi ra đối tác có bật keep-alive không?</p>
+    <div class="summary hand"><h3>Summary</h3><p>Transport chở byte tới đúng process (nhờ port). TCP bắt tay, đánh số, ACK và gửi lại nên chắc chắn và đúng thứ tự, đổi lại tốn RTT; UDP gửi là đi, nhanh nhưng không hứa gì. Mỗi kết nối là một 4-tuple; mở/đóng liên tục thì tốn RTT và cạn port, nên dùng keep-alive và pool.</p></div>
+  </section>
+
+  <section class="page">
+    <h2 class="page-no"><b>2</b>QUIC và dòng byte</h2>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> ⭐ Head-of-line blocking ở tầng TCP là gì? Vì sao HTTP/3 chuyển sang QUIC?
+        <small>từ khóa: HOL blocking · multiplexing · QUIC · UDP · HTTP/3</small></div>
+      <div class="note hand">
+        <h3>Một làn chung → mỗi stream một làn</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-20 -31 H20 C20 -10 4 -4 4 0 C4 4 20 10 20 31 H-20 C-20 10 -4 4 -4 0 C-4 -4 -20 -10 -20 -31 Z" fill="#bfd9f2"/><path class="s3" d="M-13 -26 H13 C11 -16 5 -9 0 -5 C-5 -9 -11 -16 -13 -26 Z" fill="#f2b84b"/><path class="s3" d="M-16 29 H16 C14 22 6 16 0 14 C-6 16 -14 22 -16 29 Z" fill="#f2b84b"/><path class="s2" d="M0 -3 V14"/><rect class="s" x="-27" y="-39" width="54" height="8" rx="3" fill="#f7da6a"/><rect class="s" x="-27" y="31" width="54" height="8" rx="3" fill="#f7da6a"/></svg>
+          <figcaption>một gói mất, cả hàng chờ</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Đường chỉ có một làn: xe đầu chết máy thì cả hàng đứng, dù xe sau đi chỗ khác. QUIC chia mỗi đoàn xe một làn riêng.</p>
+        <p class="chot"><span class="lb">Chốt</span>TCP chỉ biết <b>một dòng byte đúng thứ tự</b>: mất một gói thì mọi byte sau phải chờ, kể cả byte của request khác. HTTP/2 dồn nhiều request lên một TCP nên vẫn dính. <b>QUIC</b> chạy trên UDP, tự làm tin cậy cho từng stream → mất gói chỉ chặn stream của nó.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><table class="mini"><tr><th></th><th>HTTP/1.1</th><th>HTTP/2</th><th>HTTP/3</th></tr><tr><td>Transport</td><td>TCP</td><td>TCP</td><td>QUIC (UDP)</td></tr><tr><td>HOL tầng HTTP</td><td>có</td><td>hết (multiplex)</td><td>hết</td></tr><tr><td>HOL tầng TCP</td><td>có</td><td>còn</td><td>hết</td></tr><tr><td>Bắt tay mới (kèm TLS 1.3)</td><td>2 RTT</td><td>2 RTT</td><td>1 RTT</td></tr></table></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Backend thường không tự chạy QUIC: CDN hoặc load balancer nói HTTP/3 với client, rồi nói HTTP/1.1 hoặc HTTP/2 với server Node phía sau. Lợi lớn nhất ở mạng mobile chập chờn, và QUIC giữ được kết nối khi đổi Wi-Fi sang 4G (nhận nhau bằng connection ID).</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>“HTTP/2 đã hết HOL.” Chỉ hết ở tầng HTTP. Ở tầng TCP vẫn còn: mạng mất gói nhiều thì một kết nối HTTP/2 có thể chậm hơn vài kết nối HTTP/1.1.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Vì sao không sửa TCP mà làm giao thức mới trên UDP? (TCP nằm trong kernel và trong thiết bị mạng khắp nơi, gần như không đổi được; UDP đi qua mọi nơi, QUIC chạy ở user space nên nâng cấp nhanh)</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q5</b> ⭐ Vì sao <code>socket.on('data')</code> nhận message bị cắt nửa hoặc dính nhau?
+        <small>từ khóa: byte stream · framing · message boundary · buffer</small></div>
+      <div class="note hand">
+        <h3>TCP là dòng byte, không có ranh giới</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-14 22 L14 -36" fill="none" style="stroke-width:9"/><path d="M-14 22 L14 -36" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path class="s" d="M14 22 L-14 -36" fill="none" style="stroke-width:9"/><path d="M14 22 L-14 -36" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle class="s" cx="-17" cy="30" r="9" fill="#e87a6a"/><circle class="s" cx="17" cy="30" r="9" fill="#e87a6a"/><circle class="s3" cx="0" cy="-6" r="3" fill="#1d2433"/></svg>
+          <figcaption>cắt đúng chỗ là việc của protocol</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Rót hai cốc nước vào cùng một ống: đầu kia hứng ra một dòng nước liền, không biết đâu là cốc 1, đâu là cốc 2.</p>
+        <p class="chot"><span class="lb">Chốt</span>TCP không biết “message”. Một lần <code>'data'</code> có thể là nửa message, hoặc nhiều message dính nhau. Cắt đúng chỗ là việc của tầng trên: <b>framing</b> của protocol.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><pre>// SAI: coi mỗi chunk là một message
+socket.on('data', c => handle(JSON.parse(c)))
+
+// ĐÚNG: gom buffer, cắt tại mỗi \n
+socket.setEncoding('utf8')  // không cắt đôi ký tự UTF-8
+let buf = ''
+socket.on('data', c => {
+  buf += c
+  let i
+  while ((i = buf.indexOf('\n')) >= 0) {
+    handle(JSON.parse(buf.slice(0, i)))
+    buf = buf.slice(i + 1)
+  }
+})</pre></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Dùng HTTP, WebSocket, STOMP thì thư viện đã làm framing. Chỉ tự làm khi viết server <code>net</code> thô, hoặc nói chuyện với giao thức TCP riêng của đối tác (hay gặp: 4 byte độ dài ở đầu mỗi message).</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Test local chạy đúng vì message nhỏ, mạng nhanh nên mỗi chunk tình cờ đúng một message. Lên production tải cao mới vỡ.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Giao thức “4 byte độ dài ở đầu”: chunk nhận được chỉ có 2 byte thì làm gì? (giữ lại trong buffer, chờ thêm cho đủ 4 byte rồi mới đọc độ dài)</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span><code>fv-ccu.js</code> dùng WebSocket nên framing do WS lo; gọi đối tác qua HTTP/SOAP cũng vậy. Tự hỏi: có đối tác nào nói chuyện bằng socket TCP thô không?</p>
+    <div class="summary hand"><h3>Summary</h3><p>TCP giữ đúng thứ tự cho cả kết nối nên mất một gói là mọi stream phía sau phải chờ (HOL); QUIC chạy trên UDP và giữ thứ tự theo từng stream, là nền của HTTP/3. TCP chỉ đưa một dòng byte không ranh giới: cắt message đúng chỗ là việc của protocol phía trên.</p></div>
+  </section>
+
+  <p class="foot">Nguồn: MDN HTTP/3, RFC 9000 (QUIC). Trước: 2.0 Transport (hình) · Tiếp: 3.0 Protocol.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

@@ -1,0 +1,1261 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bức tranh tổng quan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1024px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1024 3716"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Cây tổng thể về auth: mục 0 hai câu hỏi authentication và authorization; 1 công cụ mật mã; 2 thứ ghép từ công cụ; 3 session và JWT; 4 OAuth2 và OIDC; chỗ hay bị thủng và phần đã làm ở FV"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <g id="ck">
+          <path
+            d="M0 0 l7 9 l16 -18"
+            fill="none"
+            stroke="#2fa24a"
+            stroke-width="4.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </g>
+        <g id="xx">
+          <path
+            d="M0 0 l16 16 M16 0 l-16 16"
+            fill="none"
+            stroke="#d6453d"
+            stroke-width="4.5"
+            stroke-linecap="round"
+          />
+        </g>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <rect
+          class="s"
+          x="40"
+          y="30"
+          width="944"
+          height="100"
+          rx="16"
+          fill="#bcd9f5"
+        />
+        <text class="t" x="512" y="95" font-size="44">AUTH — CÂY TỔNG THỂ</text>
+        <rect
+          class="s"
+          x="162"
+          y="143"
+          width="700"
+          height="52"
+          rx="26"
+          fill="#f9c9b6"
+        />
+        <text class="t" x="512" y="178" font-size="26">
+          Mỗi mục nằm đúng một chỗ · tầng sau dùng đồ của tầng trước
+        </text>
+        <g transform="translate(0 225)">
+          <rect
+            class="s"
+            x="35"
+            y="0"
+            width="955"
+            height="66"
+            rx="12"
+            fill="#c5def5"
+          />
+          <circle class="s" cx="66" cy="33" r="20" fill="#fffdf5" />
+          <text class="t" x="66" y="43" font-size="28">1</text>
+          <text class="tl" x="98" y="46" font-size="32">AUTH LÀ GÌ</text>
+          <rect
+            class="s3"
+            x="585"
+            y="12"
+            width="385"
+            height="42"
+            rx="21"
+            fill="#fffdf5"
+          />
+          <text class="t" x="777" y="41" font-size="21">
+            hai câu hỏi cần trả lời
+          </text>
+          <rect
+            class="s"
+            x="35"
+            y="76"
+            width="955"
+            height="292"
+            rx="18"
+            fill="#fffdf5"
+          />
+          <text class="t" x="512" y="120" font-size="28">
+            Học công cụ để làm gì? Để trả lời hai câu hỏi này, theo đúng thứ tự:
+          </text>
+          <rect
+            class="s"
+            x="55"
+            y="140"
+            width="410"
+            height="150"
+            rx="14"
+            fill="#dcebfa"
+          />
+          <text class="tl" x="73" y="182" font-size="30">Authentication</text>
+          <text class="tl" x="73" y="226" font-size="30">“Bạn là ai?”</text>
+          <text class="tl" x="73" y="260" font-size="22">sai thì lỗi 401</text>
+          <g transform="translate(415 178) scale(0.85)">
+            <circle class="s" cx="0" cy="0" r="13" fill="#ffe3c2" />
+            <path
+              class="s"
+              d="M0 13 V55 M0 28 L-20 46 M0 28 L20 46 M0 55 L-14 82 M0 55 L14 82"
+              fill="none"
+            />
+          </g>
+          <rect
+            class="s"
+            x="560"
+            y="140"
+            width="410"
+            height="150"
+            rx="14"
+            fill="#dff3e0"
+          />
+          <text class="tl" x="578" y="182" font-size="30">Authorization</text>
+          <text class="tl" x="578" y="226" font-size="30">
+            “Bạn được làm gì?”
+          </text>
+          <text class="tl" x="578" y="260" font-size="22">sai thì lỗi 403</text>
+          <g transform="translate(915 232) scale(1.0)">
+            <path
+              class="s"
+              d="M-26 30 V-6 A26 26 0 0 1 26 -6 V30 Z"
+              fill="#cbd3dc"
+            />
+            <path class="s2" d="M-13 -14 V30 M0 -22 V30 M13 -14 V30" />
+          </g>
+          <path class="blue" d="M472 215 L552 215" marker-end="url(#ah)" />
+          <text class="t" x="512" y="200" font-size="22">rồi</text>
+          <text class="tl" x="55" y="326" font-size="22">
+            Luôn theo thứ tự này. Đây là 2 bước,
+          </text>
+          <text class="tl" x="55" y="354" font-size="22">
+            không phải 2 loại auth.
+          </text>
+          <rect
+            class="s3"
+            x="560"
+            y="306"
+            width="410"
+            height="42"
+            rx="10"
+            fill="#fffdf5"
+          />
+          <text class="tl" x="574" y="334" font-size="22">
+            RBAC, ABAC: cách phân quyền
+          </text>
+        </g>
+        <path class="blue" d="M512 598 L512 636" marker-end="url(#ah)" />
+        <text class="tl" x="532" y="625" font-size="22">
+          trả lời bằng cách nào?
+        </text>
+        <g transform="translate(0 641)">
+          <rect
+            class="s"
+            x="35"
+            y="0"
+            width="955"
+            height="66"
+            rx="12"
+            fill="#fbd3b4"
+          />
+          <circle class="s" cx="66" cy="33" r="20" fill="#fffdf5" />
+          <text class="t" x="66" y="43" font-size="28">2</text>
+          <text class="tl" x="98" y="46" font-size="32">CÔNG CỤ MẬT MÃ</text>
+          <rect
+            class="s3"
+            x="585"
+            y="12"
+            width="385"
+            height="42"
+            rx="21"
+            fill="#fffdf5"
+          />
+          <text class="t" x="777" y="41" font-size="21">những viên gạch</text>
+          <rect
+            class="s"
+            x="35"
+            y="76"
+            width="955"
+            height="414"
+            rx="18"
+            fill="#fffdf5"
+          />
+          <text class="t" x="512" y="120" font-size="30">
+            Dùng gì để băm, giấu, ký?
+          </text>
+          <rect
+            class="s"
+            x="55"
+            y="140"
+            width="290"
+            height="330"
+            rx="14"
+            fill="#fde8d8"
+          />
+          <g transform="translate(200 180) scale(1.0)">
+            <rect
+              class="s3"
+              x="-62"
+              y="-21"
+              width="124"
+              height="42"
+              rx="8"
+              fill="#fffdf5"
+            />
+            <text class="t" x="0" y="9" font-size="24">a3f9c2…</text>
+          </g>
+          <text class="t" x="200" y="246" font-size="27">Hash</text>
+          <text class="t" x="200" y="274" font-size="21">
+            hỏi: có bị sửa không?
+          </text>
+          <rect
+            class="s3"
+            x="75"
+            y="288"
+            width="250"
+            height="38"
+            rx="10"
+            fill="#fffdf5"
+          />
+          <text class="tl" x="89" y="313" font-size="22">SHA-256</text>
+          <rect
+            class="s3"
+            x="75"
+            y="334"
+            width="250"
+            height="38"
+            rx="10"
+            fill="#fffdf5"
+          />
+          <text class="tl" x="89" y="359" font-size="22">bcrypt, argon2</text>
+          <text class="t" x="200" y="400" font-size="20">
+            không khoá, một chiều
+          </text>
+          <text class="t" x="200" y="426" font-size="20">
+            MD5, SHA-1 đã hỏng, bỏ
+          </text>
+          <text class="t" x="200" y="452" font-size="20">
+            bcrypt: chậm, cho password
+          </text>
+          <rect
+            class="s"
+            x="367"
+            y="140"
+            width="290"
+            height="330"
+            rx="14"
+            fill="#fde8d8"
+          />
+          <g transform="translate(512 178) scale(0.85)">
+            <path
+              class="s"
+              d="M-15 -6 V-20 A15 15 0 0 1 15 -20 V-6"
+              fill="none"
+              style="stroke-width: 9"
+            />
+            <path
+              d="M-15 -6 V-20 A15 15 0 0 1 15 -20 V-6"
+              fill="none"
+              stroke="#cbd3dc"
+              stroke-width="4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <rect
+              class="s"
+              x="-26"
+              y="-8"
+              width="52"
+              height="42"
+              rx="6"
+              fill="#f7da6a"
+            />
+            <circle class="s3" cx="0" cy="12" r="5.5" fill="#1d2433" />
+            <path class="ink" d="M0 14 V24" />
+          </g>
+          <text class="t" x="512" y="246" font-size="27">Mã hoá đối xứng</text>
+          <text class="t" x="512" y="274" font-size="21">
+            hỏi: làm sao giấu nội dung?
+          </text>
+          <rect
+            class="s3"
+            x="387"
+            y="288"
+            width="250"
+            height="38"
+            rx="10"
+            fill="#fffdf5"
+          />
+          <text class="tl" x="401" y="313" font-size="22">AES-GCM</text>
+          <text class="t" x="512" y="354" font-size="20">
+            1 khoá chung, giải ngược được
+          </text>
+          <text class="t" x="512" y="380" font-size="20">
+            GCM: chống cả việc bị sửa
+          </text>
+          <text class="t" x="512" y="406" font-size="20">
+            nhanh, hợp dữ liệu lớn
+          </text>
+          <rect
+            class="s"
+            x="679"
+            y="140"
+            width="290"
+            height="330"
+            rx="14"
+            fill="#fde8d8"
+          />
+          <g transform="translate(829 184) scale(0.95)">
+            <g transform="translate(0 -8) rotate(-30)">
+              <path
+                class="s"
+                d="M-4 0 H38 M26 0 v15 M37 0 v11"
+                fill="none"
+                style="stroke-width: 7"
+              />
+              <path
+                d="M-4 0 H38 M26 0 v15 M37 0 v11"
+                fill="none"
+                stroke="#f7da6a"
+                stroke-width="3"
+                stroke-linecap="round"
+              />
+              <circle class="s" cx="-20" cy="0" r="18" fill="#f7da6a" />
+              <circle class="s2" cx="-20" cy="0" r="6" fill="#fbf9f2" />
+            </g>
+          </g>
+          <text class="t" x="824" y="246" font-size="27">
+            Mã hoá bất đối xứng
+          </text>
+          <text class="t" x="824" y="274" font-size="21">
+            hỏi: ai là người đã ký?
+          </text>
+          <rect
+            class="s3"
+            x="699"
+            y="288"
+            width="250"
+            height="38"
+            rx="10"
+            fill="#fffdf5"
+          />
+          <text class="tl" x="713" y="313" font-size="22">RSA, ECDSA</text>
+          <text class="t" x="824" y="354" font-size="20">
+            cặp khoá public / private
+          </text>
+          <text class="t" x="824" y="380" font-size="20">
+            private ký, public kiểm
+          </text>
+          <text class="t" x="824" y="406" font-size="20">
+            chậm, chỉ dùng ký / trao khoá
+          </text>
+        </g>
+        <path class="blue" d="M512 1136 L512 1174" marker-end="url(#ah)" />
+        <text class="tl" x="532" y="1163" font-size="22">ghép lại</text>
+        <g transform="translate(0 1179)">
+          <rect
+            class="s"
+            x="35"
+            y="0"
+            width="955"
+            height="66"
+            rx="12"
+            fill="#cdeccf"
+          />
+          <circle class="s" cx="66" cy="33" r="20" fill="#fffdf5" />
+          <text class="t" x="66" y="43" font-size="28">3</text>
+          <text class="tl" x="98" y="46" font-size="32">
+            THỨ GHÉP TỪ CÔNG CỤ
+          </text>
+          <rect
+            class="s3"
+            x="585"
+            y="12"
+            width="385"
+            height="42"
+            rx="21"
+            fill="#fffdf5"
+          />
+          <text class="t" x="777" y="41" font-size="21">
+            tường, cửa ghép từ gạch
+          </text>
+          <rect
+            class="s"
+            x="35"
+            y="76"
+            width="955"
+            height="288"
+            rx="18"
+            fill="#fffdf5"
+          />
+          <text class="t" x="512" y="120" font-size="30">
+            Ghép gạch thành thứ dùng được
+          </text>
+          <rect
+            class="s"
+            x="55"
+            y="140"
+            width="440"
+            height="170"
+            rx="14"
+            fill="#e3f5e4"
+          />
+          <text class="tl" x="73" y="182" font-size="30">HMAC</text>
+          <text class="tl" x="73" y="222" font-size="25">
+            = Hash + khoá chung
+          </text>
+          <text class="tl" x="73" y="256" font-size="21">
+            xác thực nguồn gửi, nhưng bên nào
+          </text>
+          <text class="tl" x="73" y="282" font-size="21">
+            có khoá cũng giả được
+          </text>
+          <rect
+            class="s"
+            x="530"
+            y="140"
+            width="440"
+            height="170"
+            rx="14"
+            fill="#e3f5e4"
+          />
+          <text class="tl" x="548" y="182" font-size="30">Chữ ký số</text>
+          <text class="tl" x="548" y="222" font-size="25">
+            = Hash + khoá private
+          </text>
+          <text class="tl" x="548" y="256" font-size="21">
+            chống chối bỏ, vì chỉ một bên
+          </text>
+          <text class="tl" x="548" y="282" font-size="21">giữ khoá ký</text>
+          <text class="t" x="512" y="346" font-size="22">
+            Chưa phải thẻ hay quy trình: chỉ là vật liệu đã ghép sẵn.
+          </text>
+        </g>
+        <path class="blue" d="M512 1548 L512 1586" marker-end="url(#ah)" />
+        <text class="tl" x="532" y="1575" font-size="22">đóng gói thành</text>
+        <g transform="translate(0 1591)">
+          <rect
+            class="s"
+            x="35"
+            y="0"
+            width="955"
+            height="66"
+            rx="12"
+            fill="#ddd1f3"
+          />
+          <circle class="s" cx="66" cy="33" r="20" fill="#fffdf5" />
+          <text class="t" x="66" y="43" font-size="28">4</text>
+          <text class="tl" x="98" y="46" font-size="32">
+            CÁCH SERVER NHỚ BẠN
+          </text>
+          <rect
+            class="s3"
+            x="585"
+            y="12"
+            width="385"
+            height="42"
+            rx="21"
+            fill="#fffdf5"
+          />
+          <text class="t" x="777" y="41" font-size="21">
+            trả lời: “Bạn là ai?”
+          </text>
+          <rect
+            class="s"
+            x="35"
+            y="76"
+            width="955"
+            height="542"
+            rx="18"
+            fill="#fffdf5"
+          />
+          <text class="t" x="512" y="120" font-size="30">
+            Làm sao server nhớ tôi đã đăng nhập?
+          </text>
+          <rect
+            class="s"
+            x="55"
+            y="140"
+            width="410"
+            height="370"
+            rx="14"
+            fill="#ece6f8"
+          />
+          <text class="tl" x="73" y="182" font-size="30">Session</text>
+          <g transform="translate(410 172) scale(0.8)">
+            <rect
+              class="s"
+              x="-22"
+              y="-28"
+              width="44"
+              height="56"
+              rx="5"
+              fill="#fffdf5"
+            />
+            <path class="s2" d="M-12 -14 H12 M-12 0 H12 M-12 14 H4" />
+          </g>
+          <text class="tl" x="73" y="224" font-size="21">
+            Server giữ sổ ghi ai đang đăng nhập
+          </text>
+          <text class="tl" x="73" y="250" font-size="21">
+            (Redis / DB). Thẻ chỉ là mã ngẫu nhiên.
+          </text>
+          <use href="#ck" x="73" y="300" />
+          <text class="tl" x="107" y="306" font-size="21">
+            thu hồi ngay: xoá dòng trong sổ
+          </text>
+          <use href="#xx" x="73" y="330" />
+          <text class="tl" x="107" y="346" font-size="21">
+            mọi server phải dùng chung sổ
+          </text>
+          <text class="tl" x="73" y="424" font-size="21">
+            Hợp với web truyền thống, cần
+          </text>
+          <text class="tl" x="73" y="450" font-size="21">
+            đăng xuất / khoá tài khoản ngay.
+          </text>
+          <rect
+            class="s"
+            x="560"
+            y="140"
+            width="410"
+            height="370"
+            rx="14"
+            fill="#ece6f8"
+          />
+          <text class="tl" x="578" y="182" font-size="30">JWT</text>
+          <g transform="translate(925 176) scale(0.7)">
+            <path
+              class="s"
+              d="M-24 -36 H12 L24 -24 V34 H-24 Z"
+              fill="#fffdf5"
+            />
+            <path class="s3" d="M12 -36 V-24 H24 Z" fill="#cbd3dc" />
+            <path class="s2" d="M-15 -20 H3 M-15 -10 H12 M-15 0 H12" />
+            <path
+              class="ink"
+              d="M-16 20 q4 -12 8 0 q4 8 8 -4 q4 -6 10 0"
+              stroke="#e0652d"
+              style="stroke-width: 2.5"
+            />
+            <circle class="s" cx="14" cy="26" r="9" fill="#e87a6a" />
+            <circle class="s3" cx="14" cy="26" r="3" fill="#f7da6a" />
+          </g>
+          <text class="tl" x="578" y="224" font-size="21">
+            Client giữ thẻ ghi sẵn tên, quyền,
+          </text>
+          <text class="tl" x="578" y="250" font-size="21">
+            hạn dùng và có chữ ký.
+          </text>
+          <use href="#ck" x="578" y="284" />
+          <text class="tl" x="612" y="290" font-size="21">
+            server không cần nhớ gì
+          </text>
+          <use href="#xx" x="578" y="310" />
+          <text class="tl" x="612" y="326" font-size="21">
+            khó thu hồi nên access token
+          </text>
+          <text class="tl" x="612" y="352" font-size="21">
+            sống ngắn + refresh rotation
+          </text>
+          <rect
+            class="s3"
+            x="580"
+            y="380"
+            width="370"
+            height="42"
+            rx="10"
+            fill="#fffdf5"
+          />
+          <text class="tl" x="594" y="408" font-size="21">
+            HS256 = dùng HMAC
+          </text>
+          <rect
+            class="s3"
+            x="580"
+            y="432"
+            width="370"
+            height="42"
+            rx="10"
+            fill="#fffdf5"
+          />
+          <text class="tl" x="594" y="460" font-size="21">
+            RS256 = dùng chữ ký số
+          </text>
+          <rect
+            class="s"
+            x="55"
+            y="526"
+            width="915"
+            height="76"
+            rx="14"
+            fill="#f3eefb"
+          />
+          <g transform="translate(100 566) scale(0.5)">
+            <polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a" />
+            <path class="ink" d="M0 -14 V6" style="stroke-width: 5" />
+            <circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433" />
+          </g>
+          <text class="tl" x="140" y="556" font-size="23">
+            JWT chỉ ký, KHÔNG mã hoá: payload ai cũng đọc được.
+          </text>
+          <text class="tl" x="140" y="584" font-size="22">
+            Hay sai: alg = none · nhầm HS / RS · quên kiểm exp, aud
+          </text>
+        </g>
+        <path class="blue" d="M512 2214 L512 2252" marker-end="url(#ah)" />
+        <text class="tl" x="532" y="2241" font-size="22">
+          nhiều bên cùng dùng
+        </text>
+        <g transform="translate(0 2257)">
+          <rect
+            class="s"
+            x="35"
+            y="0"
+            width="955"
+            height="66"
+            rx="12"
+            fill="#f6c9dc"
+          />
+          <circle class="s" cx="66" cy="33" r="20" fill="#fffdf5" />
+          <text class="t" x="66" y="43" font-size="28">5</text>
+          <text class="tl" x="98" y="46" font-size="32">
+            GIAO THỨC GIỮA NHIỀU BÊN
+          </text>
+          <rect
+            class="s3"
+            x="585"
+            y="12"
+            width="385"
+            height="42"
+            rx="21"
+            fill="#fffdf5"
+          />
+          <text class="t" x="777" y="41" font-size="21">OAuth2 · OIDC</text>
+          <rect
+            class="s"
+            x="35"
+            y="76"
+            width="955"
+            height="405"
+            rx="18"
+            fill="#fffdf5"
+          />
+          <text class="t" x="512" y="120" font-size="30">
+            Đăng nhập bằng Google hoạt động thế nào?
+          </text>
+          <rect
+            class="s"
+            x="55"
+            y="140"
+            width="480"
+            height="335"
+            rx="14"
+            fill="#fbe3ee"
+          />
+          <text class="tl" x="73" y="182" font-size="28">
+            OAuth2 = ủy quyền
+          </text>
+          <rect
+            class="s3"
+            x="405"
+            y="154"
+            width="112"
+            height="30"
+            rx="15"
+            fill="#fffdf5"
+          />
+          <text class="t" x="461" y="175" font-size="19">→ AuthZ</text>
+          <text class="tl" x="73" y="224" font-size="21">
+            Như đưa chìa khoá cho người giữ xe:
+          </text>
+          <text class="tl" x="73" y="250" font-size="21">
+            nổ máy được, mở cốp thì không.
+          </text>
+          <rect
+            class="s3"
+            x="75"
+            y="270"
+            width="440"
+            height="64"
+            rx="10"
+            fill="#fffdf5"
+          />
+          <text class="tl" x="89" y="297" font-size="22">
+            Authorization Code + PKCE
+          </text>
+          <text class="tl" x="89" y="322" font-size="19">
+            dùng cho mobile, SPA
+          </text>
+          <rect
+            class="s3"
+            x="75"
+            y="344"
+            width="440"
+            height="64"
+            rx="10"
+            fill="#fffdf5"
+          />
+          <text class="tl" x="89" y="371" font-size="22">
+            Client Credentials
+          </text>
+          <text class="tl" x="89" y="396" font-size="19">
+            service gọi service, không có người dùng
+          </text>
+          <use href="#xx" x="73" y="434" />
+          <text class="tl" x="107" y="450" font-size="21">
+            Implicit flow: bỏ, đã deprecated
+          </text>
+          <path class="blue" d="M540 300 L566 300" marker-end="url(#ah)" />
+          <rect
+            class="s"
+            x="570"
+            y="140"
+            width="400"
+            height="335"
+            rx="14"
+            fill="#fbe3ee"
+          />
+          <text class="tl" x="588" y="182" font-size="27">OIDC = xác thực</text>
+          <rect
+            class="s3"
+            x="850"
+            y="154"
+            width="108"
+            height="30"
+            rx="15"
+            fill="#fffdf5"
+          />
+          <text class="t" x="904" y="175" font-size="19">→ AuthN</text>
+          <text class="tl" x="588" y="224" font-size="21">
+            Lớp thêm lên OAuth2 để biết
+          </text>
+          <text class="tl" x="588" y="250" font-size="21">
+            “người này là ai”.
+          </text>
+          <text class="tl" x="588" y="300" font-size="21">
+            ID token chính là một JWT
+          </text>
+          <text class="tl" x="588" y="326" font-size="21">
+            do Google ký (xem JWT).
+          </text>
+          <g transform="translate(900 300) scale(0.6)">
+            <path
+              class="s"
+              d="M-24 -36 H12 L24 -24 V34 H-24 Z"
+              fill="#fffdf5"
+            />
+            <path class="s3" d="M12 -36 V-24 H24 Z" fill="#cbd3dc" />
+            <path class="s2" d="M-15 -20 H3 M-15 -10 H12 M-15 0 H12" />
+            <path
+              class="ink"
+              d="M-16 20 q4 -12 8 0 q4 8 8 -4 q4 -6 10 0"
+              stroke="#e0652d"
+              style="stroke-width: 2.5"
+            />
+            <circle class="s" cx="14" cy="26" r="9" fill="#e87a6a" />
+            <circle class="s3" cx="14" cy="26" r="3" fill="#f7da6a" />
+          </g>
+          <text class="tl" x="588" y="384" font-size="22">
+            “Đăng nhập bằng Google”
+          </text>
+          <text class="tl" x="588" y="412" font-size="21">
+            chính là OIDC chạy trên OAuth2.
+          </text>
+        </g>
+        <g transform="translate(0 2786)">
+          <rect
+            class="s"
+            x="35"
+            y="0"
+            width="955"
+            height="66"
+            rx="12"
+            fill="#f9c9b6"
+          />
+          <circle class="s" cx="66" cy="33" r="20" fill="#fffdf5" />
+          <text class="t" x="66" y="43" font-size="28">!</text>
+          <text class="tl" x="98" y="46" font-size="32">
+            CHỖ HAY BỊ THỦNG (OWASP)
+          </text>
+          <rect
+            class="s3"
+            x="585"
+            y="12"
+            width="385"
+            height="42"
+            rx="21"
+            fill="#fffdf5"
+          />
+          <text class="t" x="777" y="41" font-size="21">
+            không phải 1 nhánh của cây
+          </text>
+          <rect
+            class="s"
+            x="35"
+            y="76"
+            width="955"
+            height="306"
+            rx="18"
+            fill="#fffdf5"
+          />
+          <text class="t" x="512" y="120" font-size="28">
+            Kẻ tấn công nhắm vào đâu? Mỗi lỗi gắn vào nhánh nó làm hỏng.
+          </text>
+          <rect
+            class="s"
+            x="55"
+            y="140"
+            width="450"
+            height="110"
+            rx="14"
+            fill="#fde3d9"
+          />
+          <text class="tl" x="73" y="176" font-size="26">
+            Broken Access Control
+          </text>
+          <text class="tl" x="73" y="206" font-size="20">
+            gắn vào AuthZ · đổi /orders/123 thành
+          </text>
+          <text class="tl" x="73" y="232" font-size="20">
+            /orders/124 là xem được đơn người khác
+          </text>
+          <rect
+            class="s"
+            x="520"
+            y="140"
+            width="450"
+            height="110"
+            rx="14"
+            fill="#fde3d9"
+          />
+          <text class="tl" x="538" y="176" font-size="26">
+            Cryptographic Failures
+          </text>
+          <text class="tl" x="538" y="206" font-size="20">
+            gắn vào mật mã · MD5 / SHA-256 cho password,
+          </text>
+          <text class="tl" x="538" y="232" font-size="20">
+            lưu plaintext, truyền HTTP trần
+          </text>
+          <rect
+            class="s"
+            x="55"
+            y="264"
+            width="450"
+            height="110"
+            rx="14"
+            fill="#fde3d9"
+          />
+          <text class="tl" x="73" y="300" font-size="26">Injection</text>
+          <text class="tl" x="73" y="330" font-size="20">
+            không gắn nhánh nào · nhét lệnh vào input
+          </text>
+          <text class="tl" x="73" y="356" font-size="20">
+            (SQL injection): dùng query tham số hoá
+          </text>
+          <rect
+            class="s"
+            x="520"
+            y="264"
+            width="450"
+            height="110"
+            rx="14"
+            fill="#fde3d9"
+          />
+          <text class="tl" x="538" y="300" font-size="26">SSRF</text>
+          <text class="tl" x="538" y="330" font-size="20">
+            không gắn nhánh nào · server bị lừa gọi
+          </text>
+          <text class="tl" x="538" y="356" font-size="20">
+            URL nội bộ do người dùng đưa vào
+          </text>
+        </g>
+        <g transform="translate(0 3216)">
+          <rect
+            class="s"
+            x="35"
+            y="0"
+            width="955"
+            height="66"
+            rx="12"
+            fill="#cfe0f5"
+          />
+          <circle class="s" cx="66" cy="33" r="20" fill="#fffdf5" />
+          <text class="t" x="66" y="43" font-size="24">FV</text>
+          <text class="tl" x="98" y="46" font-size="32">
+            ĐÃ LÀM Ở FV: gắn vào cây
+          </text>
+          <rect
+            class="s3"
+            x="585"
+            y="12"
+            width="385"
+            height="42"
+            rx="21"
+            fill="#fffdf5"
+          />
+          <text class="t" x="777" y="41" font-size="21">
+            chỉ cần nói thành lời
+          </text>
+          <rect
+            class="s"
+            x="35"
+            y="76"
+            width="955"
+            height="270"
+            rx="18"
+            fill="#fffdf5"
+          />
+          <use href="#ck" x="60" y="112" />
+          <text class="tl" x="94" y="118" font-size="21">
+            HMAC request signing: canonical = initiator + cmdtype + reqtid +
+            reqtime
+          </text>
+          <rect
+            class="s3"
+            x="868"
+            y="92"
+            width="92"
+            height="34"
+            rx="17"
+            fill="#e3eefb"
+          />
+          <text class="t" x="914" y="115" font-size="21">HMAC</text>
+          <use href="#ck" x="60" y="160" />
+          <text class="tl" x="94" y="166" font-size="21">
+            Chống replay: cửa sổ 2 phút, nonce Redis, server_time bù clock drift
+          </text>
+          <rect
+            class="s3"
+            x="868"
+            y="140"
+            width="92"
+            height="34"
+            rx="17"
+            fill="#e3eefb"
+          />
+          <text class="t" x="914" y="163" font-size="21">HMAC</text>
+          <use href="#ck" x="60" y="208" />
+          <text class="tl" x="94" y="214" font-size="21">
+            Keycloak ký JWT RS256, service kiểm bằng public key
+          </text>
+          <rect
+            class="s3"
+            x="868"
+            y="188"
+            width="92"
+            height="34"
+            rx="17"
+            fill="#e3eefb"
+          />
+          <text class="t" x="914" y="211" font-size="21">RS256</text>
+          <use href="#ck" x="60" y="256" />
+          <text class="tl" x="94" y="262" font-size="21">
+            RBAC ma trận quyền req.user.authorise[module][page][action]
+          </text>
+          <rect
+            class="s3"
+            x="868"
+            y="236"
+            width="92"
+            height="34"
+            rx="17"
+            fill="#e3eefb"
+          />
+          <text class="t" x="914" y="259" font-size="21">RBAC</text>
+          <use href="#ck" x="60" y="304" />
+          <text class="tl" x="94" y="310" font-size="21">
+            Versioned security policy: siết theo version app, không gãy client
+            cũ
+          </text>
+          <rect
+            class="s3"
+            x="868"
+            y="284"
+            width="92"
+            height="34"
+            rx="17"
+            fill="#e3eefb"
+          />
+          <text class="t" x="914" y="307" font-size="21">rollout</text>
+        </g>
+        <g transform="translate(0 3610)">
+          <rect
+            class="s"
+            x="60"
+            y="0"
+            width="904"
+            height="76"
+            rx="16"
+            fill="#fbe98a"
+          />
+          <text class="t" x="512" y="50" font-size="34">
+            Số nhỏ là gạch. Số lớn là thứ xây từ gạch.
+          </text>
+        </g>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

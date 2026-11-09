@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saga và transaction phân tán</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">Saga &amp; transaction phân tán</h1>
+  <p class="sub">mất ACID chung, đổi lấy chuỗi local transaction có bù</p>
+  <section class="page">
+    <h2 class="page-no"><b>5</b>Nhất quán dữ liệu (1/2)</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> Tách service xong thì mất gì của ACID, và thay bằng gì?
+        <small>từ khóa: ACID · local transaction · eventual consistency</small></div>
+      <div class="note hand">
+        <h3>① Mất atomic và isolation chung</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-10 -36 H10 V-12 L32 28 Q36 36 28 36 H-28 Q-36 36 -32 28 L-10 -12 Z" fill="#fffdf5"/><path class="s3" d="M-22 10 H22 L32 28 Q36 36 28 36 H-28 Q-36 36 -32 28 Z" fill="#cdebd0"/><rect class="s" x="-13" y="-41" width="26" height="6" rx="2" fill="#cbd3dc"/><circle class="s2" cx="-6" cy="22" r="3.5"/><circle class="s2" cx="9" cy="17" r="2.5"/><circle class="s2" cx="2" cy="2" r="2.5"/></svg>
+          <figcaption>ACID chỉ còn trong từng DB</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Ba cửa hàng riêng: giữ hàng, thu tiền, giao hàng. Thu tiền ghi sổ xong thì lỗi ở cửa hàng giao không tự xóa được dòng thu tiền.</p>
+        <p><span class="lb">Bên dưới</span>Mỗi service vẫn có local transaction nhưng <b>Atomicity</b> và <b>Isolation</b> không bao trùm cả đơn hàng: đã giữ hàng, đã trừ tiền, chưa có vận đơn, và luồng khác thấy trạng thái dở. Thay bằng <b>Saga</b> (hoàn tất hoặc bù từng bước) và <b>eventual consistency</b>.</p>
+        <p><span class="lb">Ví dụ</span>Giữ hàng ✓ → trừ tiền ✓ → vận đơn chưa có: luồng khác đọc được trạng thái dở này.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>ACID “Consistency” nghĩa là giữ ràng buộc dữ liệu, không phải mọi service thấy dữ liệu mới ngay.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Shipping lỗi thì DB Payment có tự rollback không? (Không.)</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> Vì sao thường tránh 2PC trong microservices? Nó hoạt động thế nào?
+        <small>từ khóa: two-phase commit · XA · blocking · coordinator</small></div>
+      <div class="note hand">
+        <h3>② Chờ nhau, giữ lock, kẹt coordinator</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-15 -6 V-20 A15 15 0 0 1 15 -20 V-6" fill="none" style="stroke-width:9"/><path d="M-15 -6 V-20 A15 15 0 0 1 15 -20 V-6" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><rect class="s" x="-26" y="-8" width="52" height="42" rx="6" fill="#f7da6a"/><circle class="s3" cx="0" cy="12" r="5.5" fill="#1d2433"/><path class="ink" d="M0 14 V24"/></svg>
+          <figcaption>đã vote yes thì bị khóa</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Ba cửa hàng hẹn “chưa ai chốt sổ cho đến khi tất cả sẵn sàng”. Một người mất liên lạc thì cả ba đứng im.</p>
+        <p><span class="lb">Bên dưới</span><b>2PC</b> có coordinator điều phối hai pha. <b>Prepare</b>: mỗi participant chuẩn bị transaction và vote có thể commit không. <b>Commit/abort</b>: coordinator ghi bền quyết định rồi yêu cầu thực hiện. Đã vote yes thì phải giữ transaction prepared (thường kèm lock) tới khi biết quyết định; coordinator chết thì kẹt đến khi phục hồi.</p>
+        <p><span class="lb">Ví dụ</span>API đối tác qua HTTP không hỗ trợ XA, nên không thể làm participant của 2PC.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>2PC không “luôn sai”: dùng được khi các DB cùng hỗ trợ XA và nghiệp vụ bắt buộc atomic.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Coordinator chết sau khi participant vote yes, participant tự quyết commit hay abort? (Không tự quyết được, phải chờ.)</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> ⭐ Saga là gì? Vẽ luồng đặt hàng bị fail ở bước 3.
+        <small>từ khóa: saga · local transaction · compensating transaction</small></div>
+      <div class="note hand">
+        <h3>③ Chuỗi local commit, lỗi thì bù ngược</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s" cx="-36" cy="-16" r="10" fill="#cdebd0"/><circle class="s" cx="0" cy="-16" r="10" fill="#cdebd0"/><circle class="s" cx="36" cy="-16" r="10" fill="#e87a6a"/><text class="t" x="-36" y="-11" font-size="15">1</text><text class="t" x="0" y="-11" font-size="15">2</text><text class="t" x="36" y="-11" font-size="15">3</text><path class="s2" d="M-25 -16 H-14 M11 -16 H22"/><polygon class="s3" points="-11.0,-16.0 -19.0,-11.8 -19.0,-20.2" fill="#1d2433"/><polygon class="s3" points="25.0,-16.0 17.0,-11.8 17.0,-20.2" fill="#1d2433"/><path class="ink" d="M36 -4 C36 36 -36 36 -36 14" stroke="#4fa355"/><polygon class="s3" points="-36.0,5.0 -29.7,16.0 -42.3,16.0" fill="#4fa355"/></svg>
+          <figcaption>tiến lên, lỗi thì lùi bù</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Mua không thành thì cửa hàng làm thủ tục trả tiền và trả hàng về kho. Đó là việc mới, chứ lần mua không bị xóa như chưa từng có.</p>
+        <p><span class="lb">Bên dưới</span>Saga = chuỗi <b>local transaction đã commit riêng</b>. T1 giữ hàng, T2 trừ tiền, T3 tạo vận đơn. T3 bị từ chối → chạy C2 hoàn tiền, rồi C1 nhả hàng (không bù T3 vì chưa thành công). Lưu tiến độ (<code>sagaId</code>, bước, trạng thái) để restart vẫn biết đang ở đâu.</p>
+        <p><span class="lb">Ví dụ</span>T1 ✓ → T2 ✓ → T3 ✗ → C2 hoàn tiền → C1 nhả hàng → trạng thái <code>CANCELLED</code>.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span><b>Timeout ≠ thất bại</b>: Shipping có thể đã tạo vận đơn mà response bị mất. Trước khi bù phải xác minh hoặc retry cùng idempotency key.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>C2 (hoàn tiền) cũng lỗi thì sao? (Retry idempotent, kẹt lâu thì đưa vào đối soát.)</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> Orchestration hay choreography, chọn khi nào?
+        <small>từ khóa: orchestrator · choreography · event-driven</small></div>
+      <div class="note hand">
+        <h3>④ Một người điều phối, hay mỗi bên tự nghe</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M0 0 L0.0 -30.0"/><path class="s" d="M0 0 L30.4 -9.3"/><path class="s" d="M0 0 L18.8 24.3"/><path class="s" d="M0 0 L-18.8 24.3"/><path class="s" d="M0 0 L-30.4 -9.3"/><circle class="s" cx="0.0" cy="-30.0" r="8" fill="#bfd9f2"/><circle class="s" cx="30.4" cy="-9.3" r="8" fill="#bfd9f2"/><circle class="s" cx="18.8" cy="24.3" r="8" fill="#bfd9f2"/><circle class="s" cx="-18.8" cy="24.3" r="8" fill="#bfd9f2"/><circle class="s" cx="-30.4" cy="-9.3" r="8" fill="#bfd9f2"/><circle class="s" cx="0" cy="0" r="12" fill="#f7da6a"/></svg>
+          <figcaption>orchestrator ở giữa</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Một quản lý gọi từng cửa hàng rồi quyết bước sau; hoặc mỗi cửa hàng nghe thông báo “xong rồi” và tự làm phần mình.</p>
+        <p><span class="lb">Bên dưới</span><b>Orchestration</b>: bộ điều phối giữ tiến độ, gửi command (<code>ReserveStock</code> → <code>ChargePayment</code> → <code>CreateShipment</code>), lỗi thì tự điều phối bù. <b>Choreography</b>: Inventory phát <code>StockReserved</code>, Payment nghe rồi phát <code>PaymentCharged</code>, Shipping nghe rồi tạo vận đơn. Chọn orchestration khi nhiều nhánh, bù phức tạp, cần biết “đơn kẹt ở đâu”; choreography khi luồng ngắn.</p>
+        <p><span class="lb">Ví dụ</span>Hỏi “đơn này đang kẹt ở bước nào?” → orchestration trả lời một chỗ, choreography phải lần theo event.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Choreography vẫn coupling qua contract event; luồng dài thì khó truy, dễ vòng lặp.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Luồng 6 bước, nhiều nhánh bù: chọn kiểu nào? (Orchestration.)</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> ⭐ Compensation khác rollback ở đâu? Bước nào nên đặt cuối?
+        <small>từ khóa: compensatable · pivot · retriable · semantic lock</small></div>
+      <div class="note hand">
+        <h3>⑤ Phiếu hoàn tiền, không phải xóa sổ</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s" cx="0" cy="0" r="17" fill="#f7da6a"/><text class="t" x="0" y="8" font-size="24">$</text><path class="ink" d="M19.9 -23.7 A31 31 0 0 0 -26.8 15.5" stroke="#e0652d"/><polygon class="s3" points="-22.3,23.3 -33.3,16.9 -22.4,10.6" fill="#e0652d"/></svg>
+          <figcaption>bù = việc mới, có lịch sử</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Rollback giống bỏ bản nháp chưa chốt sổ. Compensation giống ghi thêm phiếu hoàn tiền sau khi đã thu; phiếu thu cũ vẫn còn.</p>
+        <p><span class="lb">Bên dưới</span>Rollback hủy việc <b>chưa commit</b>; compensation là giao dịch mới bù việc <b>đã commit</b>, lịch sử vẫn còn (phí hoặc email đã gửi có thể không lấy lại được). Thứ tự bước: <b>compensatable</b> → <b>pivot</b> (điểm không quay lại) → <b>retriable</b> (retry tới khi xong). Saga không có isolation chung nên dùng <b>semantic lock</b>: trạng thái nghiệp vụ như <code>PENDING</code> mà luồng khác phải tôn trọng.</p>
+        <p><span class="lb">Ví dụ</span><code>Charge</code> → <code>Refund</code>. Giữ hàng, giữ hạn mức đặt trước; cập nhật trạng thái và gửi thông báo đặt sau pivot.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Compensation cũng có thể lỗi: lưu <code>COMPENSATING</code>, retry idempotent để không hoàn tiền hai lần.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Hoàn tiền bị timeout thì làm gì? (Xác minh trạng thái hoặc retry cùng key, không gửi lệnh mới.)</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span><code>eco-card-payment</code> <code>payment.service.ts</code> mở Mongo transaction nhưng lệnh trừ số dư không truyền <code>{ session }</code> → local transaction chưa atomic thật. Request-reply qua <code>BACKEND_REQ</code> ≠ Saga có lưu tiến độ và bù.</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Tách service thì chỉ còn <b>local ACID</b>; toàn luồng mất atomic và isolation chung. 2PC giữ lock, kẹt khi mất coordinator, đối tác HTTP không tham gia được, nên thường chọn <b>Saga</b>: chuỗi local commit + bù ngược. Compensation là giao dịch mới, không phải rollback; bước không bù được xếp sau cùng, và kết quả chưa rõ (timeout) phải xác minh trước khi bù.</p>
+    </div>
+  </section>
+
+  <p class="foot">Nguồn: On-tap/01c cặp 5 (dòng FV chép từ file đó). Ví dụ mua hàng là giả định để học, không mô tả hệ FV.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

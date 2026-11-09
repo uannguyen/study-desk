@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DB bên dưới chạy thế nào</title>
+<meta name="repos" content="" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  /* khổ rộng: thêm class wide vào thẻ main, cột Q giữ nguyên, cột nội dung tự giãn. render.sh nhận ra để chụp rộng 1440 */
+  .sheet.wide { max-width: 1440px; }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">Bên dưới một database chạy thế nào?</h1>
+  <p class="sub">Postgres, MongoDB, Redis: server viết bằng C/C++ + B-tree, cache RAM, WAL, MVCC</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>Đường đi của một query</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> DB thực chất là gì? Code Node nói chuyện với nó ra sao?
+        <small>từ khóa: server process · wire protocol · driver · connection pool</small></div>
+      <div class="note hand">
+        <h3>① Một server chạy mãi, nghe trên cổng TCP</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-22" y="-38" width="44" height="76" rx="9" fill="#fffdf5"/><rect class="s3" x="-15" y="-27" width="30" height="46" rx="3" fill="#bfd9f2"/><path class="s2" d="M-7 -32 h14"/><circle class="s3" cx="0" cy="28" r="4" fill="#1d2433"/><path class="s2" d="M-8 -14 h16 M-8 -4 h10 M-8 6 h13"/></svg>
+          <figcaption>driver chỉ là client gửi bytes</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Bạn không tự vào kho lấy sách, bạn đưa phiếu qua cửa sổ cho thủ thư.</p>
+        <p><span class="lb">Bên dưới</span>Postgres (C) mỗi connection <b>1 process</b>; Mongo (C++) mỗi connection 1 thread; Redis (C) <b>1 thread</b> chạy lệnh. Driver đóng gói query theo protocol rồi gửi qua TCP.</p>
+        <p><span class="lb">Ví dụ</span>Cổng <code>5432</code> · <code>27017</code> · <code>6379</code>; protocol riêng của Postgres · BSON · RESP.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Mở connection mới mỗi request: tốn handshake, Postgres tốn cả 1 process. Phải dùng pool.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Giải thích được vì sao Postgres hay cần PgBouncer.</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> ⭐ Một câu query đi qua những bước nào bên trong DB?
+        <small>từ khóa: parser · planner/optimizer · executor · EXPLAIN</small></div>
+      <div class="note hand">
+        <h3>② Đọc phiếu → chọn đường → đi lấy</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s2" d="M-32 24 L-12 -10 L10 14 L30 -12" style="stroke-dasharray:5 5"/><circle class="s" cx="-32" cy="24" r="7.5" fill="#cdebd0"/><circle class="s" cx="-12" cy="-10" r="7.5" fill="#bfd9f2"/><circle class="s" cx="10" cy="14" r="7.5" fill="#bfd9f2"/><circle class="s" cx="30" cy="-12" r="7.5" fill="#f7da6a"/><path class="s" d="M30 -18 V-40"/><polygon class="s3" points="30,-40 44,-34 30,-28" fill="#e87a6a"/></svg>
+          <figcaption>parse → plan → execute</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Thủ thư đọc phiếu, nghĩ xem lục kệ hay tra mục lục nhanh hơn, rồi mới đi lấy.</p>
+        <p><span class="lb">Bên dưới</span><b>Parser</b> biến SQL thành cây (như V8 ra AST) → <b>planner</b> ước lượng chi phí từng cách dựa trên thống kê, chọn rẻ nhất → <b>executor</b> chạy plan, gọi xuống storage.</p>
+        <p><span class="lb">Ví dụ</span><code>EXPLAIN</code> in ra <code>Seq Scan</code> hay <code>Index Scan</code>; Mongo <code>explain()</code> ra <code>COLLSCAN</code> hay <code>IXSCAN</code>.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Có index chưa chắc được dùng: thống kê cũ hoặc lọc ra quá nhiều dòng thì planner chọn quét cả bảng.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Đọc một plan và nói nó chọn đường nào, vì sao.</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> Vì sao cùng một query lúc 1ms, lúc 50ms?
+        <small>từ khóa: page · buffer pool · shared_buffers · cache hit/miss</small></div>
+      <div class="note hand">
+        <h3>③ Dữ liệu nằm theo trang, trang nóng giữ trong RAM</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-30 -22 v44 a30 10 0 0 0 60 0 v-44" fill="#bfd9f2"/><path class="s2" d="M-30 -2 a30 10 0 0 0 60 0 M-30 14 a30 10 0 0 0 60 0"/><ellipse class="s" cx="0" cy="-22" rx="30" ry="10" fill="#fffdf5"/></svg>
+          <figcaption>file trên đĩa chia thành page</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Sách hay đọc để sẵn trên bàn; sách ít dùng phải vào kho lấy.</p>
+        <p><span class="lb">Bên dưới</span>Bảng = file chia <b>page 8KB</b> (Postgres). Cần page nào thì tìm trong RAM trước (<code>shared_buffers</code>, WiredTiger cache). Có = <b>hit</b>, không có = <b>miss</b>, đọc đĩa chậm hơn hàng trăm lần.</p>
+        <p><span class="lb">Ví dụ</span>Lần đầu chạy sau restart chậm (cache lạnh), lần hai nhanh (đã nằm trong RAM).</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Benchmark một lần rồi kết luận; dữ liệu lớn hơn RAM thì hit ratio tụt, query chậm đột ngột.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Nói được "working set vừa RAM" nghĩa là gì.</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> ⭐ Index B-tree hoạt động thế nào? Vì sao nhanh?
+        <small>từ khóa: B-tree · O(log n) · composite index · leftmost prefix</small></div>
+      <div class="note hand">
+        <h3>④ Mục lục lùn và bè: 3–4 bước là tới</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><ellipse class="s2" cx="0" cy="38" rx="14" ry="4" fill="#cbd3dc"/><path class="s" d="M0 38 C-8 24 -28 8 -28 -10 A28 28 0 0 1 28 -10 C28 8 8 24 0 38 Z" fill="#e87a6a"/><circle class="s" cx="0" cy="-10" r="10" fill="#fffdf5"/></svg>
+          <figcaption>nhảy thẳng tới đúng chỗ</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Tra mục lục: chữ cái → trang → dòng, không lật từng trang.</p>
+        <p><span class="lb">Bên dưới</span>Mỗi node là một page chứa hàng trăm key đã sắp xếp. Cây rất lùn: 100 triệu dòng chỉ sâu ~3–4 tầng, tức đọc ~4 page. Key sắp xếp nên dùng được cho <code>=</code>, khoảng, <code>ORDER BY</code>.</p>
+        <p><span class="lb">Ví dụ</span>Index <code>(user_id, created_at)</code> dùng được cho <code>WHERE user_id = ?</code>, không dùng được cho chỉ <code>WHERE created_at &gt; ?</code>.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Index không miễn phí: mỗi lần ghi phải cập nhật thêm mọi index.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Vẽ được cây 3 tầng và giải thích luật leftmost prefix.</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>Mongo là DB chính, Redis làm cache. Tự hỏi: service nào set <code>maxPoolSize</code> bao nhiêu, collection lớn nhất có index gì?</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>DB là server process; driver gửi query qua TCP nên phải dùng connection pool. Bên trong, query được parse, planner chọn đường rẻ nhất, executor đọc page qua buffer pool trong RAM. Index B-tree lùn và bè nên chỉ cần vài page là tới dòng cần tìm; nhanh hay chậm phụ thuộc page có sẵn trong RAM không.</p>
+    </div>
+  </section>
+
+  <section class="page">
+    <h2 class="page-no"><b>2</b>Ghi an toàn, chạy song song</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> ⭐ Commit xong mà mất điện thì có mất dữ liệu không?
+        <small>từ khóa: WAL · journal · fsync · checkpoint · durability</small></div>
+      <div class="note hand">
+        <h3>⑤ Ghi nhật ký trước, sửa dữ liệu thật sau</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-28" y="-34" width="56" height="70" rx="5" fill="#fffdf5"/><rect class="s" x="-10" y="-41" width="20" height="10" rx="3" fill="#cbd3dc"/><rect class="s3" x="-20" y="-20" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 -14 H18"/><path class="ink" d="M-18 -14 l4 5 l8 -11" stroke="#4fa355" style="stroke-width:3"/><rect class="s3" x="-20" y="-2" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 4 H18"/><path class="ink" d="M-18 4 l4 5 l8 -11" stroke="#4fa355" style="stroke-width:3"/><rect class="s3" x="-20" y="16" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 22 H18"/></svg>
+          <figcaption>sổ nhật ký chỉ ghi nối đuôi</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Đổi gì cũng ghi vào sổ trước; mất điện thì sáng mai đọc sổ làm nốt.</p>
+        <p><span class="lb">Bên dưới</span>Sửa page trong RAM → ghi thay đổi vào <b>WAL</b> (append, tuần tự nên nhanh) → <code>fsync</code> → mới báo commit OK. Page bẩn được ghi xuống đĩa sau, ở <b>checkpoint</b>. Crash thì replay WAL.</p>
+        <p><span class="lb">Ví dụ</span>Postgres: WAL. Mongo: journal của WiredTiger. Redis: AOF, mặc định <code>everysec</code> nên có thể mất ~1 giây.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>So tốc độ ghi khi một bên không chờ fsync, bên kia có chờ: so sai.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Nói được vì sao ghi WAL tuần tự nhanh hơn ghi thẳng từng page.</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q6</b> Đang có người đọc thì người khác ghi có phải chờ không?
+        <small>từ khóa: MVCC · snapshot · row version · VACUUM · bloat</small></div>
+      <div class="note hand">
+        <h3>⑥ MVCC: mỗi người đọc thấy một bản chụp</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s2" d="M0 -36 V36" style="stroke-dasharray:5 5"/><g transform="translate(-21 5) rotate(-40)"><rect class="s" x="-17" y="-5" width="26" height="10" fill="#f7da6a"/><polygon class="s3" points="9,-5 22,0 9,5" fill="#fbe3a8"/><rect class="s" x="-23" y="-5" width="6" height="10" fill="#f9c0b4"/></g><path class="s" d="M5 0 Q22 -18 39 0 Q22 18 5 0 Z" fill="#fffdf5"/><circle class="s3" cx="22" cy="0" r="6.5" fill="#bfd9f2"/><circle cx="22" cy="0" r="2.5" fill="#1d2433"/></svg>
+          <figcaption>người ghi, người đọc không chặn nhau</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Sửa bài thì viết sang tờ mới; bạn đang đọc tờ cũ vẫn đọc tiếp.</p>
+        <p><span class="lb">Bên dưới</span>Postgres <code>UPDATE</code> không ghi đè mà tạo <b>phiên bản mới</b> của dòng, đánh dấu transaction nào thấy bản nào (<code>xmin</code>/<code>xmax</code>). Đọc không chặn ghi. Bản cũ hết ai dùng thì <b>VACUUM</b> dọn.</p>
+        <p><span class="lb">Ví dụ</span>Bảng update liên tục mà autovacuum không theo kịp → bảng phình (bloat), query chậm dần.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>MVCC không chống được hai người cùng ghi một dòng: vẫn cần lock hoặc <code>SELECT … FOR UPDATE</code>.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Giải thích Read Committed và Repeatable Read bằng "bản chụp lúc nào".</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q7</b> Redis khác gì hai thằng kia mà nhanh vậy?
+        <small>từ khóa: in-memory · hash table · single thread · event loop · O(1)</small></div>
+      <div class="note hand">
+        <h3>⑦ Redis bỏ đĩa, bỏ planner: chỉ còn hash table trong RAM</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><g transform="rotate(35)"><path class="s" d="M-8 20 Q0 46 8 20 Z" fill="#f2b84b"/><polygon class="s" points="-12,6 -26,26 -12,20" fill="#e87a6a"/><polygon class="s" points="12,6 26,26 12,20" fill="#e87a6a"/><path class="s" d="M0 -40 C16 -24 16 4 12 20 H-12 C-16 4 -16 -24 0 -40 Z" fill="#fffdf5"/><path class="s3" d="M0 -40 C8 -32 12 -24 13 -18 H-13 C-12 -24 -8 -32 0 -40 Z" fill="#e87a6a"/><circle class="s" cx="0" cy="-6" r="7" fill="#bfd9f2"/></g></svg>
+          <figcaption>đường đi ngắn nhất</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Thủ thư chỉ dùng mặt bàn, không có kho: lấy cực nhanh nhưng bàn nhỏ.</p>
+        <p><span class="lb">Bên dưới</span><code>GET user:42</code> = hash key, nhảy thẳng tới ô nhớ, O(1). Không parser SQL, không planner, không page. <b>Một thread</b> chạy lệnh trên event loop như Node: không cần lock, mỗi lệnh tự atomic.</p>
+        <p><span class="lb">Ví dụ</span><code>INCR</code> làm counter, <code>SET key val NX EX 30</code> làm lock: an toàn vì lệnh chạy tuần tự.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Giống Node: một lệnh chậm (<code>KEYS *</code>, <code>HGETALL</code> hash khổng lồ) chặn cả server.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Nói được vì sao Redis single-thread mà vẫn chịu được hàng chục nghìn lệnh/giây.</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>Tự hỏi: Redis ở FV đang lưu gì (cache, session, lock)? Bật RDB hay AOF? Mất 1 giây dữ liệu có sao không?</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Commit an toàn nhờ ghi WAL/journal tuần tự và fsync trước khi báo OK; crash thì replay WAL. MVCC giữ nhiều phiên bản dòng nên đọc không chặn ghi, đổi lại phải VACUUM. Redis bỏ đĩa và planner, chỉ còn hash table trong RAM với một thread, nên nhanh nhưng phải đánh đổi độ bền và dung lượng.</p>
+    </div>
+  </section>
+
+  <p class="foot">Số tầng B-tree, page 8KB là bậc độ lớn/mặc định của Postgres; Mongo (WiredTiger) cùng nguyên lý nhưng khác chi tiết.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

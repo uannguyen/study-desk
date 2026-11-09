@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vận hành microservices</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">Vận hành microservices</h1>
+  <p class="sub">nhìn thấy, đổi dần, kiểm thử và bảo vệ giữa các service</p>
+  <section class="page">
+    <h2 class="page-no"><b>7</b>Observability, deploy, test, security</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> Request đi qua 7 service rồi lỗi, debug thế nào?
+        <small>từ khóa: observability · logs / metrics / traces · OpenTelemetry</small></div>
+      <div class="note hand">
+        <h3>① Ba trụ: metrics, trace, log</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M10 12 L34 36" fill="none" style="stroke-width:11"/><path d="M10 12 L34 36" fill="none" stroke="#f2b84b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><circle class="s" cx="-8" cy="-8" r="26" fill="#eaf4fd"/><path class="s2" d="M-24 4 l9 -11 l9 7 l12 -18" stroke="#e0652d"/><circle class="s3" cx="9" cy="-18" r="3" fill="#e0652d"/></svg>
+          <figcaption>từ rộng đến sâu</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Kiện hàng chậm: cần thống kê bao nhiêu kiện chậm, hành trình của kiện đang hỏi, và ghi chú chi tiết tại điểm nó bị kẹt.</p>
+        <p><span class="lb">Bên dưới</span><b>Metrics</b>: con số tổng hợp theo thời gian (vd. <code>http_requests_total{status="500"}</code>), Prometheus kéo về mỗi 15–30s. Cho biết có chuyện không, rộng cỡ nào, từ lúc nào; không biết request nào. Rẻ vì không lưu từng request (RED: rate, errors, duration; USE cho tài nguyên). <b>Trace</b>: các span cho thấy đường đi và thời gian qua từng service. <b>Log</b>: chi tiết sự kiện, có <code>traceId</code>, <code>spanId</code>, <code>service</code>, <code>orderId</code>. Luồng debug: metrics → trace lỗi/chậm → span bất thường → log của span đó. OpenTelemetry để instrument/export; Jaeger/Tempo để lưu và xem trace. Sentry là error tracking (gom exception + stack trace), không thay metrics.</p>
+        <p><span class="lb">Ví dụ</span>Payment span 2s: chậm DB, chờ đối tác hay chờ queue? Cần span con để biết.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Span lỗi ở Gateway thường chỉ là nơi nhận lỗi; phải lần xuống dependency.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Chỉ có log, không có traceId: tìm đúng request qua 7 service được không? (Rất khó.)</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> Trace ID được truyền qua các service (và qua queue) bằng cách nào?
+        <small>từ khóa: context propagation · traceparent · AsyncLocalStorage</small></div>
+      <div class="note hand">
+        <h3>② Mã hành trình đi cùng kiện hàng</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s2" d="M-32 24 L-12 -10 L10 14 L30 -12" style="stroke-dasharray:5 5"/><circle class="s" cx="-32" cy="24" r="7.5" fill="#cdebd0"/><circle class="s" cx="-12" cy="-10" r="7.5" fill="#bfd9f2"/><circle class="s" cx="10" cy="14" r="7.5" fill="#bfd9f2"/><circle class="s" cx="30" cy="-12" r="7.5" fill="#f7da6a"/><path class="s" d="M30 -18 V-40"/><polygon class="s3" points="30,-40 44,-34 30,-28" fill="#e87a6a"/></svg>
+          <figcaption>nối các span</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Mỗi điểm xử lý ghi cùng mã hành trình lên phiếu chuyển tiếp. Chỉ ghi ở cửa đầu rồi không chuyển đi thì các điểm sau không nối được.</p>
+        <p><span class="lb">Bên dưới</span>Order gọi Payment: instrumentation <b>inject</b> context vào HTTP header <code>traceparent</code>; Payment <b>extract</b> rồi tạo span con. Cùng traceId, mỗi span có spanId riêng. Qua queue: producer inject vào message header, consumer extract trước khi xử lý. Trong một process Node, <code>AsyncLocalStorage</code> giữ context theo chuỗi async của từng request, không dùng biến global.</p>
+        <p><span class="lb">Ví dụ</span>[Order] —header→ [Payment] —metadata→ [Queue] → [Shipping], nối thành một trace.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>ALS <b>không tự truyền qua network</b>. Mất ở một chặng thì trace đứt thành mảnh.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Message qua queue mà không inject header: trace chặng Shipping nối vào đâu? (Đứt, thành trace mới.)</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> Đổi API mà không làm vỡ các service đang gọi?
+        <small>từ khóa: backward compatible · tolerant reader · versioning · expand-contract</small></div>
+      <div class="note hand">
+        <h3>③ Mẫu phiếu mới, mẫu cũ vẫn nhận</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-24 -36 H12 L24 -24 V34 H-24 Z" fill="#fffdf5"/><path class="s3" d="M12 -36 V-24 H24 Z" fill="#cbd3dc"/><path class="s2" d="M-15 -20 H3 M-15 -10 H12 M-15 0 H12"/><path class="ink" d="M-16 20 q4 -12 8 0 q4 8 8 -4 q4 -6 10 0" stroke="#e0652d" style="stroke-width:2.5"/><circle class="s" cx="14" cy="26" r="9" fill="#e87a6a"/><circle class="s3" cx="14" cy="26" r="3" fill="#f7da6a"/></svg>
+          <figcaption>contract giữa hai bên</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Cửa hàng đổi mẫu phiếu đặt hàng thì nơi còn dùng mẫu cũ vẫn phải gửi được. Ép đổi cùng ngày thì không còn độc lập.</p>
+        <p><span class="lb">Bên dưới</span><b>Contract</b> gồm request/response, kiểu và ý nghĩa field, mã lỗi; event cũng có contract. Thêm field optional thường tương thích nếu consumer bỏ qua field lạ (<b>tolerant reader</b>). <b>Expand-contract</b>: provider hỗ trợ cả cũ và mới → chuyển từng consumer → xác minh không còn dùng cũ → bỏ cũ. <code>/v2</code> cho thay đổi breaking, chạy song song v1 tới khi migrate xong.</p>
+        <p><span class="lb">Ví dụ</span>Thêm <code>amountMinor</code> đơn vị rõ, giữ <code>amount</code> cũ trong giai đoạn chuyển tiếp.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Đổi <code>amount</code> từ đồng sang nghìn đồng là breaking dù tên và kiểu giữ nguyên. Thêm enum mới cũng có thể làm consumer switch exhaustive lỗi.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Xóa một field optional mà “chắc không ai dùng” có an toàn không? (Không, phải xác minh.)</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> Deploy độc lập cần điều kiện gì? Canary và blue-green khác gì nhau?
+        <small>từ khóa: independent deployability · rolling · blue-green · canary</small></div>
+      <div class="note hand">
+        <h3>④ Thay một nhà, nhà bên vẫn chạy</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><g transform="rotate(35)"><path class="s" d="M-8 20 Q0 46 8 20 Z" fill="#f2b84b"/><polygon class="s" points="-12,6 -26,26 -12,20" fill="#e87a6a"/><polygon class="s" points="12,6 26,26 12,20" fill="#e87a6a"/><path class="s" d="M0 -40 C16 -24 16 4 12 20 H-12 C-16 4 -16 -24 0 -40 Z" fill="#fffdf5"/><path class="s3" d="M0 -40 C8 -32 12 -24 13 -18 H-13 C-12 -24 -8 -32 0 -40 Z" fill="#e87a6a"/><circle class="s" cx="0" cy="-6" r="7" fill="#bfd9f2"/></g></svg>
+          <figcaption>release riêng từng service</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Thay một cửa hàng mà cửa hàng bên cạnh vẫn phục vụ, kể cả lúc cũ và mới chạy song song. Có hai nút deploy riêng chưa đủ.</p>
+        <p><span class="lb">Bên dưới</span>Cần: artifact/version riêng, contract tương thích, dữ liệu sở hữu rõ, migration DB an toàn (bản cũ và mới cùng chạy nên cả hai làm việc được với schema hiện tại). <b>Rolling</b>: thay dần instance. <b>Blue-green</b>: hai môi trường, kiểm bản mới rồi chuyển traffic. <b>Canary</b>: một phần nhỏ traffic thử bản mới, theo dõi error rate, latency, kết quả nghiệp vụ rồi mới tăng.</p>
+        <p><span class="lb">Ví dụ</span>Canary 5% traffic → error rate ổn → 25% → 100%.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Rollback code không rollback dữ liệu. Xóa cột ngay sẽ làm bản cũ chết và rollback mất an toàn.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Deploy Payment mới khi Order còn bản cũ, còn chạy đúng không?</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> Test hệ microservices thế nào?
+        <small>từ khóa: test pyramid · contract test · Pact · testcontainers</small></div>
+      <div class="note hand">
+        <h3>⑤ Nhiều test nhỏ, vài test xuyên hệ</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-28" y="-34" width="56" height="70" rx="5" fill="#fffdf5"/><rect class="s" x="-10" y="-41" width="20" height="10" rx="3" fill="#cbd3dc"/><rect class="s3" x="-20" y="-20" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 -14 H18"/><path class="ink" d="M-18 -14 l4 5 l8 -11" stroke="#4fa355" style="stroke-width:3"/><rect class="s3" x="-20" y="-2" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 4 H18"/><path class="ink" d="M-18 4 l4 5 l8 -11" stroke="#4fa355" style="stroke-width:3"/><rect class="s3" x="-20" y="16" width="12" height="12" rx="2" fill="#fffdf5"/><path class="s2" d="M-2 22 H18"/></svg>
+          <figcaption>đủ tầng, đúng chỗ</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Kiểm từng cửa hàng làm đúng phần mình, kiểm mẫu phiếu giữa hai bên, rồi chạy vài hành trình mua hàng thật.</p>
+        <p><span class="lb">Bên dưới</span><b>Unit</b>: logic cục bộ, nhanh. <b>Integration</b>: service với dependency thật (transaction, unique constraint, publish/consume), dùng Testcontainers dựng DB/broker tạm. <b>Consumer-driven contract</b> (Pact): consumer ghi kỳ vọng, provider verify trong CI. <b>E2E</b>: ít luồng trọng yếu. Test thêm crash sau commit, message trùng, compensation lỗi.</p>
+        <p><span class="lb">Ví dụ</span>Contract: <code>GET /payments/{id}</code> trả <code>status</code> và <code>amountMinor</code>; provider đổi tên field thì CI đỏ.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Mock DB không chứng minh transaction hay constraint thật hoạt động đúng. Chỉ test happy path bỏ sót phần khó nhất.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Mock DB pass, đã chứng minh inbox + nghiệp vụ atomic chưa? (Chưa.)</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q6</b> Service gọi nhau có cần xác thực không? Làm thế nào?
+        <small>từ khóa: zero trust · mTLS · service mesh · token exchange</small></div>
+      <div class="note hand">
+        <h3>⑥ Qua cổng rồi vẫn không mở được két</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M0 -38 L32 -26 V0 C32 20 14 32 0 40 C-14 32 -32 20 -32 0 V-26 Z" fill="#bfd9f2"/><path class="s3" d="M0 -38 L-32 -26 V0 C-32 20 -14 32 0 40 Z" fill="#a8c8ea"/><circle class="s3" cx="0" cy="-6" r="7" fill="#1d2433"/><polygon class="s3" points="-3,0 3,0 6,17 -6,17" fill="#1d2433"/></svg>
+          <figcaption>mạng nội bộ không đủ tin</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Người đã vào tòa nhà không tự nhiên được mở két. Mỗi nơi nhạy cảm vẫn kiểm người gọi là ai và được phép làm gì.</p>
+        <p><span class="lb">Bên dưới</span><b>Zero trust</b>: vị trí trong mạng nội bộ không đủ để tin. <b>mTLS</b> mã hóa và xác thực danh tính hai đầu bằng certificate (service mesh quản được), nhưng không quyết định ai được hoàn tiền: cần <b>authorization</b> riêng. Forward JWT thì downstream tự verify chữ ký, issuer, audience, expiry. <b>HMAC</b> ký request để kiểm toàn vẹn và nguồn gửi.</p>
+        <p><span class="lb">Ví dụ</span>Order có certificate hợp lệ vẫn không được gọi <code>Refund</code> tùy ý nếu policy không cho.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>HMAC không mã hóa payload; chống replay cần thêm timestamp/nonce. Danh tính service và danh tính user là hai lớp khác nhau.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>mTLS bật rồi thì có thể bỏ kiểm quyền ở service không? (Không.)</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>request signing bằng <code>HMAC_SHA256</code>: <code>eco-card</code> ký (<code>ecoCardPayment.service.ts</code>), <code>eco-card-payment</code> kiểm (<code>partner.service.ts</code>). Là ví dụ HMAC, không phải mTLS/service mesh.</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Debug bằng ba trụ phối hợp: <b>metrics → trace → log</b>, nhờ trace context truyền qua mọi chặng (kể cả queue). Deploy độc lập cần <b>contract tương thích + migration an toàn</b> (expand-contract), rồi rollout canary/blue-green. Test bằng unit, integration thật, contract test. Giữa service: <b>authentication (mTLS/JWT) khác authorization</b>, cần cả hai.</p>
+    </div>
+  </section>
+
+  <p class="foot">Nguồn: On-tap/01c cặp 7 (dòng FV chép từ file đó). Tình huống đặt hàng qua Gateway → Order → Payment là giả định để học.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

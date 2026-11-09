@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Idempotency</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">Idempotency key</h1>
+  <p class="sub">gửi 1 lần hay 5 lần, kết quả vẫn như gửi 1 lần</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>Chống xử lý trùng khi retry</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> Idempotent là gì? Method HTTP nào idempotent?
+        <small>từ khóa: idempotent · safe method · PUT vs POST · side effect</small></div>
+      <div class="note hand">
+        <h3>① Làm lại cũng không sao</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><circle class="s3" r="36" fill="#cdebd0"/><path class="ink" d="M-25.4 -9.2 A27 27 0 0 1 25.4 -9.2"/><polygon class="s3" points="28.4,-0.8 18.8,-9.0 30.6,-13.3" fill="#4fa355"/><path class="ink" d="M25.4 9.2 A27 27 0 0 1 -25.4 9.2"/><polygon class="s3" points="-28.4,0.8 -18.8,9.0 -30.6,13.3" fill="#4fa355"/></svg>
+          <figcaption>lặp N lần = 1 lần</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Bấm nút thang máy tầng 5 một lần hay mười lần, thang vẫn chỉ đi tới tầng 5 một lần.</p>
+        <p><span class="lb">Bên dưới</span>Một thao tác là idempotent khi chạy nó N lần để lại <b>trạng thái server</b> giống hệt chạy 1 lần. Theo HTTP: GET, HEAD, PUT, DELETE là idempotent; POST và PATCH thì không được đảm bảo.</p>
+        <p><span class="lb">Ví dụ</span><code>PUT /users/7 {name:"An"}</code> gọi 3 lần, tên vẫn là "An". Còn <code>POST /payments {amount:100}</code> gọi 3 lần thì có thể tạo ra 3 giao dịch.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Idempotent không có nghĩa là response giống nhau. DELETE lần 2 có thể trả 404, nhưng trạng thái vẫn đúng. Cũng đừng nhầm với <i>safe</i>: safe là không đổi trạng thái gì cả (GET).</p>
+        <p class="test"><span class="lb">Tự kiểm</span><code>UPDATE balance = balance - 100</code> có idempotent không? (Không, vì mỗi lần chạy lại trừ thêm.)</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q2</b> Idempotency key chạy thế nào ở server?
+        <small>từ khóa: Idempotency-Key header · dedupe store · unique constraint · TTL</small></div>
+      <div class="note hand">
+        <h3>② Một chìa cho một lần làm</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><g transform="translate(0 -8) rotate(-30)"><path class="s" d="M-4 0 H38 M26 0 v15 M37 0 v11" fill="none" style="stroke-width:7"/><path d="M-4 0 H38 M26 0 v15 M37 0 v11" fill="none" stroke="#f7da6a" stroke-width="3" stroke-linecap="round"/><circle class="s" cx="-20" cy="0" r="18" fill="#f7da6a"/><circle class="s2" cx="-20" cy="0" r="6" fill="#fbf9f2"/></g><text class="t" x="26" y="30" font-size="22" stroke-width="0.3">= 1×</text></svg>
+          <figcaption>key = vé dùng 1 lần</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Gửi đồ ở siêu thị thì được phát một thẻ số. Đưa lại đúng thẻ đó, nhân viên trả lại đúng ngăn cũ chứ không mở ngăn mới.</p>
+        <p><span class="lb">Bên dưới</span>Client sinh một key (thường là UUID) cho <b>một ý định</b> và gửi qua header <code>Idempotency-Key</code>. Server làm 3 bước: (1) chiếm key một cách nguyên tử (<code>INSERT</code> có unique constraint, hoặc Redis <code>SET key NX EX</code>); (2) xử lý nghiệp vụ; (3) lưu response gắn với key. Request trùng key thì trả lại response đã lưu.</p>
+        <p><span class="lb">Ví dụ</span>App bị timeout nên retry với cùng key <code>a1b2…</code>. Server thấy key đã <i>done</i> nên trả lại 201 cũ, không trừ tiền lần hai.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Kiểu "check rồi mới insert" (SELECT trước, INSERT sau) sẽ bị race condition: hai request cùng lọt qua bước check. Bước chiếm key phải nguyên tử. Thêm nữa: cùng key mà body khác thì phải báo lỗi, đừng trả response cũ.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Request 2 tới khi request 1 vẫn đang <i>processing</i> thì server trả gì? (Trả 409 để client đợi rồi thử lại, không xử lý song song.)</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q3</b> ⭐ Webhook hoặc message bị gửi trùng, làm sao không trừ tiền 2 lần?
+        <small>từ khóa: at-least-once · idempotent consumer · dedupe · exactly-once</small></div>
+      <div class="note hand">
+        <h3>③ Trùng là chuyện bình thường</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-9" y="-42" width="18" height="16" rx="8" fill="#e87a6a"/><rect class="s" x="-5" y="-28" width="10" height="16" fill="#f7da6a"/><rect class="s" x="-24" y="-14" width="48" height="10" rx="3" fill="#e87a6a"/><rect x="-26" y="6" width="52" height="26" rx="5" fill="none" stroke="#e0652d" stroke-width="2.5" style="stroke-dasharray:6 4"/><text class="t" x="0" y="26" font-size="17" style="fill:#e0652d;stroke:#e0652d">seen</text></svg>
+          <figcaption>đóng dấu "đã xử lý"</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Bưu tá không chắc thư đã tới nên gửi thêm bản nữa. Người nhận xem số thư: số này đã đóng dấu rồi thì bỏ qua.</p>
+        <p><span class="lb">Bên dưới</span>Webhook và queue thường giao theo kiểu <b>at-least-once</b>: thà gửi trùng còn hơn làm mất. "Exactly-once" ở mức end-to-end thực tế là <b>at-least-once + idempotent consumer</b>. Consumer dedupe theo id nghiệp vụ (bill id, event id) bằng unique constraint hoặc dedupe store có TTL.</p>
+        <p><span class="lb">Ví dụ</span>Cổng thanh toán gọi IPN 2 lần cho cùng <code>bill_id=B9</code>. Lần 2 vướng unique constraint nên chỉ trả 200 OK và không cộng tiền nữa.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Trả lời "broker của tôi exactly-once nên không cần lo" là red flag. Nếu ghi dedupe và ghi nghiệp vụ không nằm cùng một transaction thì vẫn có thể lệch.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Consumer crash sau khi cộng tiền nhưng trước khi ack. Message sẽ quay lại, và cái gì chặn việc cộng lần 2?</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>Đã làm idempotency chống trùng merchant bill id ở payment webview SDK và dedupe request trên Redis (theo On-tap/03, 06).</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Idempotent nghĩa là làm N lần thì trạng thái vẫn như làm 1 lần. Mạng có timeout và retry, webhook hay queue thì giao at-least-once, nên trùng lặp là mặc định. Cách chặn: client gửi idempotency key (hoặc dùng id nghiệp vụ), server chiếm key một cách nguyên tử bằng unique constraint hay <code>SET NX</code>, rồi lưu và trả lại kết quả cũ.</p>
+    </div>
+  </section>
+
+  <p class="foot">Nguồn: ngữ nghĩa method theo HTTP (RFC 9110). Mã 409 cho request đang xử lý là quy ước phổ biến, không phải chuẩn bắt buộc.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

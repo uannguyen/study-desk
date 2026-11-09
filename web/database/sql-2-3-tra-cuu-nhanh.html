@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tra cứu nhanh SQL</title>
+<meta name="repos" content="" />
+<style>
+  :root { --canvas: #faf9f5; --card: #ffffff; --soft: #f5f0e8; --code: #efe9de; --ink: #141413; --body: #3d3d3a;
+          --muted: #6c6a64; --line: #e6dfd8; --primary: #cc785c; --warn: #c64545; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--canvas); color: var(--body); font: 16px/1.55 Inter, 'Segoe UI', system-ui, sans-serif; }
+  main { max-width: 1080px; margin: 0 auto; padding: 32px 20px 48px; }
+  h1 { font: 400 36px/1.15 Georgia, 'Times New Roman', serif; color: var(--ink); margin: 0 0 6px; letter-spacing: -0.5px; }
+  .lead { color: var(--muted); margin: 0 0 18px; }
+  .bar { position: sticky; top: 0; z-index: 2; background: var(--canvas); padding: 10px 0 12px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+  #q { width: 100%; font: inherit; padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--ink); }
+  #q:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+  nav { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  nav a { font-size: 13px; text-decoration: none; color: var(--ink); background: var(--soft); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+  nav a:hover { border-color: var(--primary); }
+  section { margin-top: 28px; }
+  h2 { font: 400 24px/1.2 Georgia, 'Times New Roman', serif; color: var(--ink); margin: 0 0 10px; }
+  h2 small { font: 14px Inter, system-ui, sans-serif; color: var(--muted); margin-left: 8px; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  td { padding: 9px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+  tr:first-child td { border-top: 0; }
+  td.task { width: 30%; color: var(--ink); font-weight: 500; }
+  td.task small { display: block; font-weight: 400; color: var(--muted); font-size: 13px; margin-top: 2px; }
+  td.task small.w { color: var(--warn); }
+  pre { margin: 0; position: relative; background: var(--code); border-radius: 8px; padding: 8px 64px 8px 12px; white-space: pre-wrap; word-break: break-word;
+        font: 14px/1.5 'JetBrains Mono', 'Fira Code', Consolas, monospace; color: var(--ink); }
+  pre i { font-style: normal; color: var(--muted); }
+  button.cp { position: absolute; top: 6px; right: 6px; font: 12px Inter, system-ui, sans-serif; border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 6px; padding: 2px 8px; cursor: pointer; }
+  button.cp:hover { color: var(--primary); border-color: var(--primary); }
+  .hide { display: none; }
+  #empty { color: var(--muted); margin-top: 24px; }
+  .foot { margin-top: 32px; font-size: 13px; color: var(--muted); }
+  @media (max-width: 640px) { td { display: block; width: 100% !important; } td.pre { border-top: 0; padding-top: 0; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tra cứu nhanh SQL (Postgres)</h1>
+  <p class="lead">Mỗi dòng gồm việc cần làm và đúng một lệnh, viết trên 3 bảng lab <code>users</code> · <code>wallets</code> · <code>transactions</code>. Gõ vào ô tìm kiếm hoặc nhấn Ctrl+F. Muốn hiểu vì sao thì xem các bản Cornell 2.0–2.2.</p>
+
+  <div class="bar">
+    <input id="q" type="search" placeholder="Tìm việc cần làm: thêm cột, xóa, đổi kiểu, khóa ngoại, upsert…" autocomplete="off">
+    <nav>
+      <a href="#psql">psql</a><a href="#bang">Tạo bảng</a><a href="#cot">Sửa cột</a><a href="#rang-buoc">Ràng buộc · index</a>
+      <a href="#them">Thêm dữ liệu</a><a href="#sua">Sửa · xóa dữ liệu</a><a href="#doc">Đọc dữ liệu</a><a href="#tx">Transaction</a><a href="#hieu-nang">Hiệu năng</a>
+    </nav>
+  </div>
+
+  <section id="psql">
+    <h2>1. psql: xem và di chuyển <small>lệnh bắt đầu bằng \ không cần dấu ;</small></h2>
+    <table>
+      <tr><td class="task">Kết nối database</td><td class="pre"><pre>psql -h localhost -U postgres -d lab</pre></td></tr>
+      <tr><td class="task">Liệt kê database / chuyển database</td><td class="pre"><pre>\l
+\c lab</pre></td></tr>
+      <tr><td class="task">Liệt kê các bảng</td><td class="pre"><pre>\dt</pre></td></tr>
+      <tr><td class="task">Xem cấu trúc một bảng<small>cột, kiểu, default, index, FK</small></td><td class="pre"><pre>\d users</pre></td></tr>
+      <tr><td class="task">Liệt kê index</td><td class="pre"><pre>\di</pre></td></tr>
+      <tr><td class="task">Bật hiển thị dọc khi dòng quá dài</td><td class="pre"><pre>\x auto</pre></td></tr>
+      <tr><td class="task">Bật đo thời gian chạy query</td><td class="pre"><pre>\timing on</pre></td></tr>
+      <tr><td class="task">Chạy lệnh từ file .sql</td><td class="pre"><pre>\i seed.sql</pre></td></tr>
+      <tr><td class="task">Thoát psql</td><td class="pre"><pre>\q</pre></td></tr>
+    </table>
+  </section>
+
+  <section id="bang">
+    <h2>2. Tạo và xóa bảng</h2>
+    <table>
+      <tr><td class="task">Tạo bảng users</td><td class="pre"><pre>CREATE TABLE users (
+  id         BIGSERIAL PRIMARY KEY,
+  email      TEXT NOT NULL UNIQUE,
+  name       TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);</pre></td></tr>
+      <tr><td class="task">Tạo bảng có khóa ngoại (wallets)</td><td class="pre"><pre>CREATE TABLE wallets (
+  id         BIGSERIAL PRIMARY KEY,
+  user_id    BIGINT NOT NULL REFERENCES users(id),
+  balance    NUMERIC(18,2) NOT NULL DEFAULT 0 CHECK (balance &gt;= 0),
+  currency   TEXT NOT NULL DEFAULT 'VND' CHECK (currency IN ('VND', 'USD')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);</pre></td></tr>
+      <tr><td class="task">Tạo bảng transactions</td><td class="pre"><pre>CREATE TABLE transactions (
+  id             BIGSERIAL PRIMARY KEY,
+  from_wallet_id BIGINT NOT NULL REFERENCES wallets(id),
+  to_wallet_id   BIGINT NOT NULL REFERENCES wallets(id),
+  amount         NUMERIC(18,2) NOT NULL,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);</pre></td></tr>
+      <tr><td class="task">Tạo bảng, bỏ qua nếu đã có</td><td class="pre"><pre>CREATE TABLE IF NOT EXISTS users ( ... );</pre></td></tr>
+      <tr><td class="task">Đổi tên bảng</td><td class="pre"><pre>ALTER TABLE users RENAME TO members;</pre></td></tr>
+      <tr><td class="task">Xóa bảng<small class="w">mất cả dữ liệu</small></td><td class="pre"><pre>DROP TABLE IF EXISTS transactions;</pre></td></tr>
+      <tr><td class="task">Xóa bảng kèm mọi thứ phụ thuộc nó<small class="w">xóa luôn FK của bảng khác trỏ vào</small></td><td class="pre"><pre>DROP TABLE IF EXISTS users CASCADE;</pre></td></tr>
+    </table>
+  </section>
+
+  <section id="cot">
+    <h2>3. Sửa cột (ALTER TABLE) <small>phần lớn không ghi lại dòng cũ, trừ đổi kiểu cột</small></h2>
+    <table>
+      <tr><td class="task">Thêm cột<small>tức thì, dòng cũ = NULL</small></td><td class="pre"><pre>ALTER TABLE users ADD COLUMN phone TEXT;</pre></td></tr>
+      <tr><td class="task">Thêm cột, bỏ qua nếu đã có</td><td class="pre"><pre>ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;</pre></td></tr>
+      <tr><td class="task">Thêm cột có giá trị mặc định<small>tức thì từ PG11, dòng cũ nhận default</small></td><td class="pre"><pre>ALTER TABLE users ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT true;</pre></td></tr>
+      <tr><td class="task">Thêm nhiều cột một lần</td><td class="pre"><pre>ALTER TABLE users
+  ADD COLUMN age SMALLINT,
+  ADD COLUMN sex TEXT;</pre></td></tr>
+      <tr><td class="task">Xóa cột</td><td class="pre"><pre>ALTER TABLE users DROP COLUMN phone;</pre></td></tr>
+      <tr><td class="task">Đổi tên cột</td><td class="pre"><pre>ALTER TABLE wallets RENAME COLUMN balance TO amount;</pre></td></tr>
+      <tr><td class="task">Đổi kiểu cột<small class="w">ghi lại cả bảng nếu phải đổi dữ liệu</small></td><td class="pre"><pre>ALTER TABLE wallets ALTER COLUMN balance TYPE NUMERIC(20,2);</pre></td></tr>
+      <tr><td class="task">Đổi kiểu cột khi Postgres không tự ép được<small>vd. TEXT → INTEGER</small></td><td class="pre"><pre>ALTER TABLE users ALTER COLUMN phone TYPE BIGINT USING phone::bigint;</pre></td></tr>
+      <tr><td class="task">Bắt buộc cột phải có giá trị<small class="w">lỗi nếu còn dòng NULL, điền trước</small></td><td class="pre"><pre>UPDATE users SET phone = '' WHERE phone IS NULL;
+ALTER TABLE users ALTER COLUMN phone SET NOT NULL;</pre></td></tr>
+      <tr><td class="task">Cho phép cột NULL trở lại</td><td class="pre"><pre>ALTER TABLE users ALTER COLUMN phone DROP NOT NULL;</pre></td></tr>
+      <tr><td class="task">Đặt / bỏ giá trị mặc định<small>chỉ áp cho dòng thêm sau này</small></td><td class="pre"><pre>ALTER TABLE users ALTER COLUMN phone SET DEFAULT '';
+ALTER TABLE users ALTER COLUMN phone DROP DEFAULT;</pre></td></tr>
+    </table>
+  </section>
+
+  <section id="rang-buoc">
+    <h2>4. Ràng buộc và index</h2>
+    <table>
+      <tr><td class="task">Thêm UNIQUE cho cột</td><td class="pre"><pre>ALTER TABLE users ADD CONSTRAINT uq_users_email UNIQUE (email);</pre></td></tr>
+      <tr><td class="task">Thêm CHECK</td><td class="pre"><pre>ALTER TABLE transactions ADD CONSTRAINT chk_amount CHECK (amount &gt; 0);</pre></td></tr>
+      <tr><td class="task">Thêm khóa ngoại (FK)</td><td class="pre"><pre>ALTER TABLE wallets ADD CONSTRAINT fk_wallets_user
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT;</pre></td></tr>
+      <tr><td class="task">Xóa ràng buộc<small>xem tên bằng \d tên_bảng</small></td><td class="pre"><pre>ALTER TABLE transactions DROP CONSTRAINT chk_amount;</pre></td></tr>
+      <tr><td class="task">Tạo index</td><td class="pre"><pre>CREATE INDEX idx_tx_from ON transactions (from_wallet_id);</pre></td></tr>
+      <tr><td class="task">Tạo index nhiều cột<small>cột lọc bằng = đứng trước</small></td><td class="pre"><pre>CREATE INDEX idx_tx_from_time ON transactions (from_wallet_id, created_at);</pre></td></tr>
+      <tr><td class="task">Tạo index không khóa ghi<small class="w">không chạy được trong BEGIN</small></td><td class="pre"><pre>CREATE INDEX CONCURRENTLY idx_wallets_user ON wallets (user_id);</pre></td></tr>
+      <tr><td class="task">Tạo unique index</td><td class="pre"><pre>CREATE UNIQUE INDEX uq_wallets_user ON wallets (user_id);</pre></td></tr>
+      <tr><td class="task">Xóa index</td><td class="pre"><pre>DROP INDEX IF EXISTS idx_tx_from;</pre></td></tr>
+    </table>
+  </section>
+
+  <section id="them">
+    <h2>5. Thêm dữ liệu (INSERT)</h2>
+    <table>
+      <tr><td class="task">Thêm một dòng</td><td class="pre"><pre>INSERT INTO users (name, email) VALUES ('An', 'an@lab.vn');</pre></td></tr>
+      <tr><td class="task">Thêm nhiều dòng</td><td class="pre"><pre>INSERT INTO users (name, email) VALUES
+  ('Bình', 'binh@lab.vn'),
+  ('Chi',  'chi@lab.vn');</pre></td></tr>
+      <tr><td class="task">Thêm rồi lấy lại id vừa tạo</td><td class="pre"><pre>INSERT INTO users (name, email) VALUES ('Dũng', 'dung@lab.vn') RETURNING id;</pre></td></tr>
+      <tr><td class="task">Seed 10k users</td><td class="pre"><pre>INSERT INTO users (name, email)
+SELECT 'user ' || g, 'u' || g || '@lab.vn'
+FROM generate_series(1, 10000) AS g;</pre></td></tr>
+      <tr><td class="task">Mỗi user một ví<small>INSERT … SELECT</small></td><td class="pre"><pre>INSERT INTO wallets (user_id, balance, currency)
+SELECT id,
+       (random() * 1000000)::numeric(18,2),
+       (ARRAY['VND','USD'])[1 + floor(random() * 2)::int]
+FROM users;</pre></td></tr>
+      <tr><td class="task">Seed 100k giao dịch chuyển tiền<small>bốc id ví có thật, chạy đúng cả khi id có lỗ</small></td><td class="pre"><pre>WITH w AS (
+  SELECT array_agg(id ORDER BY id) AS ids, count(*)::int AS n FROM wallets
+),
+s AS (
+  SELECT floor(power(random(), 3) * w.n)::int + 1 AS f,  <i>-- ví gửi, lệch về đầu mảng</i>
+         floor(random() * (w.n - 1))::int         AS k   <i>-- ví nhận luôn khác ví gửi</i>
+  FROM w, generate_series(1, 100000)
+)
+INSERT INTO transactions (from_wallet_id, to_wallet_id, amount, created_at)
+SELECT w.ids[s.f],
+       w.ids[(s.f + s.k) % w.n + 1],
+       (1 + random() * 499999)::numeric(18,2),
+       now() - random() * interval '365 days'
+FROM s, w;</pre></td></tr>
+      <tr><td class="task">Thêm, nếu trùng thì cập nhật (upsert)</td><td class="pre"><pre>INSERT INTO users (email, name) VALUES ('an@lab.vn', 'An mới')
+ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name;</pre></td></tr>
+      <tr><td class="task">Thêm, nếu trùng thì bỏ qua</td><td class="pre"><pre>INSERT INTO users (email, name) VALUES ('an@lab.vn', 'An')
+ON CONFLICT (email) DO NOTHING;</pre></td></tr>
+    </table>
+  </section>
+
+  <section id="sua">
+    <h2>6. Sửa và xóa dữ liệu <small>luôn chạy SELECT với cùng WHERE trước</small></h2>
+    <table>
+      <tr><td class="task">Sửa một dòng</td><td class="pre"><pre>UPDATE users SET name = 'An Nguyễn' WHERE id = 1;</pre></td></tr>
+      <tr><td class="task">Cộng / trừ giá trị</td><td class="pre"><pre>UPDATE wallets SET balance = balance - 50000 WHERE id = 1;</pre></td></tr>
+      <tr><td class="task">Sửa dựa trên bảng khác (UPDATE … FROM)</td><td class="pre"><pre>UPDATE wallets w SET balance = 0
+FROM users u
+WHERE w.user_id = u.id AND u.email LIKE '%@test.vn';</pre></td></tr>
+      <tr><td class="task">Sửa rồi xem lại dòng đã sửa</td><td class="pre"><pre>UPDATE wallets SET balance = balance + 1000 WHERE id = 1 RETURNING id, balance;</pre></td></tr>
+      <tr><td class="task">Xóa dòng</td><td class="pre"><pre>DELETE FROM transactions WHERE created_at &lt; now() - interval '1 year';</pre></td></tr>
+      <tr><td class="task">Xóa sạch bảng, reset id về 1<small class="w">không hoàn tác được ngoài transaction</small></td><td class="pre"><pre>TRUNCATE transactions, wallets, users RESTART IDENTITY;</pre></td></tr>
+    </table>
+  </section>
+
+  <section id="doc">
+    <h2>7. Đọc dữ liệu (SELECT)</h2>
+    <table>
+      <tr><td class="task">Lấy vài dòng xem thử</td><td class="pre"><pre>SELECT * FROM users LIMIT 10;</pre></td></tr>
+      <tr><td class="task">Lọc theo điều kiện</td><td class="pre"><pre>SELECT id, name FROM users WHERE created_at &gt;= '2026-01-01';</pre></td></tr>
+      <tr><td class="task">Tìm theo chuỗi (không phân biệt hoa thường)</td><td class="pre"><pre>SELECT * FROM users WHERE name ILIKE '%an%';</pre></td></tr>
+      <tr><td class="task">Lọc theo danh sách / khoảng</td><td class="pre"><pre>SELECT * FROM wallets WHERE user_id IN (1, 2, 3);
+SELECT * FROM wallets WHERE balance BETWEEN 100000 AND 500000;</pre></td></tr>
+      <tr><td class="task">Lọc giá trị rỗng<small class="w">không dùng = NULL</small></td><td class="pre"><pre>SELECT * FROM users WHERE phone IS NULL;</pre></td></tr>
+      <tr><td class="task">Sắp xếp và phân trang</td><td class="pre"><pre>SELECT * FROM transactions ORDER BY created_at DESC LIMIT 20 OFFSET 40;</pre></td></tr>
+      <tr><td class="task">Đếm số dòng</td><td class="pre"><pre>SELECT count(*) FROM transactions;</pre></td></tr>
+      <tr><td class="task">Lấy giá trị không trùng</td><td class="pre"><pre>SELECT DISTINCT currency FROM wallets;</pre></td></tr>
+      <tr><td class="task">Gom nhóm và tính tổng</td><td class="pre"><pre>SELECT currency, count(*), sum(balance)
+FROM wallets GROUP BY currency;</pre></td></tr>
+      <tr><td class="task">Lọc sau khi gom nhóm (HAVING)</td><td class="pre"><pre>SELECT from_wallet_id, count(*) AS n
+FROM transactions GROUP BY from_wallet_id
+HAVING count(*) &gt; 5 ORDER BY n DESC;</pre></td></tr>
+      <tr><td class="task">Nối hai bảng (INNER JOIN)</td><td class="pre"><pre>SELECT u.name, w.balance
+FROM users u JOIN wallets w ON w.user_id = u.id;</pre></td></tr>
+      <tr><td class="task">Nối, giữ cả dòng không khớp (LEFT JOIN)<small class="w">điều kiện bảng phải đặt ở ON</small></td><td class="pre"><pre>SELECT u.id, w.id AS wallet_id
+FROM users u LEFT JOIN wallets w ON w.user_id = u.id
+WHERE w.id IS NULL;   <i>-- user chưa có ví</i></pre></td></tr>
+      <tr><td class="task">Tìm dòng có liên quan ở bảng khác (EXISTS)</td><td class="pre"><pre>SELECT * FROM wallets w
+WHERE EXISTS (SELECT 1 FROM transactions t WHERE t.from_wallet_id = w.id);  <i>-- ví đã từng gửi tiền</i></pre></td></tr>
+      <tr><td class="task">Đặt tên cho query con (CTE)</td><td class="pre"><pre>WITH big AS (
+  SELECT from_wallet_id, sum(amount) AS total FROM transactions GROUP BY from_wallet_id
+)
+SELECT * FROM big WHERE total &gt; 1000000;</pre></td></tr>
+    </table>
+  </section>
+
+  <section id="tx">
+    <h2>8. Transaction và lock</h2>
+    <table>
+      <tr><td class="task">Chạy nhiều lệnh như một khối</td><td class="pre"><pre>BEGIN;
+UPDATE wallets SET balance = balance - 100 WHERE id = 1;
+UPDATE wallets SET balance = balance + 100 WHERE id = 2;
+COMMIT;   <i>-- hoặc ROLLBACK; để hủy</i></pre></td></tr>
+      <tr><td class="task">Khóa dòng trước khi sửa<small>lock theo id tăng dần để tránh deadlock</small></td><td class="pre"><pre>BEGIN;
+SELECT * FROM wallets WHERE id IN (1, 2) ORDER BY id FOR UPDATE;
+<i>-- UPDATE ...</i>
+COMMIT;</pre></td></tr>
+      <tr><td class="task">Hủy một phần trong transaction</td><td class="pre"><pre>SAVEPOINT sp1;
+<i>-- lệnh lỗi ...</i>
+ROLLBACK TO SAVEPOINT sp1;</pre></td></tr>
+      <tr><td class="task">Đổi isolation level</td><td class="pre"><pre>BEGIN ISOLATION LEVEL REPEATABLE READ;</pre></td></tr>
+      <tr><td class="task">Xem ai đang chờ lock</td><td class="pre"><pre>SELECT pid, state, wait_event_type, query FROM pg_stat_activity
+WHERE wait_event_type = 'Lock';</pre></td></tr>
+    </table>
+  </section>
+
+  <section id="hieu-nang">
+    <h2>9. Kiểm tra hiệu năng</h2>
+    <table>
+      <tr><td class="task">Xem kế hoạch chạy thật<small class="w">ANALYZE chạy thật, cẩn thận với UPDATE/DELETE</small></td><td class="pre"><pre>EXPLAIN ANALYZE SELECT * FROM transactions WHERE from_wallet_id = 42;</pre></td></tr>
+      <tr><td class="task">Xem thêm số block đọc từ cache / đĩa</td><td class="pre"><pre>EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM transactions WHERE from_wallet_id = 42;</pre></td></tr>
+      <tr><td class="task">Cập nhật thống kê cho planner<small>chạy sau khi seed nhiều dữ liệu</small></td><td class="pre"><pre>ANALYZE transactions;</pre></td></tr>
+      <tr><td class="task">Xem dung lượng bảng (kèm index)</td><td class="pre"><pre>SELECT pg_size_pretty(pg_total_relation_size('transactions'));</pre></td></tr>
+    </table>
+  </section>
+
+  <p id="empty" class="hide">Không có dòng nào khớp. Thử từ khác, ví dụ "cột", "index", "xóa".</p>
+  <p class="foot">Cú pháp theo Postgres 11 trở lên. Phần giải thích vì sao, bẫy và câu hỏi phỏng vấn nằm ở các bản Cornell 2.0 đến 2.2.</p>
+</main>
+<script>
+  // Nút "Chép" cho mỗi khối lệnh; chú thích -- vẫn được chép vì psql bỏ qua comment
+  document.querySelectorAll('pre').forEach(pre => {
+    const text = pre.textContent.trim();
+    const b = document.createElement('button');
+    b.className = 'cp'; b.textContent = 'Chép';
+    b.onclick = () => navigator.clipboard.writeText(text)
+      .then(() => { b.textContent = 'Đã chép'; setTimeout(() => b.textContent = 'Chép', 1200); }).catch(() => {});
+    pre.appendChild(b);
+  });
+
+  // Lọc theo từ khóa, không phân biệt dấu
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+  const q = document.getElementById('q');
+  q.addEventListener('input', () => {
+    const words = norm(q.value).split(/\s+/).filter(Boolean);
+    let any = false;
+    document.querySelectorAll('section').forEach(sec => {
+      let shown = 0;
+      sec.querySelectorAll('tr').forEach(tr => {
+        const ok = words.every(w => norm(tr.innerText).includes(w));
+        tr.classList.toggle('hide', !ok); if (ok) shown++;
+      });
+      sec.classList.toggle('hide', shown === 0); if (shown) any = true;
+    });
+    document.getElementById('empty').classList.toggle('hide', any);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Thứ tự chạy SQL</title>
+    <meta name="repos" content="" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1024px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1024 2180"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Thứ tự chạy logic của câu SELECT: FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY, LIMIT"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <!-- TIÊU ĐỀ -->
+        <rect class="s" x="40" y="30" width="944" height="100" rx="16" fill="#bcd9f5" />
+        <text class="t" x="512" y="95" font-size="44">SQL chạy theo thứ tự nào?</text>
+
+        <!-- PILL PHỤ -->
+        <rect class="s" x="202" y="143" width="620" height="52" rx="26" fill="#f9c9b6" />
+        <text class="t" x="512" y="179" font-size="28">viết bắt đầu bằng SELECT, nhưng chạy bắt đầu từ FROM</text>
+
+        <!-- ① CÂU BẠN VIẾT -->
+        <g transform="translate(0 225)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#c5def5" />
+          <text class="tl" x="55" y="45" font-size="32">① Câu bạn viết: số tròn là thứ tự Postgres chạy</text>
+
+          <rect class="s" x="35" y="86" width="955" height="340" rx="18" fill="#fffdf5" />
+          <g transform="translate(0 132)">
+            <circle class="s3" cx="78" cy="-8" r="17" fill="#fbd3b4" /><text class="t" x="78" y="0" font-size="22">5</text>
+            <text class="tl" x="110" y="0" font-size="24">SELECT u.name, sum(t.amount) AS tong_gui</text>
+          </g>
+          <g transform="translate(0 166)">
+            <circle class="s3" cx="78" cy="-8" r="17" fill="#c5def5" /><text class="t" x="78" y="0" font-size="22">1</text>
+            <text class="tl" x="110" y="0" font-size="24">FROM transactions t</text>
+          </g>
+          <g transform="translate(0 200)">
+            <text class="tl" x="110" y="0" font-size="24">JOIN wallets w ON w.id = t.from_wallet_id</text>
+          </g>
+          <g transform="translate(0 234)">
+            <text class="tl" x="110" y="0" font-size="24">JOIN users u ON u.id = w.user_id</text>
+          </g>
+          <g transform="translate(0 268)">
+            <circle class="s3" cx="78" cy="-8" r="17" fill="#c8e6c0" /><text class="t" x="78" y="0" font-size="22">2</text>
+            <text class="tl" x="110" y="0" font-size="24">WHERE t.created_at &gt;= now() - interval '30 days'</text>
+          </g>
+          <g transform="translate(0 302)">
+            <circle class="s3" cx="78" cy="-8" r="17" fill="#d9cdf2" /><text class="t" x="78" y="0" font-size="22">3</text>
+            <text class="tl" x="110" y="0" font-size="24">GROUP BY u.id, u.name</text>
+          </g>
+          <g transform="translate(0 336)">
+            <circle class="s3" cx="78" cy="-8" r="17" fill="#d9cdf2" /><text class="t" x="78" y="0" font-size="22">4</text>
+            <text class="tl" x="110" y="0" font-size="24">HAVING sum(t.amount) &gt; 5000000</text>
+          </g>
+          <g transform="translate(0 370)">
+            <circle class="s3" cx="78" cy="-8" r="17" fill="#f7e48a" /><text class="t" x="78" y="0" font-size="22">6</text>
+            <text class="tl" x="110" y="0" font-size="24">ORDER BY tong_gui DESC</text>
+          </g>
+          <g transform="translate(0 404)">
+            <circle class="s3" cx="78" cy="-8" r="17" fill="#f7e48a" /><text class="t" x="78" y="0" font-size="22">7</text>
+            <text class="tl" x="110" y="0" font-size="24">LIMIT 10;</text>
+          </g>
+
+          <!-- hình: thứ tự viết khác thứ tự chạy -->
+          <g transform="translate(835 250) scale(1.9)">
+            <rect class="s" x="-40" y="-12" width="24" height="30" rx="4" fill="#cdebd0"/><text class="t" x="-28" y="10" font-size="22">1</text><rect class="s" x="-12" y="-12" width="24" height="30" rx="4" fill="#f9c0b4"/><text class="t" x="0" y="10" font-size="22">3</text><rect class="s" x="16" y="-12" width="24" height="30" rx="4" fill="#f9c0b4"/><text class="t" x="28" y="10" font-size="22">2</text><path class="ink" d="M0 -16 Q16 -48 28 -28" stroke="#e0652d" style="stroke-width:2.5"/><polygon class="s3" points="32.3,-20.1 21.5,-26.7 32.6,-32.8" fill="#e0652d"/><path class="s2" d="M-36 28 H36"/>
+          </g>
+          <text class="t" x="835" y="345" font-size="22">thứ tự viết ≠ thứ tự chạy</text>
+        </g>
+
+        <!-- ② DÂY CHUYỀN 7 TRẠM -->
+        <g transform="translate(0 685)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#c5def5" />
+          <text class="tl" x="55" y="45" font-size="32">② Dây chuyền 7 trạm: dữ liệu vơi dần qua từng trạm</text>
+
+          <!-- mũi tên giữa các trạm -->
+          <path class="ink" d="M155 197 V213" marker-end="url(#ad)" />
+          <path class="ink" d="M155 327 V343" marker-end="url(#ad)" />
+          <path class="ink" d="M155 457 V473" marker-end="url(#ad)" />
+          <path class="ink" d="M155 587 V603" marker-end="url(#ad)" />
+          <path class="ink" d="M155 717 V733" marker-end="url(#ad)" />
+          <path class="ink" d="M155 847 V863" marker-end="url(#ad)" />
+
+          <!-- 1 FROM -->
+          <g transform="translate(0 90)">
+            <rect class="s" x="35" y="0" width="955" height="104" rx="14" fill="#eef5fc" />
+            <rect class="s" x="55" y="24" width="200" height="56" rx="12" fill="#c5def5" />
+            <circle class="s3" cx="80" cy="52" r="16" fill="#f9c9b6" /><text class="t" x="80" y="60" font-size="21">1</text>
+            <text class="t" x="168" y="62" font-size="28">FROM · JOIN</text>
+            <rect class="s" x="283" y="28" width="36" height="46" rx="4" fill="#c5def5" /><path class="s2" d="M283 43 H319 M283 58 H319" />
+            <text class="t" x="331" y="60" font-size="26">+</text>
+            <rect class="s" x="343" y="28" width="36" height="46" rx="4" fill="#c8e6c0" /><path class="s2" d="M343 43 H379 M343 58 H379" />
+            <text class="t" x="391" y="60" font-size="26">+</text>
+            <rect class="s" x="403" y="28" width="36" height="46" rx="4" fill="#fbd3b4" /><path class="s2" d="M403 43 H439 M403 58 H439" />
+            <text class="tl" x="470" y="44" font-size="24">Ghép 3 bảng thành một bảng phẳng</text>
+            <text class="tl" x="470" y="78" font-size="21">≈ nối mảng theo khóa ngoại</text>
+            <rect class="s3" x="855" y="32" width="118" height="40" rx="10" fill="#ffffff" />
+            <text class="t" x="914" y="59" font-size="21">100 000 dòng</text>
+          </g>
+
+          <!-- 2 WHERE -->
+          <g transform="translate(0 220)">
+            <rect class="s" x="35" y="0" width="955" height="104" rx="14" fill="#eef7ea" />
+            <rect class="s" x="55" y="24" width="200" height="56" rx="12" fill="#c8e6c0" />
+            <circle class="s3" cx="80" cy="52" r="16" fill="#f9c9b6" /><text class="t" x="80" y="60" font-size="21">2</text>
+            <text class="t" x="168" y="62" font-size="28">WHERE</text>
+            <polygon class="s" points="300,20 420,20 377,58 377,86 343,86 343,58" fill="#c8e6c0" />
+            <circle class="s3" cx="330" cy="12" r="5" fill="#6fbf73" /><circle class="s3" cx="360" cy="10" r="5" fill="#6fbf73" /><circle class="s3" cx="392" cy="13" r="5" fill="#6fbf73" />
+            <circle class="s3" cx="360" cy="96" r="5" fill="#6fbf73" />
+            <text class="tl" x="470" y="44" font-size="24">Lọc từng dòng: giữ 30 ngày gần đây</text>
+            <text class="tl" x="470" y="78" font-size="21">≈ rows.filter(r =&gt; r.created_at &gt;= ...)</text>
+            <rect class="s3" x="855" y="32" width="118" height="40" rx="10" fill="#ffffff" />
+            <text class="t" x="914" y="59" font-size="21">8 410 dòng</text>
+          </g>
+
+          <!-- 3 GROUP BY -->
+          <g transform="translate(0 350)">
+            <rect class="s" x="35" y="0" width="955" height="104" rx="14" fill="#f2eefb" />
+            <rect class="s" x="55" y="24" width="200" height="56" rx="12" fill="#d9cdf2" />
+            <circle class="s3" cx="80" cy="52" r="16" fill="#f9c9b6" /><text class="t" x="80" y="60" font-size="21">3</text>
+            <text class="t" x="168" y="62" font-size="28">GROUP BY</text>
+            <rect class="s" x="285" y="18" width="44" height="72" rx="8" fill="#ffffff" />
+            <rect class="s3" x="293" y="62" width="28" height="20" rx="3" fill="#a58fd6" /><rect class="s3" x="293" y="40" width="28" height="20" rx="3" fill="#a58fd6" />
+            <rect class="s" x="338" y="18" width="44" height="72" rx="8" fill="#ffffff" />
+            <rect class="s3" x="346" y="62" width="28" height="20" rx="3" fill="#d9cdf2" />
+            <rect class="s" x="391" y="18" width="44" height="72" rx="8" fill="#ffffff" />
+            <rect class="s3" x="399" y="62" width="28" height="20" rx="3" fill="#a58fd6" /><rect class="s3" x="399" y="40" width="28" height="20" rx="3" fill="#a58fd6" /><rect class="s3" x="399" y="24" width="28" height="14" rx="3" fill="#a58fd6" />
+            <text class="tl" x="470" y="44" font-size="24">Gom các dòng cùng user thành nhóm</text>
+            <text class="tl" x="470" y="78" font-size="21">≈ groupBy(rows, r =&gt; r.user_id)</text>
+            <rect class="s3" x="855" y="32" width="118" height="40" rx="10" fill="#ffffff" />
+            <text class="t" x="914" y="59" font-size="21">4 258 nhóm</text>
+          </g>
+
+          <!-- 4 HAVING -->
+          <g transform="translate(0 480)">
+            <rect class="s" x="35" y="0" width="955" height="104" rx="14" fill="#f2eefb" />
+            <rect class="s" x="55" y="24" width="200" height="56" rx="12" fill="#d9cdf2" />
+            <circle class="s3" cx="80" cy="52" r="16" fill="#f9c9b6" /><text class="t" x="80" y="60" font-size="21">4</text>
+            <text class="t" x="168" y="62" font-size="28">HAVING</text>
+            <rect class="s" x="285" y="18" width="44" height="72" rx="8" fill="#ffffff" />
+            <rect class="s3" x="293" y="62" width="28" height="20" rx="3" fill="#a58fd6" /><rect class="s3" x="293" y="40" width="28" height="20" rx="3" fill="#a58fd6" />
+            <rect class="s" x="338" y="18" width="44" height="72" rx="8" fill="#ffffff" />
+            <path d="M342 24 L378 84 M378 24 L342 84" stroke="#d9534f" stroke-width="4" stroke-linecap="round" fill="none" />
+            <rect class="s" x="391" y="18" width="44" height="72" rx="8" fill="#ffffff" />
+            <rect class="s3" x="399" y="62" width="28" height="20" rx="3" fill="#a58fd6" /><rect class="s3" x="399" y="40" width="28" height="20" rx="3" fill="#a58fd6" /><rect class="s3" x="399" y="24" width="28" height="14" rx="3" fill="#a58fd6" />
+            <text class="tl" x="470" y="44" font-size="24">Lọc cả nhóm: tổng gửi &gt; 5 triệu</text>
+            <text class="tl" x="470" y="78" font-size="21">≈ groups.filter(g =&gt; g.sum &gt; 5tr)</text>
+            <rect class="s3" x="855" y="32" width="118" height="40" rx="10" fill="#ffffff" />
+            <text class="t" x="914" y="59" font-size="21">19 nhóm</text>
+          </g>
+
+          <!-- 5 SELECT -->
+          <g transform="translate(0 610)">
+            <rect class="s" x="35" y="0" width="955" height="104" rx="14" fill="#fdf1e7" />
+            <rect class="s" x="55" y="24" width="200" height="56" rx="12" fill="#fbd3b4" />
+            <circle class="s3" cx="80" cy="52" r="16" fill="#f9c9b6" /><text class="t" x="80" y="60" font-size="21">5</text>
+            <text class="t" x="168" y="62" font-size="28">SELECT</text>
+            <rect class="s3" x="315" y="22" width="34" height="62" fill="#e9937a" />
+            <rect class="s3" x="383" y="22" width="34" height="62" fill="#e9937a" />
+            <rect class="s" x="281" y="22" width="170" height="62" rx="4" fill="none" />
+            <path class="s2" d="M315 22 V84 M349 22 V84 M383 22 V84 M417 22 V84 M281 43 H451 M281 64 H451" />
+            <text class="tl" x="470" y="44" font-size="24">Chọn cột, tính sum, đặt alias</text>
+            <text class="tl" x="470" y="78" font-size="21">≈ .map(g =&gt; ({ name, tong_gui }))</text>
+            <rect class="s3" x="855" y="32" width="118" height="40" rx="10" fill="#ffffff" />
+            <text class="t" x="914" y="59" font-size="21">19 dòng</text>
+          </g>
+
+          <!-- 6 ORDER BY -->
+          <g transform="translate(0 740)">
+            <rect class="s" x="35" y="0" width="955" height="104" rx="14" fill="#fdf8dc" />
+            <rect class="s" x="55" y="24" width="200" height="56" rx="12" fill="#f7e48a" />
+            <circle class="s3" cx="80" cy="52" r="16" fill="#f9c9b6" /><text class="t" x="80" y="60" font-size="21">6</text>
+            <text class="t" x="168" y="62" font-size="28">ORDER BY</text>
+            <rect class="s3" x="295" y="16" width="26" height="70" rx="3" fill="#f2b84b" />
+            <rect class="s3" x="329" y="32" width="26" height="54" rx="3" fill="#f2b84b" />
+            <rect class="s3" x="363" y="48" width="26" height="38" rx="3" fill="#f2b84b" />
+            <rect class="s3" x="397" y="64" width="26" height="22" rx="3" fill="#f2b84b" />
+            <path class="s2" d="M285 86 H433" />
+            <text class="tl" x="470" y="44" font-size="24">Sắp xếp, dùng được alias tong_gui</text>
+            <text class="tl" x="470" y="78" font-size="21">≈ .sort((a, b) =&gt; b.tong_gui - a.tong_gui)</text>
+            <rect class="s3" x="855" y="32" width="118" height="40" rx="10" fill="#ffffff" />
+            <text class="t" x="914" y="59" font-size="21">19 dòng</text>
+          </g>
+
+          <!-- 7 LIMIT -->
+          <g transform="translate(0 870)">
+            <rect class="s" x="35" y="0" width="955" height="104" rx="14" fill="#fdf8dc" />
+            <rect class="s" x="55" y="24" width="200" height="56" rx="12" fill="#f7e48a" />
+            <circle class="s3" cx="80" cy="52" r="16" fill="#f9c9b6" /><text class="t" x="80" y="60" font-size="21">7</text>
+            <text class="t" x="168" y="62" font-size="28">LIMIT</text>
+            <g transform="translate(360 50) scale(0.9) rotate(90)">
+              <path class="s" d="M-14 22 L14 -36" fill="none" style="stroke-width:9"/><path d="M-14 22 L14 -36" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path class="s" d="M14 22 L-14 -36" fill="none" style="stroke-width:9"/><path d="M14 22 L-14 -36" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle class="s" cx="-17" cy="30" r="9" fill="#e87a6a"/><circle class="s" cx="17" cy="30" r="9" fill="#e87a6a"/><circle class="s3" cx="0" cy="-6" r="3" fill="#1d2433"/>
+            </g>
+            <text class="tl" x="470" y="44" font-size="24">Cắt lấy 10 dòng đầu, bỏ phần còn lại</text>
+            <text class="tl" x="470" y="78" font-size="21">≈ .slice(0, 10)</text>
+            <rect class="s3" x="855" y="32" width="118" height="40" rx="10" fill="#ffffff" />
+            <text class="t" x="914" y="59" font-size="21">10 dòng</text>
+          </g>
+        </g>
+
+        <!-- ③ BẪY -->
+        <g transform="translate(0 1695)">
+          <rect class="s" x="35" y="0" width="955" height="66" rx="12" fill="#c5def5" />
+          <text class="tl" x="55" y="45" font-size="32">③ Bẫy hay bị hỏi: alias và WHERE vs HAVING</text>
+
+          <rect class="s" x="35" y="86" width="465" height="230" rx="18" fill="#fffdf5" />
+          <rect class="s" x="55" y="102" width="150" height="46" rx="12" fill="#f9c9b6" />
+          <text class="t" x="130" y="134" font-size="26">✗ Lỗi</text>
+          <g transform="translate(430 135) scale(0.8)">
+            <polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/>
+          </g>
+          <text class="tl" x="60" y="196" font-size="24">WHERE tong_gui &gt; 5000000</text>
+          <text class="tl" x="60" y="236" font-size="21">tong_gui sinh ra ở trạm 5 (SELECT).</text>
+          <text class="tl" x="60" y="264" font-size="21">Trạm 2 chạy trước nên chưa thấy nó:</text>
+          <text class="tl" x="60" y="292" font-size="21">column "tong_gui" does not exist.</text>
+
+          <rect class="s" x="525" y="86" width="465" height="230" rx="18" fill="#fffdf5" />
+          <rect class="s" x="545" y="102" width="190" height="46" rx="12" fill="#c8e6c0" />
+          <text class="t" x="640" y="134" font-size="26">✓ Chạy được</text>
+          <text class="tl" x="550" y="196" font-size="24">ORDER BY tong_gui DESC</text>
+          <text class="tl" x="550" y="236" font-size="21">Trạm 6 chạy sau SELECT nên alias đã có.</text>
+          <text class="tl" x="550" y="264" font-size="21">Lọc theo sum? Dùng HAVING, vì WHERE</text>
+          <text class="tl" x="550" y="292" font-size="21">lọc dòng, lúc đó chưa có nhóm để sum.</text>
+        </g>
+
+        <!-- FOOTNOTE -->
+        <text class="t" x="512" y="2050" font-size="18">Số dòng đo thật trên mini_wallet (29/10/2026). Planner có thể chạy khác bên dưới, nhưng kết quả luôn như thứ tự này.</text>
+
+        <!-- CÂU CHỐT -->
+        <g transform="translate(0 2075)">
+          <rect class="s" x="60" y="0" width="904" height="76" rx="16" fill="#fbe98a" />
+          <text class="t" x="512" y="50" font-size="34">Đọc và nghĩ từ FROM, nhưng câu vẫn phải mở đầu bằng SELECT.</text>
+        </g>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

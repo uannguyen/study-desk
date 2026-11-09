@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Injection và SSRF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .note pre { font: 16px/23px ui-monospace, 'SFMono-Regular', Menlo, monospace; background: #efe9de; border-radius: 6px; padding: 6px 10px; margin: 4px 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* khung khối gọn: Nôm na → Chốt → Ví dụ → Áp dụng → Bẫy → Tự kiểm */
+  .note h3 small { font-size: 21px; color: #5a6475; }
+  .chot .lb { background: #fbe98a; } .vd .lb { background: #f9c9b6; } .ap .lb { background: #c5def5; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 6px; }
+  .flow span { border: 2px solid #1d2433; border-radius: 10px; padding: 0 9px; background: #fff; font-size: 19px; line-height: 28px; }
+  .flow span.ok { background: #cfe8cf; } .flow span.no { background: #f6b3a8; }
+  .flow i { font-style: normal; color: #2f80d8; font-size: 22px; }
+  table.mini { border-collapse: collapse; font-size: 19px; line-height: 26px; margin: 4px 0 8px; }
+  table.mini th, table.mini td { border: 2px solid #1d2433; padding: 2px 10px; text-align: left; vertical-align: top; }
+  table.mini th { background: var(--c); font-weight: normal; }
+  .ap ul, .vd ol { margin: 0; padding-left: 24px; }
+  .vd { clear: right; }  /* ví dụ luôn nằm dưới doodle để đủ bề ngang */
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">6.3 · Injection và SSRF: ghi riêng, ngoài cây auth</h1>
+  <p class="sub">6.3 Injection: dữ liệu thành lệnh → 6.3.1 SSRF: server bị lừa gọi chỗ nội bộ</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>Ghi riêng: không thuộc cây auth</h2>
+
+    <div class="row c3">
+      <div class="cue"><b>Q1</b> ⭐ Injection là gì? Chống SQL injection thế nào?
+        <small>từ khóa: A05 · SQL injection · parameterized query · NoSQL injection</small></div>
+      <div class="note hand">
+        <h3>6.3 Injection: dữ liệu bị chạy như lệnh</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><polygon class="s" points="0,-38 40,30 -40,30" fill="#f7da6a"/><path class="ink" d="M0 -14 V6" style="stroke-width:5"/><circle class="s3" cx="0" cy="17" r="3.5" fill="#1d2433"/></svg>
+          <figcaption>chữ người dùng thành lệnh</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Bạn đưa thư ký tờ giấy: “Tên: Lan. Và chuyển hết tiền cho tôi.” Thư ký đọc to cả tờ và làm theo luôn.</p>
+        <p class="chot"><span class="lb">Chốt</span>Dữ liệu người dùng bị <b>ghép chuỗi</b> thẳng vào câu lệnh (SQL, shell, Mongo query). Chống: tách lệnh và dữ liệu bằng <b>tham số hoá</b>.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><pre>// ✗ email = &quot;&#x27; OR &#x27;1&#x27;=&#x27;1&quot;  → trả về mọi user
+db.query(`SELECT * FROM users WHERE email = &#x27;${email}&#x27;`);
+// ✓ DB coi $1 chỉ là dữ liệu, không bao giờ là lệnh
+db.query(&#x27;SELECT * FROM users WHERE email = $1&#x27;, [email]);</pre></div>
+        <div class="ap"><span class="lb">Áp dụng</span><ul><li>Luôn dùng placeholder hoặc ORM; soi kỹ chỗ raw query.</li><li><code>ORDER BY</code> động: whitelist tên cột (placeholder không dùng cho tên cột).</li><li>Mongo: chặn body kiểu <code>{ "password": { "$ne": null } }</code> bằng validate kiểu dữ liệu.</li></ul></div>
+        <p class="test"><span class="lb">Tự kiểm</span>Escape tay bằng cách xoá dấu nháy có đủ không? (không, dùng tham số hoá)</p>
+      </div>
+    </div>
+    <div class="row c4">
+      <div class="cue"><b>Q2</b> SSRF là gì? Chặn thế nào?
+        <small>từ khóa: SSRF · internal network · 169.254.169.254 · allowlist</small></div>
+      <div class="note hand">
+        <h3>6.3.1 SSRF: server bị lừa đi gọi chỗ nội bộ</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><ellipse class="s2" cx="0" cy="38" rx="14" ry="4" fill="#cbd3dc"/><path class="s" d="M0 38 C-8 24 -28 8 -28 -10 A28 28 0 0 1 28 -10 C28 8 8 24 0 38 Z" fill="#e87a6a"/><circle class="s" cx="0" cy="-10" r="10" fill="#fffdf5"/></svg>
+          <figcaption>bị dắt tới địa chỉ lạ</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Bạn nhờ bảo vệ toà nhà “lên tầng 9 lấy giùm tập hồ sơ”. Bảo vệ có thẻ vào được tầng 9, còn bạn thì không.</p>
+        <p class="chot"><span class="lb">Chốt</span>Server gửi request tới <b>URL do người dùng đưa</b>, kẻ gian trỏ URL vào mạng nội bộ mà bên ngoài không vào được.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><div class="flow"><span>Tính năng “nhập ảnh từ URL”</span><i>→</i><span>url=http://169.254.169.254/…</span><i>→</i><span class="no">✗ lộ credential cloud</span></div><div class="flow"><span>url=http://localhost:6379</span><i>→</i><span class="no">✗ chạm Redis nội bộ</span></div></div>
+        <div class="ap"><span class="lb">Áp dụng</span><ul><li>Allowlist domain và scheme (chỉ https).</li><li>Resolve DNS rồi chặn IP private, loopback, link-local; kiểm lại sau mỗi redirect.</li><li>Service gọi ra ngoài đặt ở mạng riêng, không với tới DB, metadata.</li></ul></div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>OWASP 2025 đã gộp SSRF vào A01, nhưng cơ chế khác hẳn IDOR nên vẫn học riêng.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Chỉ chặn chuỗi “localhost” có đủ không? (không: còn 127.0.0.1, IP nội bộ, domain trỏ về IP nội bộ, redirect)</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>Tự hỏi: chỗ nào ở hệ cũ còn raw query ghép chuỗi? Có tính năng nào server tải URL do client gửi (ảnh, callback URL, webhook)?</p>
+    <div class="summary hand"><h3>Summary</h3><p>Injection: dữ liệu bị ghép vào lệnh nên được chạy như lệnh; chống bằng tham số hoá. SSRF: server bị lừa gọi tới địa chỉ nội bộ; chống bằng allowlist và chặn IP nội bộ sau khi resolve DNS.</p></div>
+  </section>
+
+  <p class="foot">Nguồn: OWASP Top 10:2025 (A05, A01 đã gộp SSRF). Chỉ học 4 mục theo danh sách đóng ở On-tap/02-auth-va-ma-hoa.md. Trước: 6.2 Cryptographic Failures.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API là gì</title>
+    <meta name="repos" content="" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1600px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      } /* nét mảnh, KHÔNG tô (fill:none thắng thuộc tính fill) */
+      .s3 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      } /* nét mảnh, có tô: đặt fill="#..." */
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .ink {
+        stroke: #1d2433;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Chỉ cần đổi "1536" trong viewBox (2 rect nền dùng 100% nên tự khớp) + aria-label.
+     Khổ rộng: đổi "1024" thành "1600", đổi max-width ở CSS thành 1600px, dời tiêu đề/pill phụ/câu chốt theo bảng toạ độ trong types/vertical.md. Giữ viewBox của svg chính đứng ĐẦU file: render.sh đọc nó.
+     Mẹo: viết mỗi khối trong <g transform="translate(0 Y)"> với toạ độ cục bộ từ 0 — dời cả khối chỉ cần đổi Y. -->
+    <svg
+      viewBox="0 0 1600 2120"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="API là bản quy ước giữa hai bên, không phải người đứng giữa"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <!-- mũi tên xanh dương (dùng với class .blue) -->
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+        <!-- mũi tên mực đen (dùng với class .ink) -->
+        <marker
+          id="ad"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#1d2433"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#fbf9f2" />
+      <rect width="100%" height="100%" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <!-- TIÊU ĐỀ -->
+        <rect class="s" x="40" y="30" width="1520" height="100" rx="16" fill="#bcd9f5"/>
+        <text class="t" x="800" y="97" font-size="54">API là gì?</text>
+        <rect class="s" x="450" y="143" width="700" height="52" rx="26" fill="#f9c9b6"/>
+        <text class="t" x="800" y="179" font-size="28">Một bản quy ước, không phải một người chạy việc</text>
+
+        <!-- ① ẨN DỤ -->
+        <g transform="translate(0 225)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#c5def5"/>
+          <text class="tl" x="55" y="46" font-size="34">① Bỏ ẩn dụ "bồi bàn": API không phải một nhân vật đứng giữa</text>
+
+          <!-- card trái: bồi bàn -->
+          <rect class="s" x="35" y="86" width="720" height="320" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="195" y="100" width="400" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="395" y="136" font-size="30">Bồi bàn: ẩn dụ gây rối</text>
+          <g transform="translate(120 245)">
+            <rect class="s" x="-22" y="-38" width="44" height="76" rx="9" fill="#fffdf5"/><rect class="s3" x="-15" y="-27" width="30" height="46" rx="3" fill="#bfd9f2"/><path class="s2" d="M-7 -32 h14"/><circle class="s3" cx="0" cy="28" r="4" fill="#1d2433"/><path class="s2" d="M-8 -14 h16 M-8 -4 h10 M-8 6 h13"/>
+          </g>
+          <text class="t" x="120" y="312" font-size="20">client</text>
+          <path class="ink" d="M160 245 L250 245" marker-end="url(#ad)"/>
+          <g transform="translate(320 300)">
+            <circle class="s" cx="0" cy="-78" r="14" fill="#ffe3c2"/>
+            <path class="s" d="M0 -64 V-26 M0 -52 L-20 -34 M0 -52 L20 -34 M0 -26 L-16 0 M0 -26 L16 0" fill="none"/>
+            <path class="s2" d="M-5 -80 q5 5 10 0"/>
+            <rect class="s3" x="18" y="-40" width="40" height="8" rx="3" fill="#cbd3dc"/>
+          </g>
+          <path d="M270 190 L370 300 M370 190 L270 300" stroke="#d9453a" stroke-width="7" stroke-linecap="round" fill="none"/>
+          <path class="ink" d="M395 245 L480 245" marker-end="url(#ad)"/>
+          <g transform="translate(495 207)">
+            <rect class="s" x="0" y="0" width="110" height="76" rx="10" fill="#e9937a"/>
+            <rect class="s" x="14" y="14" width="82" height="48" rx="8" fill="#fffdf5"/>
+            <text class="t" x="55" y="46" font-size="20">server</text>
+          </g>
+          <text class="tl" x="625" y="225" font-size="20">ngầm bảo</text>
+          <text class="tl" x="625" y="250" font-size="20">API là "ai đó"</text>
+          <text class="tl" x="625" y="275" font-size="20">đứng giữa</text>
+          <rect x="55" y="352" width="680" height="36" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="395" y="378" font-size="22">thứ đứng giữa thật là API Gateway / proxy: đó là phần mềm khác</text>
+
+          <!-- giữa -->
+          <text class="t" x="800" y="232" font-size="24">thay</text>
+          <path class="blue" d="M772 248 L828 248" marker-end="url(#ah)"/>
+
+          <!-- card phải: ổ cắm -->
+          <rect class="s" x="845" y="86" width="720" height="320" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="1005" y="100" width="400" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="1205" y="136" font-size="30">Ổ cắm điện: ẩn dụ đúng</text>
+          <!-- nhà máy -->
+          <g transform="translate(905 200)">
+            <rect class="s" x="60" y="-8" width="22" height="34" fill="#cbd3dc"/>
+            <circle class="s3" cx="78" cy="-20" r="8" fill="#eceae4"/><circle class="s3" cx="92" cy="-34" r="11" fill="#eceae4"/>
+            <rect class="s" x="0" y="20" width="110" height="70" rx="6" fill="#cfd8e3"/>
+            <rect class="s3" x="16" y="40" width="22" height="20" fill="#f7da6a"/><rect class="s3" x="58" y="40" width="22" height="20" fill="#f7da6a"/>
+          </g>
+          <text class="t" x="960" y="320" font-size="22">nhà máy</text>
+          <text class="t" x="960" y="344" font-size="18">(server, đổi thoải mái)</text>
+          <path class="s2" d="M1015 255 q30 -18 60 0 t60 0"/>
+          <!-- ổ cắm -->
+          <g transform="translate(1140 195)">
+            <rect class="s" x="0" y="0" width="100" height="110" rx="16" fill="#fffdf5"/>
+            <rect class="s3" x="14" y="14" width="72" height="82" rx="12" fill="#d4ecd0"/>
+            <circle class="s3" cx="36" cy="55" r="8" fill="#1d2433"/><circle class="s3" cx="64" cy="55" r="8" fill="#1d2433"/>
+          </g>
+          <text class="t" x="1190" y="334" font-size="24" style="fill:#2f80d8;stroke:#2f80d8">ổ cắm = API</text>
+          <!-- phích + quạt -->
+          <path class="s" d="M1248 244 H1262 M1248 256 H1262" fill="none"/>
+          <rect class="s" x="1262" y="234" width="38" height="32" rx="6" fill="#6aa0d8"/>
+          <path class="s2" d="M1300 250 q40 30 80 0 t40 20"/>
+          <g transform="translate(1470 235)">
+            <path class="ink" d="M0 40 V85 M-25 88 H25"/>
+            <circle class="s" r="42" fill="#fffdf5"/>
+            <ellipse class="s3" cx="0" cy="-20" rx="10" ry="18" fill="#a58fd6"/>
+            <ellipse class="s3" cx="18" cy="12" rx="10" ry="18" fill="#a58fd6" transform="rotate(120 18 12)"/>
+            <ellipse class="s3" cx="-18" cy="12" rx="10" ry="18" fill="#a58fd6" transform="rotate(240 -18 12)"/>
+            <circle class="s3" r="6" fill="#f7da6a"/>
+          </g>
+          <text class="t" x="1470" y="352" font-size="22">quạt (client)</text>
+          <rect x="865" y="362" width="680" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="1205" y="387" font-size="22">ổ cắm không làm gì: chỉ là hình dạng hai bên đã thỏa thuận</text>
+        </g>
+
+        <!-- ② HAI NGHĨA -->
+        <g transform="translate(0 675)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#d4ecd0"/>
+          <text class="tl" x="55" y="46" font-size="34">② Chữ "API" có hai nghĩa: tách ra là hết rối</text>
+
+          <rect class="s" x="35" y="86" width="720" height="250" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="175" y="100" width="440" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="395" y="136" font-size="30">Nghĩa gốc: Interface</text>
+          <g transform="translate(120 230) scale(1.5)">
+            <path class="s" d="M-24 -36 H12 L24 -24 V34 H-24 Z" fill="#fffdf5"/><path class="s3" d="M12 -36 V-24 H24 Z" fill="#cbd3dc"/><path class="s2" d="M-15 -20 H3 M-15 -10 H12 M-15 0 H12"/><path class="ink" d="M-16 20 q4 -12 8 0 q4 8 8 -4 q4 -6 10 0" stroke="#e0652d" style="stroke-width:2.5"/><circle class="s" cx="14" cy="26" r="9" fill="#e87a6a"/><circle class="s3" cx="14" cy="26" r="3" fill="#f7da6a"/>
+          </g>
+          <text class="tl" x="200" y="195" font-size="24">bản quy ước: được gọi gì, gửi gì, nhận gì</text>
+          <text class="tl" x="200" y="230" font-size="24">vd. GET /orders/:id → { id, status }</text>
+          <text class="tl" x="200" y="265" font-size="24">không chạy, không deploy được</text>
+          <rect x="55" y="288" width="680" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="395" y="313" font-size="22">A-P-I: chữ I là Interface, tức là cái mặt tiền</text>
+
+          <text class="t" x="800" y="235" font-size="64">≠</text>
+
+          <rect class="s" x="845" y="86" width="720" height="250" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="985" y="100" width="440" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="1205" y="136" font-size="30">Nói tắt: chương trình chạy</text>
+          <g transform="translate(930 228) scale(1.8)">
+            <rect class="s" x="-22" y="-22" width="44" height="18" rx="4" fill="#cfd8e3"/>
+            <rect class="s" x="-22" y="0" width="44" height="18" rx="4" fill="#cfd8e3"/>
+            <circle cx="-13" cy="-13" r="3" fill="#2fa24a"/><circle cx="-13" cy="9" r="3" fill="#2fa24a"/>
+            <line class="s2" x1="0" y1="-13" x2="14" y2="-13"/><line class="s2" x1="0" y1="9" x2="14" y2="9"/>
+          </g>
+          <text class="tl" x="1010" y="195" font-size="24">"deploy con API" = một process Node</text>
+          <text class="tl" x="1010" y="230" font-size="24">nó HIỆN THỰC bản quy ước bên trái</text>
+          <text class="tl" x="1010" y="265" font-size="24">1 quy ước ↔ nhiều bản hiện thực</text>
+          <rect x="865" y="288" width="680" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="1205" y="313" font-size="22">gọi cả chương trình bằng tên mặt tiền của nó</text>
+        </g>
+
+        <!-- ③ PHÉP THỬ -->
+        <g transform="translate(0 1050)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#e6dcf5"/>
+          <text class="tl" x="55" y="46" font-size="34">③ Phép thử: đổi cái này, bên gọi có bị hỏng không?</text>
+
+          <rect class="s" x="35" y="86" width="720" height="330" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="175" y="100" width="440" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="395" y="136" font-size="30">Trong code bạn viết hằng ngày</text>
+          <rect x="65" y="168" width="470" height="30" rx="6" fill="#cdeccd"/>
+          <text class="tl" x="75" y="190" font-size="22">app.get('/orders/:id', handler)</text>
+          <rect x="65" y="203" width="470" height="30" rx="6" fill="#cdeccd"/>
+          <text class="tl" x="75" y="225" font-size="22">app.post('/orders/:id/cancel', ...)</text>
+          <rect x="65" y="243" width="470" height="70" rx="6" fill="#e6e1d3"/>
+          <text class="tl" x="75" y="268" font-size="22">handler(req, res) {</text>
+          <text class="tl" x="95" y="300" font-size="22">query DB · cache · tính tiền ...</text>
+          <rect x="65" y="318" width="470" height="30" rx="6" fill="#cdeccd"/>
+          <text class="tl" x="95" y="340" font-size="22">res.json({ id, status, total }) }</text>
+          <text class="tl" x="550" y="210" font-size="22" style="fill:#2fa24a;stroke:#2fa24a">← API</text>
+          <text class="tl" x="550" y="285" font-size="22" style="fill:#7a7466;stroke:#7a7466">← implementation</text>
+          <text class="tl" x="550" y="340" font-size="22" style="fill:#2fa24a;stroke:#2fa24a">← output: API</text>
+          <rect x="55" y="368" width="680" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="395" y="393" font-size="22">route + input + output = API · thân hàm = implementation</text>
+
+          <rect class="s" x="845" y="86" width="720" height="330" rx="18" fill="#fffdf5"/>
+          <rect class="s" x="985" y="100" width="440" height="50" rx="12" fill="#fbd3b4"/>
+          <text class="t" x="1205" y="136" font-size="30">Đổi xong, bên gọi có hỏng?</text>
+          <rect class="s" x="870" y="168" width="325" height="185" rx="14" fill="#fde0dc"/>
+          <text class="t" x="1032" y="203" font-size="26">CÓ hỏng → là API</text>
+          <text class="t" x="1032" y="245" font-size="22">đổi field total → amount</text>
+          <text class="t" x="1032" y="280" font-size="22">đổi GET → POST</text>
+          <text class="t" x="1032" y="315" font-size="22">đổi mã lỗi 404 → 400</text>
+          <rect class="s" x="1215" y="168" width="325" height="185" rx="14" fill="#d4ecd0"/>
+          <text class="t" x="1377" y="203" font-size="26">KHÔNG → implementation</text>
+          <text class="t" x="1377" y="245" font-size="22">MySQL → MongoDB</text>
+          <text class="t" x="1377" y="280" font-size="22">thêm Redis cache</text>
+          <text class="t" x="1377" y="315" font-size="22">Express → NestJS, giữ route</text>
+          <rect x="865" y="368" width="680" height="34" rx="10" fill="#cfe0f5"/>
+          <text class="t" x="1205" y="393" font-size="22">ẩn dụ để nhớ, phép thử này mới để phân loại</text>
+        </g>
+
+        <!-- ④ BÊN DƯỚI -->
+        <g transform="translate(0 1505)">
+          <rect class="s" x="35" y="0" width="1530" height="66" rx="12" fill="#fde3c8"/>
+          <text class="tl" x="55" y="46" font-size="34">④ Bên dưới: một lời gọi API chỉ là byte đi qua mạng</text>
+
+          <!-- 6 bước, w=220, khe 42 -->
+          <g transform="translate(35 86)">
+            <rect class="s" width="220" height="190" rx="14" fill="#fffdf5"/>
+            <circle class="s" cx="18" cy="18" r="13" fill="#f9c9b6"/><text class="t" x="18" y="24" font-size="17" stroke-width="0.3">1</text>
+            <g transform="translate(110 62) scale(0.8)"><rect class="s" x="-22" y="-38" width="44" height="76" rx="9" fill="#fffdf5"/><rect class="s3" x="-15" y="-27" width="30" height="46" rx="3" fill="#bfd9f2"/><circle class="s3" cx="0" cy="28" r="4" fill="#1d2433"/></g>
+            <text class="t" x="110" y="138" font-size="26">Client gọi</text>
+            <text class="t" x="110" y="168" font-size="19">fetch('/orders/42')</text>
+          </g>
+          <g transform="translate(297 86)">
+            <rect class="s" width="220" height="190" rx="14" fill="#fffdf5"/>
+            <circle class="s" cx="18" cy="18" r="13" fill="#f9c9b6"/><text class="t" x="18" y="24" font-size="17" stroke-width="0.3">2</text>
+            <g transform="translate(110 60) scale(0.85)"><ellipse class="s2" cx="0" cy="38" rx="14" ry="4"/><path class="s" d="M0 38 C-8 24 -28 8 -28 -10 A28 28 0 0 1 28 -10 C28 8 8 24 0 38 Z" fill="#e87a6a"/><circle class="s" cx="0" cy="-10" r="10" fill="#fffdf5"/></g>
+            <text class="t" x="110" y="138" font-size="26">DNS</text>
+            <text class="t" x="110" y="168" font-size="19">tên miền → địa chỉ IP</text>
+          </g>
+          <g transform="translate(559 86)">
+            <rect class="s" width="220" height="190" rx="14" fill="#fffdf5"/>
+            <circle class="s" cx="18" cy="18" r="13" fill="#f9c9b6"/><text class="t" x="18" y="24" font-size="17" stroke-width="0.3">3</text>
+            <path class="ink" d="M60 38 L160 50" marker-end="url(#ad)"/>
+            <path class="ink" d="M160 66 L60 78" marker-end="url(#ad)"/>
+            <path class="ink" d="M60 94 L160 106" marker-end="url(#ad)"/>
+            <text class="t" x="110" y="138" font-size="26">TCP</text>
+            <text class="t" x="110" y="168" font-size="19">bắt tay, mở kênh chở byte</text>
+          </g>
+          <g transform="translate(821 86)">
+            <rect class="s" width="220" height="190" rx="14" fill="#fffdf5"/>
+            <circle class="s" cx="18" cy="18" r="13" fill="#f9c9b6"/><text class="t" x="18" y="24" font-size="17" stroke-width="0.3">4</text>
+            <g transform="translate(110 68)"><path class="s" d="M-15 -6 V-20 A15 15 0 0 1 15 -20 V-6" fill="none" style="stroke-width:9"/><path d="M-15 -6 V-20 A15 15 0 0 1 15 -20 V-6" fill="none" stroke="#cbd3dc" stroke-width="4" stroke-linecap="round"/><rect class="s" x="-26" y="-8" width="52" height="42" rx="6" fill="#f7da6a"/><circle class="s3" cx="0" cy="12" r="5.5" fill="#1d2433"/><path class="ink" d="M0 14 V24"/></g>
+            <text class="t" x="110" y="138" font-size="26">TLS</text>
+            <text class="t" x="110" y="168" font-size="19">mã hoá đường truyền</text>
+          </g>
+          <g transform="translate(1083 86)">
+            <rect class="s" width="220" height="190" rx="14" fill="#fffdf5"/>
+            <circle class="s" cx="18" cy="18" r="13" fill="#f9c9b6"/><text class="t" x="18" y="24" font-size="17" stroke-width="0.3">5</text>
+            <g transform="translate(110 70)">
+              <g stroke="#2f6fbf" stroke-width="7" stroke-linecap="butt"><line x1="-22" y1="0" x2="22" y2="0"/><line x1="0" y1="-22" x2="0" y2="22"/><line x1="-16" y1="-16" x2="16" y2="16"/><line x1="-16" y1="16" x2="16" y2="-16"/></g>
+              <circle class="s3" r="17" fill="#6fa3e0"/><circle class="s3" r="7" fill="#fffdf5"/>
+            </g>
+            <text class="t" x="110" y="138" font-size="26">Server Node</text>
+            <text class="t" x="110" y="168" font-size="19">parse → route → handler</text>
+          </g>
+          <g transform="translate(1345 86)">
+            <rect class="s" width="220" height="190" rx="14" fill="#fffdf5"/>
+            <circle class="s" cx="18" cy="18" r="13" fill="#f9c9b6"/><text class="t" x="18" y="24" font-size="17" stroke-width="0.3">6</text>
+            <text class="t" x="110" y="90" font-size="60" style="fill:#a58fd6;stroke:#6b55a8">{ }</text>
+            <text class="t" x="110" y="138" font-size="26">Response</text>
+            <text class="t" x="110" y="168" font-size="19">JSON text → object</text>
+          </g>
+          <g>
+            <path class="blue" d="M259 181 L293 181" marker-end="url(#ah)"/>
+            <path class="blue" d="M521 181 L555 181" marker-end="url(#ah)"/>
+            <path class="blue" d="M783 181 L817 181" marker-end="url(#ah)"/>
+            <path class="blue" d="M1045 181 L1079 181" marker-end="url(#ah)"/>
+            <path class="blue" d="M1307 181 L1341 181" marker-end="url(#ah)"/>
+          </g>
+
+          <!-- text thật trên dây -->
+          <rect class="s" x="35" y="300" width="750" height="125" rx="14" fill="#fbf3dc"/>
+          <text class="tl" x="55" y="332" font-size="20" style="fill:#2f80d8;stroke:#2f80d8">Request đi trên dây (chỉ là text)</text>
+          <text class="tl" x="55" y="368" font-size="23">GET /orders/42 HTTP/1.1</text>
+          <text class="tl" x="55" y="402" font-size="23">Host: api.shop.vn · Authorization: Bearer ...</text>
+          <rect class="s" x="815" y="300" width="750" height="125" rx="14" fill="#fbf3dc"/>
+          <text class="tl" x="835" y="332" font-size="20" style="fill:#2fa24a;stroke:#2fa24a">Response quay về (cũng chỉ là text)</text>
+          <text class="tl" x="835" y="368" font-size="23">HTTP/1.1 200 OK · Content-Type: application/json</text>
+          <text class="tl" x="835" y="402" font-size="23">{"id":42,"status":"PAID"}</text>
+        </g>
+
+        <!-- CÂU CHỐT -->
+        <g transform="translate(0 1970)">
+          <rect class="s" x="60" y="0" width="1480" height="76" rx="16" fill="#fbe98a"/>
+          <text class="t" x="800" y="51" font-size="38">API = phần bên ngoài nhìn thấy và phụ thuộc vào. Đổi nó → người khác hỏng.</text>
+          <text class="t" x="800" y="118" font-size="19">API rộng hơn HTTP: module.exports, fs.readFile, DOM cũng là API · bồi bàn / ổ cắm chỉ là ẩn dụ để nhớ</text>
+        </g>
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>

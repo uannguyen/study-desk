@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bản chất microservices</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">Microservices: bản chất</h1>
+  <p class="sub">chia theo nghiệp vụ, deploy độc lập, đổi lại là độ phức tạp phân tán</p>
+  <section class="page">
+    <h2 class="page-no"><b>1</b>Bản chất &amp; đánh đổi</h2>
+
+    <div class="row c1">
+      <div class="cue"><b>Q1</b> Microservices là gì? Khác monolith ở điểm nào?
+        <small>từ khóa: independently deployable · business capability · own its data</small></div>
+      <div class="note hand">
+        <h3>① Độc lập, không phải “nhỏ”</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><polygon class="s3" points="-44,8 -36.3,0.3000000000000007 -14.3,0.3000000000000007 -22,8" fill="#fffdf5"/><polygon class="s3" points="-22,8 -14.3,0.3000000000000007 -14.3,22.3 -22,30" fill="#cbd3dc"/><rect class="s" x="-44" y="8" width="22" height="22" fill="#bfd9f2"/><polygon class="s3" points="-11,-26 -3.3000000000000007,-33.7 18.7,-33.7 11,-26" fill="#fffdf5"/><polygon class="s3" points="11,-26 18.7,-33.7 18.7,-11.7 11,-4" fill="#cbd3dc"/><rect class="s" x="-11" y="-26" width="22" height="22" fill="#f7da6a"/><polygon class="s3" points="18,6 25.7,-1.6999999999999993 47.7,-1.6999999999999993 40,6" fill="#fffdf5"/><polygon class="s3" points="40,6 47.7,-1.6999999999999993 47.7,20.3 40,28" fill="#cbd3dc"/><rect class="s" x="18" y="6" width="22" height="22" fill="#f9c0b4"/></svg>
+          <figcaption>mỗi ô tự đứng được</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Một tòa nhà chung cư thì sửa ống nước tầng 3 phải cắt nước cả tòa. Dãy nhà riêng thì nhà nào sửa nhà nấy.</p>
+        <p><span class="lb">Bên dưới</span>Hệ thống chia thành nhiều service; mỗi service <b>deploy độc lập</b>, <b>một team sở hữu</b>, <b>có DB riêng</b>, nói chuyện qua network (API, message). Chia theo <b>nghiệp vụ</b> (Order, Payment), không chia theo tầng kỹ thuật (controller, DB).</p>
+        <p><span class="lb">Ví dụ</span>Monolith: [Order | Payment | User] → 1 DB. Microservices: Order→DB1, Payment→DB2, User→DB3, nối nhau qua Gateway hoặc Queue.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>“Nhỏ” không phải định nghĩa. Trả lời “service nhỏ” là bị loại ngay; định nghĩa là <b>độc lập</b>.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Sửa Payment và deploy mà không cần hỏi team Order được không?</p>
+      </div>
+    </div>
+
+    <div class="row c2">
+      <div class="cue"><b>Q2</b> Vì sao công ty chuyển sang microservices? Vấn đề gốc là kỹ thuật hay tổ chức?
+        <small>từ khóa: team autonomy · Conway's Law · scale independently · fault isolation</small></div>
+      <div class="note hand">
+        <h3>② Gốc là tổ chức</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><g transform="translate(-26 8) scale(0.8)"><path class="s" d="M-15 30 q0 -26 15 -26 q15 0 15 26 z" fill="#f9c0b4"/><circle class="s" cx="0" cy="-12" r="10" fill="#fffdf5"/></g><g transform="translate(26 8) scale(0.8)"><path class="s" d="M-15 30 q0 -26 15 -26 q15 0 15 26 z" fill="#cdebd0"/><circle class="s" cx="0" cy="-12" r="10" fill="#fffdf5"/></g><g transform="translate(0 2) scale(1.0)"><path class="s" d="M-15 30 q0 -26 15 -26 q15 0 15 26 z" fill="#f7da6a"/><circle class="s" cx="0" cy="-12" r="10" fill="#fffdf5"/></g></svg>
+          <figcaption>nhiều team, đi độc lập</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Mười bạn cùng sửa một bài báo tường thì cãi nhau và chờ nhau. Mỗi nhóm một mảng thì ai cũng đi nhanh.</p>
+        <p><span class="lb">Bên dưới</span>Nhiều team cùng sửa một codebase → conflict, chờ nhau deploy, release chung. Thêm: scale lệch (payment nóng mà phải scale cả khối), cô lập lỗi (1 module leak memory sập cả app), tự chọn công nghệ/DB. Gốc là <b>tổ chức</b>, kỹ thuật đứng thứ hai.</p>
+        <p><span class="lb">Ví dụ</span>5 team chung một repo, thứ Sáu nào cũng đợi release chung → tách service để mỗi team ship lúc nào tùy ý.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Trả lời “để scale tốt hơn” rồi dừng là thiếu ý. Một team 3 người thì chưa có vấn đề tổ chức để chữa.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Công ty chỉ có 1 team 4 người, vấn đề “nhiều team” có tồn tại không?</p>
+      </div>
+    </div>
+
+    <div class="row c3">
+      <div class="cue"><b>Q3</b> Kể 3 cái giá phải trả cụ thể.
+        <small>từ khóa: fallacies of distributed computing · operational complexity</small></div>
+      <div class="note hand">
+        <h3>③ Mỗi service thêm một khoản phí</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-28 26 v9 a28 9 0 0 0 56 0 v-9" fill="#f2b84b"/><ellipse class="s" cx="0" cy="26" rx="28" ry="9" fill="#f7da6a"/><path class="s" d="M-28 15 v9 a28 9 0 0 0 56 0 v-9" fill="#f2b84b"/><ellipse class="s" cx="0" cy="15" rx="28" ry="9" fill="#f7da6a"/><path class="s" d="M-28 4 v9 a28 9 0 0 0 56 0 v-9" fill="#f2b84b"/><ellipse class="s" cx="0" cy="4" rx="28" ry="9" fill="#f7da6a"/><path class="s" d="M-28 -7 v9 a28 9 0 0 0 56 0 v-9" fill="#f2b84b"/><ellipse class="s" cx="0" cy="-7" rx="28" ry="9" fill="#f7da6a"/><text class="t" x="0" y="-18" font-size="26">$</text></svg>
+          <figcaption>mọi thứ đều có giá</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Một cửa hàng lớn đổi thành mười quầy nhỏ: quầy nào cũng cần thu ngân, chìa khóa, sổ sách riêng.</p>
+        <p><span class="lb">Bên dưới</span>(1) Hàm → <b>network call</b>: chậm hơn, có thể fail, timeout. (2) Mất transaction ACID xuyên service → eventual consistency, saga. (3) Debug khó: một lỗi đi qua N service nên cần tracing. Ngoài ra: N pipeline, N DB, monitoring, test tích hợp và quản version API.</p>
+        <p><span class="lb">Ví dụ</span>Hàm <code>getUser()</code> từng mất 0,1ms nay là HTTP 20ms và có thể timeout; trừ tiền + giữ hàng không còn chung một transaction.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Nói “vận hành phức tạp hơn” chung chung. Hãy nêu được ví dụ cụ thể như ví dụ trên.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Kể 3 thứ mà gọi hàm trong cùng process có sẵn nhưng network call thì không.</p>
+      </div>
+    </div>
+
+    <div class="row c4">
+      <div class="cue"><b>Q4</b> ⭐ Khi nào KHÔNG nên dùng microservices? Modular monolith là gì?
+        <small>từ khóa: MonolithFirst · modular monolith</small></div>
+      <div class="note hand">
+        <h3>④ Chưa đau thì đừng tách</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><polygon class="s" points="35.1,14.5 14.5,35.1 -14.5,35.1 -35.1,14.5 -35.1,-14.5 -14.5,-35.1 14.5,-35.1 35.1,-14.5" fill="#e87a6a"/><rect class="s3" x="-22" y="-6" width="44" height="12" rx="3" fill="#fffdf5"/></svg>
+          <figcaption>dừng lại, cân nhắc</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Chưa có con thì chưa cần mua nhà ba phòng ngủ. Nhà một phòng chia ngăn gọn là đủ.</p>
+        <p><span class="lb">Bên dưới</span>Không dùng khi team nhỏ (1–2 team), domain chưa ổn định, sản phẩm còn tìm hướng, chưa có CI/CD tự động và monitoring. Chọn <b>monolith first</b> hoặc <b>modular monolith</b>: một deploy nhưng chia module ranh giới rõ, không gọi chéo lung tung, sau này tách service theo đúng ranh giới đó.</p>
+        <p><span class="lb">Ví dụ</span>Startup 5 người: một app NestJS, chia module Order/Payment/User, mỗi module không import thẳng vào bảng của module khác.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Red flag: “microservices luôn tốt hơn để scale”. Người phỏng vấn thích câu trả lời biết nói “chưa cần”.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Monolith có module gọi chéo lung tung thì tách service có sạch hơn không? (Không, chỉ chuyển nợ sang network.)</p>
+      </div>
+    </div>
+
+    <div class="row c1">
+      <div class="cue"><b>Q5</b> Distributed monolith là gì? Hệ của bạn có phải không?
+        <small>từ khóa: lockstep deploy · shared database · chatty calls</small></div>
+      <div class="note hand">
+        <h3>⑤ Gánh phí mà không được lợi</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><rect class="s" x="-44" y="-12" width="24" height="24" rx="3" fill="#bfd9f2"/><rect class="s" x="20" y="-12" width="24" height="24" rx="3" fill="#f9c0b4"/><path class="s" d="M-24 0 H-4" fill="none" style="stroke-width:7"/><path d="M-24 0 H-4" fill="none" stroke="#cbd3dc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><rect class="s" x="-14" y="-9" width="30" height="18" rx="9" fill="none" style="stroke-width:7"/><rect x="-14" y="-9" width="30" height="18" rx="9" fill="none" stroke="#f7da6a" stroke-width="3"/><path class="s" d="M12 0 H24" fill="none" style="stroke-width:7"/><path d="M12 0 H24" fill="none" stroke="#cbd3dc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <figcaption>tách rồi vẫn dính</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Hiểu nôm na</span>Mười xe tải chở một chuyến hàng nhưng bị xích vào nhau: không xe nào chạy riêng được.</p>
+        <p><span class="lb">Bên dưới</span>Đã tách thành nhiều service nhưng vẫn phải <b>deploy cùng lúc</b>, <b>dùng chung DB</b>, hoặc <b>gọi đồng bộ thành chuỗi dài</b>. Gánh hết chi phí microservices mà không có lợi ích độc lập.</p>
+        <p><span class="lb">Ví dụ</span>Đổi một field ở service A thì B và C vỡ, phải release cả ba lúc 3 giờ sáng.</p>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Đừng phủ nhận khi được hỏi về hệ của mình. Nói được dấu hiệu và hướng gỡ (tách DB, bỏ chuỗi gọi) là điểm cộng.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Deploy riêng service X lúc 3 giờ chiều được không? Không → đang dính nhau.</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>monolith <code>BE/backend</code> đa tiến trình (<code>start*.js</code> nói chuyện qua STOMP) · <code>eco-consumer</code> 11 app NX · dùng chung Mongo <code>finviet</code> → có dấu hiệu distributed monolith.</p>
+    <div class="summary hand">
+      <h3>Summary</h3>
+      <p>Microservices = nhiều service <b>deploy độc lập, team riêng, DB riêng</b>, chia theo nghiệp vụ. Đổi lấy tốc độ cho nhiều team bằng độ phức tạp phân tán (network, mất ACID, debug, vận hành). Team nhỏ, domain chưa ổn → modular monolith. Tách mà vẫn dính nhau = distributed monolith.</p>
+    </div>
+  </section>
+
+  <p class="foot">Nguồn: On-tap/01c cặp 1 (dòng FV chép từ file đó). Ví dụ đời thường để hiểu, không chép vào vở.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JWT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9e6dc; color: #1d2433; font: 21px/32px 'Patrick Hand', 'Comic Sans MS', cursive; }
+  .sheet { max-width: 1024px; margin: 0 auto; padding: 36px 35px 40px; box-sizing: border-box;
+           background: #fbf9f2 repeating-linear-gradient(transparent 0 31px, #dbe4ee 31px 32px); }
+  h1, h2, h3, p { margin: 0; font-weight: normal; }
+  /* viền "vẽ tay" bằng border-radius lệch: không cần filter nên chữ không bị rung */
+  .hand { border: 2.5px solid #1d2433; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px; }
+  .title { background: #bcd9f5; text-align: center; padding: 14px 20px; font-size: 42px; line-height: 52px; }
+  .sub { display: table; margin: 14px auto 28px; background: #f9c9b6; padding: 4px 26px; font-size: 26px; border-radius: 999px; border: 2.5px solid #1d2433; }
+
+  /* Một .page = một trang Cornell: cột câu hỏi | cột nội dung, đáy là summary */
+  .page { margin-bottom: 44px; background: linear-gradient(90deg, transparent 288px, #e8a0a0 288px 290px, transparent 290px); }
+  .page-no { display: table; position: relative; padding-right: 12px; background: #fbf9f2; font-size: 24px; margin-bottom: 12px; }  /* nền che lề đỏ khi tên cụm dài */
+  .page-no b { background: #f9c9b6; border: 2.5px solid #1d2433; border-radius: 50%; display: inline-block; width: 38px; text-align: center; margin-right: 8px; }
+  /* Một .row = một cặp Q ↔ khối, nên Q luôn ngang hàng khối của nó */
+  .row { display: grid; grid-template-columns: 270px 1fr; gap: 0 38px; margin-bottom: 26px; }
+  .row.c1 { --c: #c5def5; } .row.c2 { --c: #cfe8cf; } .row.c3 { --c: #fbd3b4; } .row.c4 { --c: #ddd3f2; }
+  .cue { font-size: 22px; padding-top: 4px; }
+  .cue b { background: var(--c); border: 2px solid #1d2433; border-radius: 8px; padding: 0 8px; margin-right: 4px; }
+  .cue small { display: block; margin-top: 6px; font-size: 18px; line-height: 26px; color: #5a6475; }
+  .note { padding: 14px 20px 16px; background: #fffdf7; }
+  .note h3 { display: table; background: var(--c); border: 2px solid #1d2433; border-radius: 999px; padding: 0 18px; font-size: 27px; line-height: 40px; margin-bottom: 8px; }
+  .note p { margin: 6px 0; }
+  code { font-family: inherit; background: #efe9de; border-radius: 5px; padding: 0 5px; }
+  .lb { font-size: 18px; background: #efe9de; border-radius: 6px; padding: 0 7px; margin-right: 6px; white-space: nowrap; }
+  .kid .lb { background: #fbe98a; } .warn .lb { background: #f6b3a8; } .test .lb { background: #cfe8cf; }
+  .doodle { float: right; width: 150px; margin: 4px 0 6px 18px; text-align: center; font-size: 17px; line-height: 22px; }
+  .doodle svg { width: 120px; height: 120px; display: block; margin: 0 auto 2px; overflow: visible; filter: url(#wobble); }
+  .note::after { content: ""; display: block; clear: both; }
+  .fv { margin: 4px 0 12px 308px; font-size: 20px; }
+  .fv .lb { background: #c5def5; }
+  .summary { background: #fbe98a; padding: 12px 22px 14px; }
+  .summary h3 { font-size: 26px; margin-bottom: 2px; }
+  .foot { font-size: 18px; color: #5a6475; text-align: center; }
+
+  /* nét SVG doodle, giống template-vertical.html */
+  .s  { stroke: #1d2433; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .s2 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .s3 { stroke: #1d2433; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .t  { font-family: 'Patrick Hand', 'Comic Sans MS', cursive; fill: #1d2433; text-anchor: middle; stroke: #1d2433; stroke-width: 0.6; }
+  .ink { stroke: #1d2433; stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .note pre { font: 16px/23px ui-monospace, 'SFMono-Regular', Menlo, monospace; background: #efe9de; border-radius: 6px; padding: 6px 10px; margin: 4px 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  /* khung khối gọn: Nôm na → Chốt → Ví dụ → Áp dụng → Bẫy → Tự kiểm */
+  .note h3 small { font-size: 21px; color: #5a6475; }
+  .chot .lb { background: #fbe98a; } .vd .lb { background: #f9c9b6; } .ap .lb { background: #c5def5; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 6px; }
+  .flow span { border: 2px solid #1d2433; border-radius: 10px; padding: 0 9px; background: #fff; font-size: 19px; line-height: 28px; }
+  .flow span.ok { background: #cfe8cf; } .flow span.no { background: #f6b3a8; }
+  .flow i { font-style: normal; color: #2f80d8; font-size: 22px; }
+  table.mini { border-collapse: collapse; font-size: 19px; line-height: 26px; margin: 4px 0 8px; }
+  table.mini th, table.mini td { border: 2px solid #1d2433; padding: 2px 10px; text-align: left; vertical-align: top; }
+  table.mini th { background: var(--c); font-weight: normal; }
+  .ap ul, .vd ol { margin: 0; padding-left: 24px; }
+  .vd { clear: right; }  /* ví dụ luôn nằm dưới doodle để đủ bề ngang */
+</style>
+</head>
+<body>
+<!-- Filter nét rung dùng chung, CHỈ áp lên SVG doodle (.doodle svg), không áp lên chữ. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<main class="sheet">
+  <h1 class="title hand">4.2 · JWT: client giữ thẻ có ký</h1>
+  <p class="sub">4.2 JWT = header.payload.signature → 4.2.1 HS256 · 4.2.2 RS256 → 4.2.3 Chọn Session hay JWT</p>
+
+  <section class="page">
+    <h2 class="page-no"><b>1</b>JWT: thẻ có chữ ký</h2>
+
+    <div class="row c2">
+      <div class="cue"><b>Q1</b> ⭐ JWT gồm những gì? Vì sao server không cần lưu gì?
+        <small>từ khóa: header.payload.signature · claims · exp · stateless</small></div>
+      <div class="note hand">
+        <h3>4.2 JWT: client giữ thẻ có ký</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M-24 -36 H12 L24 -24 V34 H-24 Z" fill="#fffdf5"/><path class="s3" d="M12 -36 V-24 H24 Z" fill="#cbd3dc"/><path class="s2" d="M-15 -20 H3 M-15 -10 H12 M-15 0 H12"/><path class="ink" d="M-16 20 q4 -12 8 0 q4 8 8 -4 q4 -6 10 0" stroke="#e0652d" style="stroke-width:2.5"/><circle class="s" cx="14" cy="26" r="9" fill="#e87a6a"/><circle class="s3" cx="14" cy="26" r="3" fill="#f7da6a"/></svg>
+          <figcaption>thẻ ghi sẵn thông tin, có chữ ký</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Vé ca nhạc in sẵn tên, khu ghế, giờ hết hạn và có tem chống giả. Nhân viên soát vé chỉ kiểm tem, không gọi về văn phòng tra sổ.</p>
+        <p class="chot"><span class="lb">Chốt</span>Ba phần base64url nối bằng dấu chấm. Server kiểm <b>chữ ký + exp</b> là tin payload, không tra DB. <b>Stateless</b>.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><pre>header    { &quot;alg&quot;: &quot;RS256&quot;, &quot;kid&quot;: &quot;k1&quot; }
+payload   { &quot;sub&quot;:&quot;42&quot;, &quot;role&quot;:&quot;staff&quot;, &quot;exp&quot;:1792317600 }
+signature = ký(header + &quot;.&quot; + payload)</pre><div class="flow"><span>Sửa "staff" thành "admin" rồi gửi</span><i>→</i><span class="no">✗ chữ ký lệch → 401</span></div></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Payload chỉ để thứ không bí mật: id, role, exp. Gửi qua header <code>Authorization: Bearer &lt;token&gt;</code>.</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>JWT chỉ <b>ký</b>, không mã hoá: dán vào jwt.io là đọc được payload. Không bỏ CCCD, số dư, password vào.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Hai server khác nhau nhận cùng một JWT, có cần chung kho session không? (không, chỉ cần khoá để kiểm chữ ký)</p>
+      </div>
+    </div>
+    <div class="row c3">
+      <div class="cue"><b>Q2</b> HS256 và RS256 khác nhau thế nào? Khi nào dùng cái nào?
+        <small>từ khóa: HMAC · RSA signature · JWKS · kid · algorithm confusion</small></div>
+      <div class="note hand">
+        <h3>4.2.1 HS256 = HMAC (3.1) · 4.2.2 RS256 = chữ ký số (3.2)</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="s" d="M0 0 L0.0 -30.0"/><path class="s" d="M0 0 L30.4 -9.3"/><path class="s" d="M0 0 L18.8 24.3"/><path class="s" d="M0 0 L-18.8 24.3"/><path class="s" d="M0 0 L-30.4 -9.3"/><circle class="s" cx="0.0" cy="-30.0" r="8" fill="#bfd9f2"/><circle class="s" cx="30.4" cy="-9.3" r="8" fill="#bfd9f2"/><circle class="s" cx="18.8" cy="24.3" r="8" fill="#bfd9f2"/><circle class="s" cx="-18.8" cy="24.3" r="8" fill="#bfd9f2"/><circle class="s" cx="-30.4" cy="-9.3" r="8" fill="#bfd9f2"/><circle class="s" cx="0" cy="0" r="12" fill="#f7da6a"/></svg>
+          <figcaption>1 nơi ký, nhiều nơi kiểm</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>HS256: mọi cổng soát vé giữ cùng con dấu, một cổng làm lộ là ai cũng in được vé giả. RS256: chỉ phòng vé có con dấu, các cổng chỉ có mẫu để so.</p>
+        <p class="chot"><span class="lb">Chốt</span>HS256 ký và kiểm bằng <b>cùng một secret</b>. RS256 ký bằng <b>private</b>, kiểm bằng <b>public</b>.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><table class="mini"><tr><th></th><th>HS256</th><th>RS256</th></tr><tr><td>Kiểm bằng</td><td>chính secret dùng để ký</td><td>public key (lấy qua JWKS)</td></tr><tr><td>Ai giả được token</td><td>mọi nơi giữ secret</td><td>chỉ nơi giữ private</td></tr><tr><td>Hợp với</td><td>1 backend tự phát tự kiểm</td><td>SSO, nhiều service</td></tr></table></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Luôn khoá thuật toán khi verify: <code>jwt.verify(token, publicKey, { algorithms: ['RS256'] })</code>.</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Không khoá <code>algorithms</code>: kẻ gian đổi alg sang HS256 rồi ký bằng chính public key (algorithm confusion).</p>
+        <p class="test"><span class="lb">Tự kiểm</span>10 service cùng kiểm token do Keycloak phát: HS256 hay RS256? (RS256)</p>
+      </div>
+    </div>
+    <div class="row c4">
+      <div class="cue"><b>Q3</b> ⭐ JWT hay Session? Bạn chọn cái nào, vì sao?
+        <small>từ khóa: revocation · stateless vs stateful · logout · scale</small></div>
+      <div class="note hand">
+        <h3>4.2.3 Chọn Session (4.1) hay JWT (4.2)</h3>
+        <figure class="doodle">
+          <svg viewBox="-50 -50 100 100"><path class="ink" d="M0 -32 V30 M-16 32 H16"/><path class="ink" d="M-32 -18 L32 -22"/><path class="s2" d="M-32 -18 L-42 8 M-32 -18 L-22 8 M32 -22 L22 4 M32 -22 L42 4"/><path class="s" d="M-44 8 Q-32 24 -20 8 Z" fill="#bfd9f2"/><path class="s" d="M20 4 Q32 20 44 4 Z" fill="#f9c0b4"/><circle class="s3" cx="0" cy="-34" r="4" fill="#f7da6a"/></svg>
+          <figcaption>thu hồi ngay vs không cần sổ</figcaption>
+        </figure>
+        <p class="kid"><span class="lb">Nôm na</span>Sổ gửi xe thì bác bảo vệ gạch tên là xong. Vé ca nhạc đã phát thì không thu lại được trước giờ hết hạn.</p>
+        <p class="chot"><span class="lb">Chốt</span>Câu hỏi quyết định: <b>có cần thu hồi ngay không?</b> Session thu hồi tức thì; JWT phải đợi exp hoặc tự làm blacklist.</p>
+        <div class="vd"><span class="lb">Ví dụ</span><table class="mini"><tr><th></th><th>Session</th><th>JWT</th></tr><tr><td>Logout, khoá tài khoản</td><td>xoá sổ là xong ngay</td><td>đợi hết exp</td></tr><tr><td>Server phải lưu</td><td>có (Redis)</td><td>không</td></tr><tr><td>Nhiều service, mobile, SSO</td><td>phải chung kho session</td><td>service nào cũng tự kiểm</td></tr></table></div>
+        <div class="ap"><span class="lb">Áp dụng</span>Một web app + một backend, cần logout ngay → session. Nhiều service, mobile, SSO → JWT access token ngắn + refresh token lưu ở server.</div>
+        <p class="warn"><span class="lb">⚠ Bẫy</span>Trả lời “JWT hiện đại hơn” là trượt. Nêu tiêu chí thu hồi trước, rồi mới chọn.</p>
+        <p class="test"><span class="lb">Tự kiểm</span>Admin khoá user đang cầm JWT sống 1 ngày, không có blacklist. User còn dùng được bao lâu? (tới khi hết exp, tối đa 1 ngày)</p>
+      </div>
+    </div>
+
+    <p class="fv"><span class="lb">FV</span>Service verify JWT của SSO Keycloak bằng public key, tức là RS256. Tự hỏi: app ví mobile giữ phiên bằng session hay token, token để ở đâu?</p>
+    <div class="summary hand"><h3>Summary</h3><p>JWT: client giữ thẻ có ký, server chỉ kiểm chữ ký và exp, không tra DB; payload ai cũng đọc được nên không để bí mật. HS256 dùng HMAC (cùng secret), RS256 dùng chữ ký số (private ký, public kiểm). Cần thu hồi ngay và một backend → session; nhiều service, SSO → JWT.</p></div>
+  </section>
+
+  <p class="foot">Nguồn: RFC 7519 (JWT), RFC 8725 (JWT BCP). Trước: 4.1 Session · Tiếp theo: 4.3 Dùng JWT cho đúng.</p>
+</main>
+<!-- render.sh đọc data-h (chiều cao trang sau khi font tải xong) để chụp PNG đúng cỡ -->
+<script>addEventListener('load', () => document.fonts.ready.then(() => { document.documentElement.dataset.h = document.documentElement.scrollHeight; }));</script>
+</body>
+</html>

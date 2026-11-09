@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kiến trúc và repository</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap&subset=vietnamese"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        background: #e9e6dc;
+        display: flex;
+        justify-content: center;
+      }
+      svg {
+        width: 100%;
+        max-width: 1024px;
+        height: auto;
+        display: block;
+        background: #fbf9f2;
+      }
+      .s {
+        stroke: #1d2433;
+        stroke-width: 2.5;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .s2 {
+        stroke: #1d2433;
+        stroke-width: 1.8;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        fill: none;
+      }
+      .t {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        text-anchor: middle;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .tl {
+        font-family: "Patrick Hand", "Comic Sans MS", cursive;
+        fill: #1d2433;
+        stroke: #1d2433;
+        stroke-width: 0.6;
+      }
+      .blue {
+        stroke: #2f80d8;
+        stroke-width: 3;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      viewBox="0 0 1024 1536"
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Monolithic architecture khác monorepo: kiến trúc là cách hệ thống chạy, repository là nơi cất code"
+    >
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="3" cy="3" r="1.2" fill="#cfcabb" />
+        </pattern>
+        <filter id="wobble" x="-5%" y="-5%" width="110%" height="110%">
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.018"
+            numOctaves="2"
+            seed="7"
+            result="n"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="n"
+            scale="3"
+            xChannelSelector="R"
+            yChannelSelector="G"
+          />
+        </filter>
+        <marker
+          id="ah"
+          viewBox="0 0 10 10"
+          refX="8"
+          refY="5"
+          markerWidth="7"
+          markerHeight="7"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M1 1 L9 5 L1 9"
+            fill="none"
+            stroke="#2f80d8"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </marker>
+      </defs>
+
+      <rect width="1024" height="1536" fill="#fbf9f2" />
+      <rect width="1024" height="1536" fill="url(#dots)" />
+
+      <g filter="url(#wobble)">
+        <!-- ============ TIÊU ĐỀ ============ -->
+        <rect
+          class="s"
+          x="40"
+          y="30"
+          width="944"
+          height="100"
+          rx="16"
+          fill="#bcd9f5"
+        />
+        <text class="t" x="512" y="95" font-size="42">
+          CÙNG CHỮ “MONOLITHIC” — NHƯNG KHÁC CHỦ ĐỀ
+        </text>
+
+        <rect
+          class="s"
+          x="262"
+          y="143"
+          width="500"
+          height="52"
+          rx="26"
+          fill="#f9c9b6"
+        />
+        <text class="t" x="512" y="179" font-size="30">
+          monolithic = gom thành một khối
+        </text>
+        <path
+          class="s2"
+          d="M222 152 l16 8 M222 170 l16 -4 M802 152 l-16 8 M802 170 l-16 -4"
+          stroke="#e8793a"
+        />
+
+        <!-- ============ TOPIC 1 ============ -->
+        <rect
+          class="s"
+          x="35"
+          y="215"
+          width="955"
+          height="66"
+          rx="12"
+          fill="#c5def5"
+        />
+        <text class="tl" x="55" y="262" font-size="36">
+          TOPIC 1 — KIẾN TRÚC: Hệ thống chạy như thế nào?
+        </text>
+        <text class="t" x="330" y="305" font-size="22">
+          (Software architecture)
+        </text>
+
+        <!-- box trái: monolithic -->
+        <rect
+          class="s"
+          x="35"
+          y="318"
+          width="450"
+          height="350"
+          rx="18"
+          fill="#fffdf5"
+        />
+        <rect
+          class="s"
+          x="75"
+          y="332"
+          width="370"
+          height="50"
+          rx="12"
+          fill="#fbd3b4"
+        />
+        <text class="t" x="260" y="368" font-size="32">
+          Monolithic architecture
+        </text>
+
+        <!-- nhà lớn -->
+        <rect class="s" x="345" y="400" width="30" height="50" fill="#d9795f" />
+        <polygon class="s" points="90,478 260,395 430,478" fill="#e9937a" />
+        <rect
+          class="s"
+          x="110"
+          y="478"
+          width="300"
+          height="104"
+          fill="#fffdf5"
+        />
+        <line class="s" x1="210" y1="478" x2="210" y2="582" />
+        <line class="s" x1="310" y1="478" x2="310" y2="582" />
+        <!-- kitchen -->
+        <rect
+          class="s2"
+          x="150"
+          y="478"
+          width="12"
+          height="14"
+          fill="#b9c6d3"
+        />
+        <polygon
+          class="s"
+          points="132,494 180,494 172,512 140,512"
+          fill="#b9c6d3"
+        />
+        <rect class="s" x="118" y="538" width="84" height="44" fill="#f2b84b" />
+        <line class="s2" x1="160" y1="540" x2="160" y2="580" />
+        <rect class="s" x="124" y="526" width="34" height="12" fill="#cbd3dc" />
+        <rect class="s" x="170" y="520" width="24" height="18" fill="#c9895a" />
+        <!-- bedroom -->
+        <rect class="s" x="240" y="490" width="34" height="26" fill="#cfe8ff" />
+        <path class="s2" d="M246 510 l8 -8 l6 5 l8 -9" />
+        <rect class="s" x="220" y="534" width="10" height="48" fill="#7fa8dd" />
+        <rect class="s" x="226" y="556" width="72" height="26" fill="#7fa8dd" />
+        <rect
+          class="s"
+          x="230"
+          y="544"
+          width="24"
+          height="14"
+          rx="4"
+          fill="#ffffff"
+        />
+        <rect class="s" x="296" y="560" width="12" height="22" fill="#e8a33d" />
+        <polygon class="s" points="294,545 310,545 302,528" fill="#f6e27a" />
+        <!-- bathroom -->
+        <rect class="s" x="320" y="522" width="26" height="22" fill="#ffffff" />
+        <ellipse class="s" cx="336" cy="556" rx="18" ry="10" fill="#ffffff" />
+        <rect class="s" x="326" y="558" width="20" height="24" fill="#ffffff" />
+        <rect class="s" x="368" y="486" width="36" height="96" fill="#d7ecf7" />
+        <circle class="s2" cx="386" cy="498" r="6" />
+        <path class="s2" d="M378 512 v8 M386 512 v12 M394 512 v8" />
+        <!-- cây -->
+        <ellipse class="s" cx="76" cy="566" rx="30" ry="24" fill="#7fc47f" />
+        <ellipse class="s" cx="444" cy="566" rx="30" ry="24" fill="#7fc47f" />
+        <text class="t" x="160" y="612" font-size="20">kitchen</text>
+        <text class="t" x="260" y="612" font-size="20">bedroom</text>
+        <text class="t" x="360" y="612" font-size="20">bathroom</text>
+        <rect x="55" y="624" width="410" height="34" rx="10" fill="#cfe0f5" />
+        <text class="t" x="260" y="650" font-size="24">
+          1 ứng dụng lớn – triển khai như một khối
+        </text>
+
+        <!-- hoặc -->
+        <text class="t" x="533" y="478" font-size="30">hoặc</text>
+        <path
+          class="blue"
+          d="M508 512 L558 512"
+          marker-start="url(#ah)"
+          marker-end="url(#ah)"
+        />
+
+        <!-- box phải: microservices -->
+        <rect
+          class="s"
+          x="580"
+          y="318"
+          width="410"
+          height="350"
+          rx="18"
+          fill="#fffdf5"
+        />
+        <rect
+          class="s"
+          x="600"
+          y="332"
+          width="370"
+          height="50"
+          rx="12"
+          fill="#fbd3b4"
+        />
+        <text class="t" x="785" y="368" font-size="30">
+          Microservices architecture
+        </text>
+
+        <!-- nhà 1: gear -->
+        <polygon class="s" points="601,502 655,456 709,502" fill="#e9937a" />
+        <rect
+          class="s"
+          x="605"
+          y="502"
+          width="100"
+          height="80"
+          fill="#fffdf5"
+        />
+        <g transform="translate(655 544)">
+          <g stroke="#2f6fbf" stroke-width="7" stroke-linecap="butt">
+            <line x1="-22" y1="0" x2="22" y2="0" />
+            <line x1="0" y1="-22" x2="0" y2="22" />
+            <line x1="-16" y1="-16" x2="16" y2="16" />
+            <line x1="-16" y1="16" x2="16" y2="-16" />
+          </g>
+          <circle class="s2" r="17" fill="#6fa3e0" />
+          <circle class="s2" r="7" fill="#fffdf5" />
+        </g>
+        <!-- nhà 2: cart -->
+        <polygon class="s" points="731,502 785,456 839,502" fill="#6aa0d8" />
+        <rect
+          class="s"
+          x="735"
+          y="502"
+          width="100"
+          height="80"
+          fill="#fffdf5"
+        />
+        <polyline
+          class="s"
+          points="761,524 772,524 778,554 806,554 812,532 774,532"
+          fill="#9bd9a0"
+        />
+        <circle class="s2" cx="782" cy="565" r="4" fill="#1d2433" />
+        <circle class="s2" cx="803" cy="565" r="4" fill="#1d2433" />
+        <!-- nhà 3: database -->
+        <polygon class="s" points="861,502 915,456 969,502" fill="#6fbf73" />
+        <rect
+          class="s"
+          x="865"
+          y="502"
+          width="100"
+          height="80"
+          fill="#fffdf5"
+        />
+        <path class="s" d="M900 530 v28 a15 6 0 0 0 30 0 v-28" fill="#a58fd6" />
+        <ellipse class="s" cx="915" cy="530" rx="15" ry="6" fill="#c7b8ec" />
+        <path class="s2" d="M900 544 a15 6 0 0 0 30 0" />
+        <!-- cây + cỏ -->
+        <ellipse class="s" cx="598" cy="568" rx="14" ry="16" fill="#7fc47f" />
+        <ellipse class="s" cx="974" cy="568" rx="14" ry="16" fill="#7fc47f" />
+        <path
+          class="s2"
+          d="M625 596 l4 -8 M650 596 l0 -8 M760 596 l4 -8 M790 596 l0 -8 M890 596 l4 -8 M920 596 l0 -8"
+          stroke="#4fa355"
+        />
+        <path
+          class="s2"
+          d="M624 450 l-6 -10 M700 440 l6 -10"
+          stroke="#2f80d8"
+        />
+        <path class="s2" d="M950 450 l8 -12 M968 466 l12 -4" stroke="#2f80d8" />
+        <rect x="600" y="624" width="370" height="34" rx="10" fill="#cfe0f5" />
+        <text class="t" x="785" y="650" font-size="24">
+          nhiều dịch vụ độc lập
+        </text>
+
+        <!-- ============ TOPIC 2 ============ -->
+        <rect
+          class="s"
+          x="35"
+          y="712"
+          width="955"
+          height="66"
+          rx="12"
+          fill="#c5def5"
+        />
+        <text class="tl" x="55" y="759" font-size="36">
+          TOPIC 2 — REPOSITORY: Code được cất ở đâu?
+        </text>
+
+        <!-- box trái: monorepo -->
+        <rect
+          class="s"
+          x="35"
+          y="800"
+          width="450"
+          height="360"
+          rx="18"
+          fill="#fffdf5"
+        />
+        <rect
+          class="s"
+          x="55"
+          y="814"
+          width="410"
+          height="46"
+          rx="12"
+          fill="#fbd3b4"
+        />
+        <text class="t" x="260" y="848" font-size="28">
+          Monorepo (monolithic repository)
+        </text>
+        <!-- cánh cửa mở -->
+        <polygon
+          class="s"
+          points="115,884 60,896 60,1076 115,1088"
+          fill="#b9824c"
+        />
+        <polygon
+          class="s"
+          points="405,884 460,896 460,1076 405,1088"
+          fill="#b9824c"
+        />
+        <circle class="s2" cx="68" cy="985" r="3" fill="#1d2433" />
+        <circle class="s2" cx="452" cy="985" r="3" fill="#1d2433" />
+        <rect
+          class="s"
+          x="115"
+          y="876"
+          width="290"
+          height="216"
+          fill="#a8723f"
+        />
+        <rect
+          class="s2"
+          x="132"
+          y="892"
+          width="256"
+          height="184"
+          fill="#ead8b6"
+        />
+        <rect
+          class="s"
+          x="132"
+          y="978"
+          width="256"
+          height="10"
+          fill="#a8723f"
+        />
+        <!-- 6 folders -->
+        <g font-size="14">
+          <!-- hàng 1 -->
+          <g>
+            <path class="s" d="M146 912 h22 l5 7 h-27z" fill="#6aa0d8" />
+            <rect
+              class="s"
+              x="146"
+              y="919"
+              width="66"
+              height="52"
+              rx="4"
+              fill="#82b5ea"
+            />
+            <rect x="150" y="944" width="58" height="20" fill="#fffdf5" />
+            <text class="t" x="179" y="959" stroke-width="0.3">frontend</text>
+          </g>
+          <g>
+            <path class="s" d="M227 912 h22 l5 7 h-27z" fill="#f0913a" />
+            <rect
+              class="s"
+              x="227"
+              y="919"
+              width="66"
+              height="52"
+              rx="4"
+              fill="#f7ad62"
+            />
+            <rect x="231" y="944" width="58" height="20" fill="#fffdf5" />
+            <text class="t" x="260" y="959" stroke-width="0.3">backend</text>
+          </g>
+          <g>
+            <path class="s" d="M308 912 h22 l5 7 h-27z" fill="#5cb87a" />
+            <rect
+              class="s"
+              x="308"
+              y="919"
+              width="66"
+              height="52"
+              rx="4"
+              fill="#7fd098"
+            />
+            <rect x="312" y="944" width="58" height="20" fill="#fffdf5" />
+            <text class="t" x="341" y="959" stroke-width="0.3">mobile</text>
+          </g>
+          <!-- hàng 2 -->
+          <g>
+            <path class="s" d="M146 1004 h22 l5 7 h-27z" fill="#9a7fd0" />
+            <rect
+              class="s"
+              x="146"
+              y="1011"
+              width="66"
+              height="52"
+              rx="4"
+              fill="#b7a0e6"
+            />
+            <rect x="150" y="1036" width="58" height="20" fill="#fffdf5" />
+            <text class="t" x="179" y="1051" stroke-width="0.3">shared</text>
+          </g>
+          <g>
+            <path class="s" d="M227 1004 h22 l5 7 h-27z" fill="#e8c23a" />
+            <rect
+              class="s"
+              x="227"
+              y="1011"
+              width="66"
+              height="52"
+              rx="4"
+              fill="#f7da6a"
+            />
+            <rect x="231" y="1036" width="58" height="20" fill="#fffdf5" />
+            <text class="t" x="260" y="1051" stroke-width="0.3">tools</text>
+          </g>
+          <g>
+            <path class="s" d="M308 1004 h22 l5 7 h-27z" fill="#e87aa8" />
+            <rect
+              class="s"
+              x="308"
+              y="1011"
+              width="66"
+              height="52"
+              rx="4"
+              fill="#f6a3c4"
+            />
+            <rect x="312" y="1036" width="58" height="20" fill="#fffdf5" />
+            <text class="t" x="341" y="1051" stroke-width="0.3">docs</text>
+          </g>
+        </g>
+        <rect x="55" y="1104" width="410" height="38" rx="10" fill="#cfe0f5" />
+        <text class="t" x="260" y="1132" font-size="24">
+          nhiều phần code trong 1 Git repo
+        </text>
+
+        <!-- hoặc -->
+        <text class="t" x="533" y="975" font-size="30">hoặc</text>
+        <path
+          class="blue"
+          d="M508 1008 L558 1008"
+          marker-start="url(#ah)"
+          marker-end="url(#ah)"
+        />
+
+        <!-- box phải: polyrepo -->
+        <rect
+          class="s"
+          x="580"
+          y="800"
+          width="410"
+          height="360"
+          rx="18"
+          fill="#fffdf5"
+        />
+        <rect
+          class="s"
+          x="600"
+          y="814"
+          width="370"
+          height="46"
+          rx="12"
+          fill="#fbd3b4"
+        />
+        <text class="t" x="785" y="850" font-size="32">Polyrepo</text>
+        <path
+          class="s2"
+          d="M640 884 l-6 -12 M650 880 l0 -12 M930 884 l8 -12 M944 892 l12 -8"
+          stroke="#2f80d8"
+        />
+        <!-- 3 tủ nhỏ -->
+        <g>
+          <rect
+            class="s"
+            x="606"
+            y="898"
+            width="112"
+            height="14"
+            fill="#a8723f"
+          />
+          <rect
+            class="s"
+            x="612"
+            y="912"
+            width="100"
+            height="168"
+            fill="#b9824c"
+          />
+          <rect
+            class="s2"
+            x="622"
+            y="922"
+            width="80"
+            height="94"
+            fill="#ead8b6"
+          />
+          <path class="s" d="M634 946 h22 l5 7 h-27z" fill="#5a8ed8" />
+          <rect
+            class="s"
+            x="634"
+            y="953"
+            width="58"
+            height="50"
+            rx="4"
+            fill="#6aa0f0"
+          />
+          <rect x="638" y="976" width="50" height="20" fill="#fffdf5" />
+          <text class="t" x="663" y="992" font-size="15" stroke-width="0.3">
+            repo-1
+          </text>
+          <rect
+            class="s"
+            x="622"
+            y="1026"
+            width="80"
+            height="44"
+            rx="4"
+            fill="#c99560"
+          />
+          <line class="s" x1="650" y1="1048" x2="674" y2="1048" />
+        </g>
+        <g>
+          <rect
+            class="s"
+            x="736"
+            y="898"
+            width="112"
+            height="14"
+            fill="#a8723f"
+          />
+          <rect
+            class="s"
+            x="742"
+            y="912"
+            width="100"
+            height="168"
+            fill="#b9824c"
+          />
+          <rect
+            class="s2"
+            x="752"
+            y="922"
+            width="80"
+            height="94"
+            fill="#ead8b6"
+          />
+          <path class="s" d="M764 946 h22 l5 7 h-27z" fill="#5cb87a" />
+          <rect
+            class="s"
+            x="764"
+            y="953"
+            width="58"
+            height="50"
+            rx="4"
+            fill="#7fd098"
+          />
+          <rect x="768" y="976" width="50" height="20" fill="#fffdf5" />
+          <text class="t" x="793" y="992" font-size="15" stroke-width="0.3">
+            repo-2
+          </text>
+          <rect
+            class="s"
+            x="752"
+            y="1026"
+            width="80"
+            height="44"
+            rx="4"
+            fill="#c99560"
+          />
+          <line class="s" x1="780" y1="1048" x2="804" y2="1048" />
+        </g>
+        <g>
+          <rect
+            class="s"
+            x="866"
+            y="898"
+            width="112"
+            height="14"
+            fill="#a8723f"
+          />
+          <rect
+            class="s"
+            x="872"
+            y="912"
+            width="100"
+            height="168"
+            fill="#b9824c"
+          />
+          <rect
+            class="s2"
+            x="882"
+            y="922"
+            width="80"
+            height="94"
+            fill="#ead8b6"
+          />
+          <path class="s" d="M894 946 h22 l5 7 h-27z" fill="#9a7fd0" />
+          <rect
+            class="s"
+            x="894"
+            y="953"
+            width="58"
+            height="50"
+            rx="4"
+            fill="#b7a0e6"
+          />
+          <rect x="898" y="976" width="50" height="20" fill="#fffdf5" />
+          <text class="t" x="923" y="992" font-size="15" stroke-width="0.3">
+            repo-3
+          </text>
+          <rect
+            class="s"
+            x="882"
+            y="1026"
+            width="80"
+            height="44"
+            rx="4"
+            fill="#c99560"
+          />
+          <line class="s" x1="910" y1="1048" x2="934" y2="1048" />
+        </g>
+        <rect x="600" y="1104" width="370" height="38" rx="10" fill="#cfe0f5" />
+        <text class="t" x="785" y="1132" font-size="24">
+          code nằm trong nhiều Git repo
+        </text>
+
+        <!-- ============ BẢNG 2x2 ============ -->
+        <g>
+          <rect
+            class="s"
+            x="400"
+            y="1195"
+            width="210"
+            height="52"
+            fill="#bcd9f5"
+          />
+          <rect
+            class="s"
+            x="610"
+            y="1195"
+            width="210"
+            height="52"
+            fill="#bcd9f5"
+          />
+          <rect
+            class="s"
+            x="200"
+            y="1247"
+            width="200"
+            height="66"
+            fill="#bcd9f5"
+          />
+          <rect
+            class="s"
+            x="200"
+            y="1313"
+            width="200"
+            height="66"
+            fill="#bcd9f5"
+          />
+          <rect
+            class="s"
+            x="400"
+            y="1247"
+            width="210"
+            height="66"
+            fill="#fffdf5"
+          />
+          <rect
+            class="s"
+            x="610"
+            y="1247"
+            width="210"
+            height="66"
+            fill="#fffdf5"
+          />
+          <rect
+            class="s"
+            x="400"
+            y="1313"
+            width="210"
+            height="66"
+            fill="#fffdf5"
+          />
+          <rect
+            class="s"
+            x="610"
+            y="1313"
+            width="210"
+            height="66"
+            fill="#fffdf5"
+          />
+          <text class="t" x="505" y="1232" font-size="30">Monorepo</text>
+          <text class="t" x="715" y="1232" font-size="30">Polyrepo</text>
+          <text class="t" x="300" y="1292" font-size="30">Monolith</text>
+          <text class="t" x="300" y="1358" font-size="30">Microservices</text>
+          <g
+            fill="none"
+            stroke="#2fa24a"
+            stroke-width="7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M485 1282 l14 16 l28 -34" />
+            <path d="M695 1282 l14 16 l28 -34" />
+            <path d="M485 1348 l14 16 l28 -34" />
+            <path d="M695 1348 l14 16 l28 -34" />
+          </g>
+        </g>
+
+        <!-- ============ CÂU CHỐT ============ -->
+        <rect
+          class="s"
+          x="60"
+          y="1410"
+          width="904"
+          height="76"
+          rx="16"
+          fill="#fbe98a"
+        />
+        <text class="t" x="512" y="1462" font-size="42">
+          Architecture ≠ Repository. Chọn 1 loại ở mỗi topic.
+        </text>
+        <path
+          class="s2"
+          d="M30 1430 l14 8 M28 1456 l16 -4 M994 1430 l-14 8 M996 1456 l-16 -4"
+          stroke="#e0a800"
+        />
+      </g>
+    </svg>
+    <script>
+      // Xem như canvas: Space + kéo chuột (hoặc kéo nút giữa) để rê, lăn chuột để cuộn (Shift: ngang), Ctrl + lăn hoặc pinch để phóng tại con trỏ, phím 0 về toàn cảnh.
+      // Hình dọc (cao hơn rộng) mở ra chiếm ~88% bề ngang, không ép cả hình vào khung nên chữ đủ to; lăn chuột để đọc xuống.
+      // Chỉ đổi viewBox nên chữ nét ở mọi mức phóng. Khung nhìn trùng tỉ lệ file (render.sh) thì viewBox không đổi nên PNG vẫn chụp như cũ.
+      (() => {
+        const svg = document.querySelector("svg");
+        const orig = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+        const portrait = orig[3] > orig[2];
+        let home = orig.slice(),
+          vb = orig.slice(),
+          space = false,
+          drag = null,
+          moved = false;
+        document.documentElement.style.cssText = "height:100%;overflow:hidden";
+        document.body.style.cssText = "height:100%;align-items:center";
+        Object.assign(svg.style, {
+          width: "100vw",
+          height: "100vh",
+          maxWidth: "none",
+          background: "none"
+        });
+        // nền width="100%" tính theo viewBox hiện tại → phóng là co mất; ghim về cỡ gốc
+        svg.querySelectorAll('rect[width="100%"]').forEach((r) => {
+          r.setAttribute("width", orig[2]);
+          r.setAttribute("height", orig[3]);
+        });
+        const set = () => svg.setAttribute("viewBox", vb.join(" "));
+        const unit = () =>
+          Math.max(vb[2] / svg.clientWidth, vb[3] / svg.clientHeight); // đơn vị SVG trên 1px màn hình
+        const fit = () => {
+          home = orig.slice();
+          if (!portrait || !svg.clientWidth || !svg.clientHeight) return;
+          const w = orig[2] / 0.8,
+            h = (w * svg.clientHeight) / svg.clientWidth; // hình chiếm ~88% bề ngang, canh giữa
+          if (Math.abs(h / orig[3] - 1) > 0.02)
+            home = [orig[0] - (w - orig[2]) / 2, orig[1], w, h];
+        };
+        const reset = () => {
+          fit();
+          vb = home.slice();
+          moved = false;
+          set();
+        };
+        reset();
+        addEventListener("resize", () => {
+          if (!moved) reset();
+        });
+        addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            e.preventDefault();
+            space = true;
+            svg.style.userSelect = "none";
+            if (!drag) svg.style.cursor = "grab";
+          }
+          if (e.key === "0") reset();
+        });
+        addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            space = false;
+            svg.style.userSelect = "";
+            if (!drag) svg.style.cursor = "";
+          }
+        });
+        svg.addEventListener("pointerdown", (e) => {
+          if (!space && e.button !== 1) return;
+          e.preventDefault(); // chặn trình duyệt bắt đầu bôi đen chữ khi kéo
+          getSelection().removeAllRanges();
+          drag = [e.clientX, e.clientY];
+          svg.setPointerCapture(e.pointerId);
+          svg.style.cursor = "grabbing";
+        });
+        svg.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault(); // chặn autoscroll của nút giữa
+        });
+        svg.addEventListener("pointermove", (e) => {
+          if (!drag) return;
+          const k = unit();
+          vb[0] -= (e.clientX - drag[0]) * k;
+          vb[1] -= (e.clientY - drag[1]) * k;
+          drag = [e.clientX, e.clientY];
+          moved = true;
+          set();
+        });
+        svg.addEventListener("pointerup", () => {
+          drag = null;
+          svg.style.cursor = space ? "grab" : "";
+        });
+        svg.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const px = e.deltaMode ? 16 : 1; // Firefox báo delta theo dòng
+            if (e.ctrlKey || e.metaKey) {
+              const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
+                svg.getScreenCTM().inverse()
+              );
+              const w = Math.min(
+                Math.max(vb[2] * Math.exp(e.deltaY * px * 0.002), orig[2] / 20),
+                orig[2] * 4
+              );
+              const f = w / vb[2];
+              vb = [
+                p.x - (p.x - vb[0]) * f,
+                p.y - (p.y - vb[1]) * f,
+                vb[2] * f,
+                vb[3] * f
+              ];
+            } else {
+              const k = unit();
+              vb[0] += (e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX) * px * k;
+              vb[1] += (e.shiftKey && !e.deltaX ? 0 : e.deltaY) * px * k;
+            }
+            moved = true;
+            set();
+          },
+          { passive: false }
+        );
+      })();
+    </script>
+  </body>
+</html>
